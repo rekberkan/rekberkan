@@ -1,0 +1,3 @@
+# DatabaseSchema
+
+Placeholder documentation content.

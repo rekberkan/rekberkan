@@ -1,0 +1,152 @@
+// ============================================================================
+// BANK-GRADE ADMIN & SECURITY SCHEMA
+// Implements: Dual Approval, Password History, Idempotency
+// ============================================================================
+
+// ============================================================================
+// WALLET ADJUSTMENT (Admin Operations - Requires Dual Approval)
+// ============================================================================
+
+enum WalletAdjustmentStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum WalletAdjustmentType {
+  CREDIT
+  DEBIT
+}
+
+model WalletAdjustment {
+  id              String                  @id @default(uuid())
+  userId          String                  @map("user_id")
+  amountMinor     BigInt                  @map("amount_minor")
+  type            WalletAdjustmentType
+  reason          String                  @db.Text
+  status          WalletAdjustmentStatus  @default(PENDING_APPROVAL)
+  
+  // Requester
+  requestedBy     String                  @map("requested_by")
+  requestedAt     DateTime                @default(now()) @map("requested_at") @db.Timestamptz
+  
+  // Approver (must be different from requester - BANK RULE)
+  approvedBy      String?                 @map("approved_by")
+  approvedAt      DateTime?               @map("approved_at") @db.Timestamptz
+  approverNotes   String?                 @map("approver_notes") @db.Text
+  
+  // Rejection
+  rejectedBy      String?                 @map("rejected_by")
+  rejectedAt      DateTime?               @map("rejected_at") @db.Timestamptz
+  rejectionReason String?                 @map("rejection_reason") @db.Text
+  
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([userId, status])
+  @@index([status, requestedAt])
+  @@index([requestedBy])
+  @@index([approvedBy])
+  @@map("wallet_adjustments")
+}
+
+// ============================================================================
+// PASSWORD HISTORY (Prevent Reuse - BANK RULE)
+// ============================================================================
+
+model PasswordHistory {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  passwordHash  String    @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, createdAt])
+  @@map("password_history")
+}
+
+// ============================================================================
+// IDEMPOTENCY RECORDS (For Financial Operations)
+// ============================================================================
+
+model IdempotencyRecord {
+  id              String    @id @default(uuid())
+  idempotencyKey  String    @unique @map("idempotency_key")
+  userId          String?   @map("user_id")
+  endpoint        String
+  method          String
+  requestHash     String    @map("request_hash")
+  status          String    @default("processing")
+  response        Json?
+  errorMessage    String?   @map("error_message") @db.Text
+  
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
+
+// ============================================================================
+// MFA BACKUP CODES
+// ============================================================================
+
+model MfaBackupCode {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  codeHash    String    @map("code_hash")
+  usedAt      DateTime? @map("used_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, usedAt])
+  @@map("mfa_backup_codes")
+}
+
+// ============================================================================
+// SECURITY EVENTS (For Monitoring & Alerting)
+// ============================================================================
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGIN_LOCKED
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+  MFA_ENABLED
+  MFA_DISABLED
+  MFA_FAILED
+  SESSION_REVOKED
+  SUSPICIOUS_ACTIVITY
+  WITHDRAWAL_FLAGGED
+  ADMIN_ACTION
+}
+
+enum SecurityEventSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model SecurityEvent {
+  id          String                @id @default(uuid())
+  userId      String?               @map("user_id")
+  eventType   SecurityEventType     @map("event_type")
+  severity    SecurityEventSeverity @default(LOW)
+  ipAddress   String?               @map("ip_address")
+  userAgent   String?               @map("user_agent")
+  details     Json?
+  
+  // For alerting
+  isAlerted   Boolean               @default(false) @map("is_alerted")
+  alertedAt   DateTime?             @map("alerted_at") @db.Timestamptz
+  
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([severity, isAlerted])
+  @@map("security_events")
+}

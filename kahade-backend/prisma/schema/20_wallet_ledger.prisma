@@ -1,0 +1,128 @@
+// ============================================================================
+// WALLET & LEDGER MODELS (IMMUTABLE LEDGER)
+// ============================================================================
+
+model Wallet {
+  id                String    @id @default(uuid())
+  userId            String    @unique @map("user_id")
+  currency          Currency  @default(IDR)
+
+  // Cached balances (minor units) - must match ledger totals
+  balanceMinor      BigInt    @default(0) @map("balance_minor") @db.BigInt
+  lockedMinor       BigInt    @default(0) @map("locked_minor") @db.BigInt
+
+  // Reconciliation tracking
+  lastReconciledAt  DateTime? @map("last_reconciled_at")
+  reconciliationHash String?  @map("reconciliation_hash")
+
+  // Optimistic locking
+  version           Int       @default(0) @map("version")
+
+  // Soft delete (financial data should NOT be hard deleted)
+  deletedAt         DateTime? @map("deleted_at")
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  accounts          LedgerAccount[]
+  deposits          Deposit[]
+  withdrawals       Withdrawal[]
+  escrowHoldsBuyer  EscrowHold[] @relation("BuyerWallet")
+  escrowHoldsSeller EscrowHold[] @relation("SellerWallet")
+
+  @@index([userId])
+  @@index([lastReconciledAt])
+  @@map("wallets")
+}
+
+model LedgerAccount {
+  id          String            @id @default(uuid())
+  walletId    String?           @map("wallet_id")
+  platformKey String?           @map("platform_key")
+  type        LedgerAccountType
+  currency    Currency          @default(IDR)
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  wallet      Wallet?           @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  entries     LedgerEntry[]
+
+  // Note: Partial unique indexes MUST be created via raw SQL migration:
+  // - Unique per (wallet_id, type, currency) when wallet_id IS NOT NULL
+  // - Unique per (platform_key, type, currency) when platform_key IS NOT NULL
+  // And XOR constraint ensures exactly one owner is set (wallet OR platform).
+
+  @@index([walletId, type, currency])
+  @@index([platformKey, type, currency])
+  @@map("ledger_accounts")
+}
+
+model LedgerJournal {
+  id               String      @id @default(uuid())
+  type             JournalType
+  currency         Currency    @default(IDR)
+  amountMinor      BigInt      @map("amount_minor") @db.BigInt
+  description      String
+  idempotencyKey   String?     @unique @map("idempotency_key")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  // Journal-centric links (single source of truth)
+  // 1:1 links (unique) where entity produces exactly one journal.
+  depositId         String? @unique @map("deposit_id")
+  withdrawalId      String? @unique @map("withdrawal_id")
+  disputeId         String? @unique @map("dispute_id")
+  referralRewardId  String? @unique @map("referral_reward_id")
+  voucherUsageId    String? @unique @map("voucher_usage_id")
+  orderSettlementId String? @unique @map("order_settlement_id")
+
+  // 1:N links (not unique) where entity may have multiple journals over time.
+  orderId       String? @map("order_id")
+  escrowHoldId  String? @map("escrow_hold_id")
+
+  // Relations (named explicitly to avoid ambiguity)
+  deposit         Deposit?         @relation("DepositJournal", fields: [depositId], references: [id], onDelete: Restrict)
+  withdrawal      Withdrawal?      @relation("WithdrawalJournal", fields: [withdrawalId], references: [id], onDelete: Restrict)
+  dispute         Dispute?         @relation("DisputeJournal", fields: [disputeId], references: [id], onDelete: Restrict)
+  referralReward  ReferralReward?  @relation("ReferralRewardJournal", fields: [referralRewardId], references: [id], onDelete: Restrict)
+  voucherUsage    VoucherUsage?    @relation("VoucherUsageJournal", fields: [voucherUsageId], references: [id], onDelete: Restrict)
+  orderSettlement OrderSettlement? @relation("OrderSettlementJournal", fields: [orderSettlementId], references: [id], onDelete: Restrict)
+
+  order          Order?       @relation("OrderJournals", fields: [orderId], references: [id], onDelete: Restrict)
+  escrowHold     EscrowHold?  @relation("EscrowHoldJournals", fields: [escrowHoldId], references: [id], onDelete: Restrict)
+
+  entries        LedgerEntry[]
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@index([depositId])
+  @@index([withdrawalId])
+  @@index([disputeId])
+  @@index([referralRewardId])
+  @@index([voucherUsageId])
+  @@index([orderSettlementId])
+  @@index([orderId])
+  @@index([escrowHoldId])
+  @@index([orderId, createdAt])
+  @@index([escrowHoldId, createdAt])
+  @@map("ledger_journals")
+}
+
+model LedgerEntry {
+  id                 String        @id @default(uuid())
+  journalId          String        @map("journal_id")
+  accountId          String        @map("account_id")
+  amountMinor        BigInt        @map("amount_minor") @db.BigInt
+
+  // Running balance for fast queries (ensure ordering by createdAt, id)
+  runningBalanceMinor BigInt?      @map("running_balance_minor") @db.BigInt
+
+  createdAt          DateTime      @default(now()) @map("created_at")
+
+  journal            LedgerJournal @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  account            LedgerAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, createdAt, id])
+  @@index([accountId, journalId])
+  @@index([journalId, createdAt])
+  @@map("ledger_entries")
+}

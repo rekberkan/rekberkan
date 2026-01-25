@@ -1,0 +1,42 @@
+// ============================================================================
+// NOTIFICATION & COMMUNICATION
+// ============================================================================
+
+model OrderComment {
+  id          String    @id @default(uuid())
+  orderId     String    @map("order_id")
+  userId      String    @map("user_id")
+  message     String    @db.Text
+  attachments Json?
+  
+  // Soft delete support
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  deletedBy   String?   @map("deleted_by")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  deleter     User?     @relation("CommentDeleter", fields: [deletedBy], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@index([deletedAt])
+  @@map("order_comments")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String   @db.Text
+  metadata  Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}

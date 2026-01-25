@@ -1,0 +1,135 @@
+// ============================================================================
+// PAYMENT MODELS (ENHANCED WITH RECONCILIATION)
+// ============================================================================
+
+model Payment {
+  id                String          @id @default(uuid())
+  userId            String          @map("user_id")
+
+  provider          PaymentProvider @default(XENDIT)
+  providerInvoiceId String?         @unique @map("provider_invoice_id")
+
+  paymentType       PaymentType     @map("payment_type")
+  paymentMethod     PaymentMethod?  @map("payment_method")
+
+  currency          Currency        @default(IDR)
+  amountMinor       BigInt          @map("amount_minor") @db.BigInt
+
+  status            PaymentStatus   @default(PENDING)
+  paymentDetails    Json?           @map("payment_details")
+  paidAt            DateTime?       @map("paid_at") @db.Timestamptz
+  expiresAt         DateTime?       @map("expires_at") @db.Timestamptz
+  
+  // CRITICAL FIX: Reconciliation tracking
+  isReconciled      Boolean         @default(false) @map("is_reconciled")
+  reconciledAt      DateTime?       @map("reconciled_at") @db.Timestamptz
+  reconciledBy      String?         @map("reconciled_by")
+  reconciliationRef String?         @map("reconciliation_ref")
+  
+  // Provider settlement tracking
+  settlementDate    DateTime?       @map("settlement_date") @db.Timestamptz
+  settlementAmount  BigInt?         @map("settlement_amount") @db.BigInt
+  settlementFees    BigInt?         @map("settlement_fees") @db.BigInt
+  
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Link to order if this payment is for order
+  orderId           String?         @map("order_id")
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order             Order?          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reconciler        User?           @relation("PaymentReconciler", fields: [reconciledBy], references: [id], onDelete: SetNull)
+  deposit           Deposit?        @relation("PaymentDeposit")
+  statusHistory     PaymentStatusHistory[]
+  webhookEvents     WebhookEvent[]
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@index([orderId])
+  @@index([provider, providerInvoiceId])
+  @@index([userId, createdAt])
+  @@index([userId, status, createdAt])
+  @@index([isReconciled, settlementDate])
+  @@index([expiresAt, status])
+  @@map("payments")
+}
+
+model PaymentStatusHistory {
+  id             String         @id @default(uuid())
+  paymentId      String         @map("payment_id")
+  fromStatus     PaymentStatus? @map("from_status")
+  toStatus       PaymentStatus  @map("to_status")
+  changedAt      DateTime       @default(now()) @map("changed_at") @db.Timestamptz
+  changedBy      String?        @map("changed_by")
+  reason         String?
+  webhookEventId String?        @map("webhook_event_id")
+
+  payment        Payment        @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  webhookEvent   WebhookEvent?  @relation(fields: [webhookEventId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId, changedAt])
+  @@index([webhookEventId])
+  @@map("payment_status_history")
+}
+
+model WebhookEvent {
+  id              String          @id @default(uuid())
+  provider        PaymentProvider @default(XENDIT)
+  eventId         String          @unique @map("event_id")
+  eventType       String          @map("event_type")
+  payload         Json
+
+  status          WebhookStatus   @default(PENDING)
+  retryCount      Int             @default(0) @map("retry_count")
+  maxRetries      Int             @default(3) @map("max_retries")
+  lastRetryAt     DateTime?       @map("last_retry_at") @db.Timestamptz
+
+  receivedAt      DateTime        @default(now()) @map("received_at") @db.Timestamptz
+  processedAt     DateTime?       @map("processed_at") @db.Timestamptz
+  processingError String?         @map("processing_error") @db.Text
+
+  // CRITICAL FIX: Enforce signature validation (will add SQL NOT NULL constraint)
+  paymentId        String?   @map("payment_id")
+  providerEventAt  DateTime? @map("provider_event_at") @db.Timestamptz
+  signatureValid   Boolean   @map("signature_valid") // SQL constraint will enforce NOT NULL + must be TRUE
+  signatureError   String?   @map("signature_error")
+  
+  // Request metadata for security
+  requestIp        String?   @map("request_ip")
+  requestHeaders   Json?     @map("request_headers")
+
+  payment          Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  statusHistory    PaymentStatusHistory[]
+
+  @@index([provider, receivedAt])
+  @@index([status, retryCount])
+  @@index([eventType])
+  @@index([paymentId])
+  @@index([signatureValid, status])
+  @@map("webhook_events")
+}
+
+model Deposit {
+  id          String        @id @default(uuid())
+  walletId    String        @map("wallet_id")
+  paymentId   String        @unique @map("payment_id")
+
+  currency    Currency      @default(IDR)
+  amountMinor BigInt        @map("amount_minor") @db.BigInt
+
+  status      DepositStatus @default(PENDING)
+  completedAt DateTime?     @map("completed_at") @db.Timestamptz
+  
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  wallet      Wallet        @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  payment     Payment       @relation("PaymentDeposit", fields: [paymentId], references: [id], onDelete: Restrict)
+
+  // Journal-centric: back relation (optional 1:1)
+  journal     LedgerJournal? @relation("DepositJournal")
+
+  @@index([walletId, status])
+  @@index([createdAt])
+  @@map("deposits")
+}

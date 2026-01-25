@@ -1,0 +1,132 @@
+// ============================================================================
+// CORE USER & AUTH MODELS (ENHANCED)
+// ============================================================================
+
+model User {
+  id                String    @id @default(uuid())
+  username          String    @unique
+  email             String    @unique
+  phone             String?
+  passwordHash      String    @map("password_hash")
+
+  // Account security
+  passwordUpdatedAt    DateTime? @map("password_updated_at") @db.Timestamptz
+  passwordResetToken   String?   @map("password_reset_token")
+  passwordResetExpires DateTime? @map("password_reset_expires") @db.Timestamptz
+  lastLoginAt          DateTime? @map("last_login_at") @db.Timestamptz
+  lastFailedLoginAt    DateTime? @map("last_failed_login_at") @db.Timestamptz
+  failedLoginCount     Int       @default(0) @map("failed_login_count")
+  lockedUntil          DateTime? @map("locked_until") @db.Timestamptz
+  
+  // Account suspension
+  suspendedAt          DateTime? @map("suspended_at") @db.Timestamptz
+  suspendedUntil       DateTime? @map("suspended_until") @db.Timestamptz
+  suspendReason        String?   @map("suspend_reason") @db.Text
+
+  // MFA (store encrypted secret; never plaintext)
+  mfaEnabled        Boolean   @default(false) @map("mfa_enabled")
+  totpSecretEnc     String?   @map("totp_secret_enc") @db.Text
+  backupCodesHash   Json?     @map("backup_codes_hash")
+
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
+  kycStatus         KYCStatus @default(NONE) @map("kyc_status")
+  
+  // CRITICAL FIX: Increased precision for reputation score (0.00 to 5.00)
+  reputationScore   Decimal   @default(0) @db.Decimal(5, 2)
+  totalTransactions Int       @default(0) @map("total_transactions")
+  isAdmin           Boolean   @default(false) @map("is_admin")
+
+  // Soft delete with FK to admin user
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
+  deletedByUserId   String?   @map("deleted_by_user_id")
+
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  wallet               Wallet?
+  sessions             Session[]
+  bankAccounts         BankAccount[]
+  ordersInitiated      Order[]               @relation("OrderInitiator")
+  ordersCounterparty   Order[]               @relation("OrderCounterparty")
+  ordersDeleted        Order[]               @relation("OrderDeletedBy")
+  ratingsGiven         Rating[]              @relation("RatingFrom")
+  ratingsReceived      Rating[]              @relation("RatingTo")
+  disputesOpened       Dispute[]             @relation("DisputeOpener")
+  disputesArbitrated   Dispute[]             @relation("DisputeArbitrator")
+  disputeEscalations   Dispute[]             @relation("DisputeEscalation")
+  kycSubmissions       KYCSubmission[]       @relation("KYCUser")
+  kycVerifications     KYCSubmission[]       @relation("KYCVerifier")
+  payments             Payment[]
+  paymentsReconciled   Payment[]             @relation("PaymentReconciler")
+  orderComments        OrderComment[]
+  commentsDeleted      OrderComment[]        @relation("CommentDeleter")
+  auditLogs            AuditLog[]
+  notifications        Notification[]
+  disputeEvidences     DisputeEvidence[]
+  withdrawalsRequested Withdrawal[]          @relation("WithdrawalRequester")
+  withdrawalsApproved  Withdrawal[]          @relation("WithdrawalApprover")
+  withdrawalReviews    Withdrawal[]          @relation("WithdrawalReviewer")
+  withdrawalApprovals  WithdrawalApproval[]  @relation("WithdrawalApprovalUser")
+  disputeTimelines     DisputeTimeline[]
+  ratingModerations    Rating[]              @relation("RatingModerator")
+
+  // User deletion actor relation (User deleted by another User)
+  deletedByActions     User[]                @relation("DeletedBy")
+  deletedBy            User?                 @relation("DeletedBy", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+
+  // Referral system
+  referralCode         ReferralCode?
+  referralsUsed        ReferralUsage[]       @relation("ReferredUser")
+  referralsSent        ReferralUsage[]       @relation("ReferrerUser")
+  referralRewards      ReferralReward[]
+
+  // Promo & Voucher
+  voucherUsages        VoucherUsage[]
+  promoAssignments     PromoAssignment[]
+  vouchersAssigned     Voucher[]             @relation("VoucherAssignedTo")
+
+  // Activity Log (CRITICAL FIX: Added relation)
+  activities           UserActivity[]
+
+  // Transaction Limits (CRITICAL FIX: Added relations)
+  transactionLimits    TransactionLimit[]    @relation("TransactionLimitUser")
+  limitOverrides       TransactionLimit[]    @relation("LimitOverrider")
+
+  // Order Settlement
+  settlementsAsSeller  OrderSettlement[]     @relation("SettlementSeller")
+  settlementsAsBuyer   OrderSettlement[]     @relation("SettlementBuyer")
+
+  @@index([kycStatus])
+  @@index([kycStatus, emailVerifiedAt])
+  @@index([deletedAt])
+  @@index([isAdmin, deletedAt])
+  @@index([email, emailVerifiedAt])
+  @@index([reputationScore(sort: Desc)])
+  @@map("users")
+}
+
+model Session {
+  id                  String    @id @default(uuid())
+  userId              String    @map("user_id")
+  refreshHash         String    @map("refresh_hash")
+  userAgent           String?   @map("user_agent")
+  ipAddress           String?   @map("ip_address")
+  revokedAt           DateTime? @map("revoked_at") @db.Timestamptz
+  expiresAt           DateTime  @map("expires_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Session rotation & token family
+  sessionFamilyId     String?   @map("session_family_id")
+  rotatedAt           DateTime? @map("rotated_at") @db.Timestamptz
+  replacedBySessionId String?   @map("replaced_by_session_id")
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy          Session?  @relation("SessionRotation", fields: [replacedBySessionId], references: [id], onDelete: SetNull)
+  replacements        Session[] @relation("SessionRotation")
+
+  @@index([userId, expiresAt])
+  @@index([sessionFamilyId])
+  @@index([expiresAt])
+  @@map("sessions")
+}

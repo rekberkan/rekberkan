@@ -1,0 +1,29 @@
+// ============================================================================
+// ACTIVITY LOG
+// ============================================================================
+
+model UserActivity {
+  id           String       @id @default(uuid())
+  userId       String       @map("user_id")
+
+  activityType ActivityType @map("activity_type")
+  description  String?
+  metadata     Json?
+
+  ipAddress    String?      @map("ip_address")
+  userAgent    String?      @map("user_agent")
+  deviceId     String?      @map("device_id")
+
+  // Geolocation (optional)
+  country      String?
+  city         String?
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([activityType, createdAt])
+  @@index([createdAt])
+  @@map("user_activities")
+}

@@ -1,0 +1,6 @@
+export enum DisputeStatus {
+  PENDING = 'PENDING',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  RESOLVED = 'RESOLVED',
+  REJECTED = 'REJECTED',
+}

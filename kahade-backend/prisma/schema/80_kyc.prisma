@@ -1,0 +1,42 @@
+// ============================================================================
+// KYC MODELS
+// ============================================================================
+
+model KYCSubmission {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+
+  // Object storage keys
+  idCardObjectKey String    @map("id_card_object_key")
+  selfieObjectKey String    @map("selfie_object_key")
+
+  // Document integrity
+  idCardHash      String    @map("id_card_hash")
+  selfieHash      String    @map("selfie_hash")
+
+  // Encrypted personal data
+  fullNameEnc     String    @map("full_name_enc") @db.Text
+  idNumberEnc     String    @map("id_number_enc") @db.Text
+  dateOfBirthEnc  String    @map("date_of_birth_enc") @db.Text
+  addressEnc      String    @map("address_enc") @db.Text
+  keyVersion      Int       @default(1) @map("key_version")
+
+  status          KYCStatus @default(PENDING)
+
+  // Attempt tracking & expiry
+  attemptNumber   Int       @default(1) @map("attempt_number")
+  expiresAt       DateTime? @map("expires_at")
+
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  verifiedBy      String?   @map("verified_by")
+  submittedAt     DateTime  @default(now()) @map("submitted_at")
+  verifiedAt      DateTime? @map("verified_at")
+
+  user            User      @relation("KYCUser", fields: [userId], references: [id], onDelete: Restrict)
+  verifier        User?     @relation("KYCVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@index([status, submittedAt])
+  @@index([userId, attemptNumber])
+  @@index([expiresAt])
+  @@map("kyc_submissions")
+}

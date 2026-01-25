@@ -1,0 +1,88 @@
+// ============================================================================
+// SYSTEM CONFIGURATION
+// ============================================================================
+
+model SystemConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([key, isActive])
+  @@map("system_configs")
+}
+
+model TransactionLimit {
+  id                       String    @id @default(uuid())
+  userId                   String?   @map("user_id")
+  kycStatus                KYCStatus @default(NONE) @map("kyc_status")
+
+  currency                 Currency  @default(IDR)
+
+  // Limits in minor units (non-negative, enforce in application + DB)
+  dailyLimitMinor          BigInt    @map("daily_limit_minor") @db.BigInt
+  perTxLimitMinor          BigInt    @map("per_tx_limit_minor") @db.BigInt
+  monthlyLimitMinor        BigInt?   @map("monthly_limit_minor") @db.BigInt
+  dailyWithdrawalLimitMinor BigInt?  @map("daily_withdrawal_limit_minor") @db.BigInt
+
+  effectiveFrom            DateTime  @map("effective_from")
+  effectiveUntil           DateTime? @map("effective_until")
+
+  isActive                 Boolean   @default(true) @map("is_active")
+  
+  // Override tracking
+  isOverridden             Boolean   @default(false) @map("is_overridden")
+  overrideReason           String?   @map("override_reason") @db.Text
+  overriddenBy             String?   @map("overridden_by")
+  overriddenAt             DateTime? @map("overridden_at") @db.Timestamptz
+  
+  createdAt                DateTime  @default(now()) @map("created_at")
+
+  user                     User?     @relation("TransactionLimitUser", fields: [userId], references: [id], onDelete: SetNull)
+  overrider                User?     @relation("LimitOverrider", fields: [overriddenBy], references: [id], onDelete: SetNull)
+
+  @@index([userId, isActive])
+  @@index([kycStatus, isActive])
+  @@index([overriddenBy])
+  @@map("transaction_limits")
+}
+
+model FeeConfig {
+  id             String        @id @default(uuid())
+  name           String
+  orderCategory  OrderCategory?
+
+  // Fee structure (non-negative values, enforce in application + DB)
+  minAmountMinor BigInt?       @map("min_amount_minor") @db.BigInt
+  maxAmountMinor BigInt?       @map("max_amount_minor") @db.BigInt
+  feePercentage  Decimal       @db.Decimal(5, 4) @map("fee_percentage")
+  flatFeeMinor   BigInt        @default(0) @map("flat_fee_minor") @db.BigInt
+
+  currency       Currency      @default(IDR)
+
+  effectiveFrom  DateTime      @map("effective_from")
+  effectiveUntil DateTime?     @map("effective_until")
+
+  isActive       Boolean       @default(true) @map("is_active")
+  priority       Int           @default(0)
+
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([orderCategory, isActive])
+  @@index([effectiveFrom, effectiveUntil])
+  @@map("fee_configs")
+}
+
+model PlatformAccountKey {
+  key         String            @id
+  description String
+  accountType LedgerAccountType @map("account_type")
+  isActive    Boolean           @default(true) @map("is_active")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@map("platform_account_keys")
+}

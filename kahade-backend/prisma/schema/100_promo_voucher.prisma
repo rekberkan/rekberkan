@@ -1,0 +1,128 @@
+// ============================================================================
+// PROMO & VOUCHER SYSTEM
+// ============================================================================
+
+model Promo {
+  id                 String          @id @default(uuid())
+  code               String          @unique
+  name               String
+  description        String?         @db.Text
+
+  targetType         PromoTargetType @map("target_type")
+
+  // Discount configuration
+  discountType       VoucherType     @map("discount_type")
+  discountValue      BigInt?         @map("discount_value") @db.BigInt
+  discountPercent    Decimal?        @map("discount_percent") @db.Decimal(5, 2)
+  maxDiscountMinor   BigInt?         @map("max_discount_minor") @db.BigInt
+
+  // Usage limits
+  maxTotalUsages     Int?            @map("max_total_usages")
+  maxUsagePerUser    Int             @default(1) @map("max_usage_per_user")
+  currentUsages      Int             @default(0) @map("current_usages")
+
+  // Constraints
+  minPurchaseMinor   BigInt?         @map("min_purchase_minor") @db.BigInt
+  applicableCategories Json?         @map("applicable_categories")
+
+  // Validity
+  validFrom          DateTime        @map("valid_from")
+  validUntil         DateTime        @map("valid_until")
+
+  isActive           Boolean         @default(true) @map("is_active")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  assignments        PromoAssignment[]
+  vouchers           Voucher[]
+
+  @@index([isActive, validFrom, validUntil])
+  @@index([targetType])
+  @@map("promos")
+}
+
+model PromoAssignment {
+  id          String   @id @default(uuid())
+  promoId     String   @map("promo_id")
+  userId      String   @map("user_id")
+
+  assignedAt  DateTime @default(now()) @map("assigned_at")
+  expiresAt   DateTime? @map("expires_at")
+
+  promo       Promo    @relation(fields: [promoId], references: [id], onDelete: Restrict)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([promoId, userId])
+  @@index([userId])
+  @@index([promoId])
+  @@map("promo_assignments")
+}
+
+model Voucher {
+  id               String        @id @default(uuid())
+  promoId          String?       @map("promo_id")
+  code             String        @unique
+
+  voucherType      VoucherType   @map("voucher_type")
+
+  // Value configuration
+  currency         Currency      @default(IDR)
+  discountMinor    BigInt?       @map("discount_minor") @db.BigInt
+  discountPercent  Decimal?      @map("discount_percent") @db.Decimal(5, 2)
+  maxDiscountMinor BigInt?       @map("max_discount_minor") @db.BigInt
+
+  // Usage limits
+  maxUsages        Int           @default(1) @map("max_usages")
+  currentUsages    Int           @default(0) @map("current_usages")
+
+  // Constraints
+  minPurchaseMinor BigInt?       @map("min_purchase_minor") @db.BigInt
+  applicableCategories Json?     @map("applicable_categories")
+
+  // Validity
+  validFrom        DateTime      @map("valid_from")
+  validUntil       DateTime      @map("valid_until")
+
+  status           VoucherStatus @default(ACTIVE)
+
+  // Assignment (optional - for user-specific vouchers)
+  assignedToUserId String?       @map("assigned_to_user_id")
+
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  promo            Promo?        @relation(fields: [promoId], references: [id], onDelete: SetNull)
+  assignedToUser   User?         @relation("VoucherAssignedTo", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  usages           VoucherUsage[]
+
+  @@index([status, validFrom, validUntil])
+  @@index([assignedToUserId])
+  @@map("vouchers")
+}
+
+model VoucherUsage {
+  id            String    @id @default(uuid())
+  voucherId     String    @map("voucher_id")
+  userId        String    @map("user_id")
+  orderId       String?   @map("order_id")
+
+  currency      Currency  @default(IDR)
+  originalMinor BigInt    @map("original_minor") @db.BigInt
+  discountMinor BigInt    @map("discount_minor") @db.BigInt
+  finalMinor    BigInt    @map("final_minor") @db.BigInt
+
+  usedAt        DateTime  @default(now()) @map("used_at")
+
+  // Idempotency
+  idempotencyKey String?  @unique @map("idempotency_key")
+
+  voucher       Voucher   @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // Journal-centric: back relation (optional 1:1)
+  journal       LedgerJournal? @relation("VoucherUsageJournal")
+
+  @@index([voucherId, usedAt])
+  @@index([userId])
+  @@map("voucher_usages")
+}

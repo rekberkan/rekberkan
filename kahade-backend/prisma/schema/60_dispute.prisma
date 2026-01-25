@@ -1,0 +1,79 @@
+// ============================================================================
+// DISPUTE MODELS
+// ============================================================================
+
+model Dispute {
+  id               String          @id @default(uuid())
+  orderId          String          @unique @map("order_id")
+  openedBy         String          @map("opened_by")
+  reason           String          @db.Text
+
+  status           DisputeStatus   @default(OPEN)
+
+  // Response & escalation tracking
+  responseDeadline DateTime?       @map("response_deadline")
+  escalatedAt      DateTime?       @map("escalated_at")
+  escalatedTo      String?         @map("escalated_to")
+
+  arbitratorId     String?         @map("arbitrator_id")
+  decision         DisputeDecision @default(NONE)
+
+  sellerAmountMinor BigInt?        @map("seller_amount_minor") @db.BigInt
+  buyerRefundMinor  BigInt?        @map("buyer_refund_minor") @db.BigInt
+
+  adminNotes       String?         @map("admin_notes") @db.Text
+  resolutionNotes  String?         @map("resolution_notes") @db.Text
+
+  // Appeal mechanism
+  canAppeal        Boolean         @default(true) @map("can_appeal")
+  appealDeadline   DateTime?       @map("appeal_deadline")
+  appealCount      Int             @default(0) @map("appeal_count")
+
+  openedAt         DateTime        @default(now()) @map("opened_at")
+  decidedAt        DateTime?       @map("decided_at")
+
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  opener           User            @relation("DisputeOpener", fields: [openedBy], references: [id], onDelete: Restrict)
+  arbitrator       User?           @relation("DisputeArbitrator", fields: [arbitratorId], references: [id], onDelete: SetNull)
+  escalatedToUser  User?           @relation("DisputeEscalation", fields: [escalatedTo], references: [id], onDelete: SetNull)
+  evidences        DisputeEvidence[]
+  timeline         DisputeTimeline[]
+
+  // Journal-centric: back relation (optional 1:1)
+  journal          LedgerJournal?  @relation("DisputeJournal")
+
+  @@index([status])
+  @@index([responseDeadline])
+  @@index([appealDeadline])
+  @@map("disputes")
+}
+
+model DisputeEvidence {
+  id           String    @id @default(uuid())
+  disputeId    String    @map("dispute_id")
+  submittedBy  String    @map("submitted_by")
+  fileUrls     Json      @map("file_urls")
+  description  String    @db.Text
+  submittedAt  DateTime  @default(now()) @map("submitted_at")
+
+  dispute      Dispute   @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  submitter    User      @relation(fields: [submittedBy], references: [id], onDelete: Restrict)
+
+  @@index([disputeId, submittedAt])
+  @@map("dispute_evidence")
+}
+
+model DisputeTimeline {
+  id          String   @id @default(uuid())
+  disputeId   String   @map("dispute_id")
+  action      String
+  performedBy String?  @map("performed_by")
+  details     Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  dispute     Dispute  @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  user        User?    @relation(fields: [performedBy], references: [id], onDelete: SetNull)
+
+  @@index([disputeId, createdAt])
+  @@map("dispute_timeline")
+}

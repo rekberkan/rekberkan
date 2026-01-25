@@ -1,0 +1,53 @@
+{
+  "users": [
+    {
+      "email": "buyer@example.com",
+      "password": "hashed_password",
+      "name": "Buyer User",
+      "role": "USER",
+      "status": "ACTIVE"
+    },
+    {
+      "email": "seller@example.com",
+      "password": "hashed_password",
+      "name": "Seller User",
+      "role": "USER",
+      "status": "ACTIVE"
+    },
+    {
+      "email": "admin@example.com",
+      "password": "hashed_password",
+      "name": "Admin User",
+      "role": "ADMIN",
+      "status": "ACTIVE"
+    }
+  ],
+  "transactions": [
+    {
+      "title": "Sample Transaction",
+      "description": "Sample escrow transaction between buyer and seller.",
+      "amount": "100000.00",
+      "currency": "IDR",
+      "status": "PENDING",
+      "buyerEmail": "buyer@example.com",
+      "sellerEmail": "seller@example.com"
+    }
+  ],
+  "disputes": [
+    {
+      "reason": "Item not delivered",
+      "description": "Buyer reported missing delivery.",
+      "status": "PENDING",
+      "reporterEmail": "buyer@example.com",
+      "transactionTitle": "Sample Transaction"
+    }
+  ],
+  "notifications": [
+    {
+      "type": "TRANSACTION",
+      "title": "Transaction created",
+      "message": "Your transaction has been created.",
+      "userEmail": "buyer@example.com"
+    }
+  ]
+}

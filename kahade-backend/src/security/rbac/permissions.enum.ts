@@ -1,0 +1,157 @@
+// ============================================================================
+// RBAC: PERMISSIONS ENUMERATION
+// ============================================================================
+
+export enum Permission {
+  // User Management
+  USER_READ = 'USER_READ',
+  USER_CREATE = 'USER_CREATE',
+  USER_UPDATE = 'USER_UPDATE',
+  USER_DELETE = 'USER_DELETE',
+  USER_BAN = 'USER_BAN',
+  
+  // Wallet Management
+  WALLET_READ = 'WALLET_READ',
+  WALLET_READ_ALL = 'WALLET_READ_ALL',
+  WALLET_ADJUST_BALANCE = 'WALLET_ADJUST_BALANCE',
+  
+  // Order Management
+  ORDER_READ = 'ORDER_READ',
+  ORDER_READ_ALL = 'ORDER_READ_ALL',
+  ORDER_CREATE = 'ORDER_CREATE',
+  ORDER_CANCEL = 'ORDER_CANCEL',
+  ORDER_FORCE_COMPLETE = 'ORDER_FORCE_COMPLETE',
+  
+  // Payment Management
+  PAYMENT_READ = 'PAYMENT_READ',
+  PAYMENT_READ_ALL = 'PAYMENT_READ_ALL',
+  PAYMENT_RECONCILE = 'PAYMENT_RECONCILE',
+  PAYMENT_REFUND = 'PAYMENT_REFUND',
+  
+  // Withdrawal Management
+  WITHDRAWAL_READ = 'WITHDRAWAL_READ',
+  WITHDRAWAL_READ_ALL = 'WITHDRAWAL_READ_ALL',
+  WITHDRAWAL_REQUEST = 'WITHDRAWAL_REQUEST',
+  WITHDRAWAL_REVIEW = 'WITHDRAWAL_REVIEW',
+  WITHDRAWAL_APPROVE = 'WITHDRAWAL_APPROVE',
+  WITHDRAWAL_REJECT = 'WITHDRAWAL_REJECT',
+  WITHDRAWAL_OVERRIDE_LIMIT = 'WITHDRAWAL_OVERRIDE_LIMIT',
+  
+  // Escrow Management
+  ESCROW_READ = 'ESCROW_READ',
+  ESCROW_READ_ALL = 'ESCROW_READ_ALL',
+  ESCROW_RELEASE = 'ESCROW_RELEASE',
+  ESCROW_REFUND = 'ESCROW_REFUND',
+  ESCROW_ADJUST = 'ESCROW_ADJUST',
+  
+  // Dispute Management
+  DISPUTE_READ = 'DISPUTE_READ',
+  DISPUTE_READ_ALL = 'DISPUTE_READ_ALL',
+  DISPUTE_OPEN = 'DISPUTE_OPEN',
+  DISPUTE_RESPOND = 'DISPUTE_RESPOND',
+  DISPUTE_ARBITRATE = 'DISPUTE_ARBITRATE',
+  DISPUTE_DECIDE = 'DISPUTE_DECIDE',
+  
+  // KYC Management
+  KYC_SUBMIT = 'KYC_SUBMIT',
+  KYC_READ = 'KYC_READ',
+  KYC_READ_ALL = 'KYC_READ_ALL',
+  KYC_VERIFY = 'KYC_VERIFY',
+  KYC_REJECT = 'KYC_REJECT',
+  
+  // Ledger Management
+  LEDGER_READ = 'LEDGER_READ',
+  LEDGER_READ_ALL = 'LEDGER_READ_ALL',
+  LEDGER_RECONCILE = 'LEDGER_RECONCILE',
+  LEDGER_AUDIT = 'LEDGER_AUDIT',
+  
+  // System Administration
+  SYSTEM_CONFIG_READ = 'SYSTEM_CONFIG_READ',
+  SYSTEM_CONFIG_WRITE = 'SYSTEM_CONFIG_WRITE',
+  SYSTEM_AUDIT_LOG_READ = 'SYSTEM_AUDIT_LOG_READ',
+  SYSTEM_WEBHOOK_MANAGE = 'SYSTEM_WEBHOOK_MANAGE',
+  
+  // Reports & Analytics
+  REPORT_FINANCIAL = 'REPORT_FINANCIAL',
+  REPORT_USER_ACTIVITY = 'REPORT_USER_ACTIVITY',
+  REPORT_TRANSACTION = 'REPORT_TRANSACTION',
+  
+  // Promo & Referral
+  PROMO_CREATE = 'PROMO_CREATE',
+  PROMO_MANAGE = 'PROMO_MANAGE',
+  REFERRAL_MANAGE = 'REFERRAL_MANAGE',
+}
+
+// Role-Permission Mapping
+export const RolePermissions: Record<string, Permission[]> = {
+  SUPER_ADMIN: Object.values(Permission), // All permissions
+  
+  ADMIN: [
+    Permission.USER_READ, Permission.USER_UPDATE, Permission.USER_BAN,
+    Permission.WALLET_READ_ALL,
+    Permission.ORDER_READ_ALL, Permission.ORDER_FORCE_COMPLETE,
+    Permission.PAYMENT_READ_ALL, Permission.PAYMENT_RECONCILE, Permission.PAYMENT_REFUND,
+    Permission.WITHDRAWAL_READ_ALL, Permission.WITHDRAWAL_REVIEW, Permission.WITHDRAWAL_APPROVE, Permission.WITHDRAWAL_REJECT,
+    Permission.ESCROW_READ_ALL, Permission.ESCROW_RELEASE, Permission.ESCROW_REFUND,
+    Permission.DISPUTE_READ_ALL, Permission.DISPUTE_ARBITRATE, Permission.DISPUTE_DECIDE,
+    Permission.KYC_READ_ALL,
+    Permission.LEDGER_READ_ALL, Permission.LEDGER_AUDIT,
+    Permission.SYSTEM_CONFIG_READ, Permission.SYSTEM_AUDIT_LOG_READ,
+    Permission.REPORT_FINANCIAL, Permission.REPORT_USER_ACTIVITY, Permission.REPORT_TRANSACTION,
+  ],
+  
+  FINANCE_MANAGER: [
+    Permission.WALLET_READ_ALL, Permission.WALLET_ADJUST_BALANCE,
+    Permission.PAYMENT_READ_ALL, Permission.PAYMENT_RECONCILE, Permission.PAYMENT_REFUND,
+    Permission.WITHDRAWAL_READ_ALL, Permission.WITHDRAWAL_APPROVE, Permission.WITHDRAWAL_REJECT, Permission.WITHDRAWAL_OVERRIDE_LIMIT,
+    Permission.LEDGER_READ_ALL, Permission.LEDGER_RECONCILE, Permission.LEDGER_AUDIT,
+    Permission.REPORT_FINANCIAL, Permission.REPORT_TRANSACTION,
+  ],
+  
+  FINANCE_OFFICER: [
+    Permission.PAYMENT_READ_ALL, Permission.PAYMENT_RECONCILE,
+    Permission.WITHDRAWAL_READ_ALL, Permission.WITHDRAWAL_REVIEW,
+    Permission.LEDGER_READ_ALL,
+    Permission.REPORT_FINANCIAL,
+  ],
+  
+  COMPLIANCE_OFFICER: [
+    Permission.USER_READ, Permission.USER_BAN,
+    Permission.KYC_READ_ALL, Permission.KYC_VERIFY, Permission.KYC_REJECT,
+    Permission.ORDER_READ_ALL,
+    Permission.WITHDRAWAL_READ_ALL, Permission.WITHDRAWAL_REVIEW,
+    Permission.SYSTEM_AUDIT_LOG_READ,
+    Permission.REPORT_USER_ACTIVITY,
+  ],
+  
+  SUPPORT_MANAGER: [
+    Permission.USER_READ, Permission.USER_UPDATE,
+    Permission.ORDER_READ_ALL,
+    Permission.DISPUTE_READ_ALL, Permission.DISPUTE_RESPOND,
+    Permission.SYSTEM_AUDIT_LOG_READ,
+  ],
+  
+  SUPPORT_AGENT: [
+    Permission.USER_READ,
+    Permission.ORDER_READ_ALL,
+    Permission.DISPUTE_READ_ALL,
+  ],
+  
+  VERIFIED_USER: [
+    Permission.WALLET_READ,
+    Permission.ORDER_READ, Permission.ORDER_CREATE, Permission.ORDER_CANCEL,
+    Permission.PAYMENT_READ,
+    Permission.WITHDRAWAL_READ, Permission.WITHDRAWAL_REQUEST,
+    Permission.ESCROW_READ,
+    Permission.DISPUTE_READ, Permission.DISPUTE_OPEN, Permission.DISPUTE_RESPOND,
+    Permission.KYC_SUBMIT,
+    Permission.LEDGER_READ,
+  ],
+  
+  USER: [
+    Permission.WALLET_READ,
+    Permission.ORDER_READ, Permission.ORDER_CREATE,
+    Permission.PAYMENT_READ,
+    Permission.KYC_SUBMIT,
+  ],
+};

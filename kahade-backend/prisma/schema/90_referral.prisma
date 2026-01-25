@@ -1,0 +1,86 @@
+// ============================================================================
+// REFERRAL SYSTEM
+// ============================================================================
+
+model ReferralCode {
+  id         String    @id @default(uuid())
+  userId     String    @unique @map("user_id")
+  code       String    @unique
+
+  // Usage tracking
+  usageCount Int       @default(0) @map("usage_count")
+  maxUsages  Int?      @map("max_usages")
+
+  isActive   Boolean   @default(true) @map("is_active")
+  expiresAt  DateTime? @map("expires_at")
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  usages     ReferralUsage[]
+
+  @@index([isActive, expiresAt])
+  @@map("referral_codes")
+}
+
+model ReferralUsage {
+  id             String         @id @default(uuid())
+  referralCodeId String         @map("referral_code_id")
+  referrerId     String         @map("referrer_id")
+  referredUserId String         @map("referred_user_id")
+
+  status         ReferralStatus @default(PENDING)
+
+  // Completion criteria
+  requiredAction String?        @map("required_action")
+  completedAt    DateTime?      @map("completed_at")
+  expiresAt      DateTime?      @map("expires_at")
+
+  usedAt         DateTime       @default(now()) @map("used_at")
+
+  referralCode   ReferralCode   @relation(fields: [referralCodeId], references: [id], onDelete: Restrict)
+  referrer       User           @relation("ReferrerUser", fields: [referrerId], references: [id], onDelete: Restrict)
+  referredUser   User           @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Restrict)
+  rewards        ReferralReward[]
+
+  @@unique([referralCodeId, referredUserId])
+  @@index([referrerId, status])
+  @@index([referredUserId])
+  @@index([status, completedAt])
+  @@map("referral_usages")
+}
+
+model ReferralReward {
+  id              String               @id @default(uuid())
+  referralUsageId String               @map("referral_usage_id")
+  userId          String               @map("user_id")
+
+  rewardType      ReferralRewardType   @map("reward_type")
+  currency        Currency             @default(IDR)
+  amountMinor     BigInt               @map("amount_minor") @db.BigInt
+
+  // Reward metadata
+  tier            Int?
+  description     String?              @db.Text
+
+  status          ReferralRewardStatus  @default(PENDING)
+  processedAt     DateTime?            @map("processed_at")
+  expiresAt       DateTime?            @map("expires_at")
+
+  createdAt       DateTime             @default(now()) @map("created_at")
+
+  // Idempotency
+  idempotencyKey  String?              @unique @map("idempotency_key")
+
+  referralUsage   ReferralUsage        @relation(fields: [referralUsageId], references: [id], onDelete: Restrict)
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // Journal-centric: back relation (optional 1:1)
+  journal         LedgerJournal?       @relation("ReferralRewardJournal")
+
+  @@index([userId, status])
+  @@index([referralUsageId])
+  @@index([expiresAt])
+  @@map("referral_rewards")
+}

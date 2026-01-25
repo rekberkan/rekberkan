@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment
+.env*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests
+coverage/
+*.test.ts
+*.spec.ts
+test/
+
+# Documentation
+docs/
+README.md
+CHANGELOG.md
+
+# CI/CD
+.github/
+
+# Logs
+logs/
+*.log
+
+# Build
+dist/
+build/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.md
+!CHANGELOG.md
+
+# Local files
+uploads/
+backups/
+temp/
+tmp/

@@ -1,0 +1,23 @@
+[
+  {
+    "email": "buyer@example.com",
+    "password": "hashed_password",
+    "name": "Buyer User",
+    "role": "USER",
+    "status": "ACTIVE"
+  },
+  {
+    "email": "seller@example.com",
+    "password": "hashed_password",
+    "name": "Seller User",
+    "role": "USER",
+    "status": "ACTIVE"
+  },
+  {
+    "email": "admin@example.com",
+    "password": "hashed_password",
+    "name": "Admin User",
+    "role": "ADMIN",
+    "status": "ACTIVE"
+  }
+]

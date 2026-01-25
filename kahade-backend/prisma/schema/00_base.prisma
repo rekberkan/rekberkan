@@ -1,0 +1,263 @@
+// ============================================================================
+// BASE CONFIGURATION
+// ============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum InitiatorRole {
+  BUYER
+  SELLER
+}
+
+enum OrderCategory {
+  ELECTRONICS
+  SERVICES
+  DIGITAL_GOODS
+  PHYSICAL_GOODS
+  OTHER
+}
+
+enum Currency {
+  IDR
+  USD
+}
+
+enum FeePayer {
+  BUYER
+  SELLER
+  SPLIT
+  FIFTY_FIFTY
+}
+
+enum OrderStatus {
+  WAITING_COUNTERPARTY
+  PENDING_ACCEPT
+  ACCEPTED
+  PAID
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  REFUNDED
+}
+
+enum EscrowHoldStatus {
+  ACTIVE
+  HELD
+  RELEASED
+  REFUNDED
+  DISPUTED
+  ADJUSTED
+}
+
+enum DisputeStatus {
+  OPEN
+  RESPONDED
+  ESCALATED
+  UNDER_REVIEW
+  UNDER_ARBITRATION
+  AWAITING_RESPONSE
+  DECIDED
+  APPEALED
+  RESOLVED
+  CLOSED
+}
+
+enum DisputeDecision {
+  NONE
+  PENDING
+  BUYER_WINS
+  SELLER_WINS
+  SPLIT
+  CANCELLED
+  RELEASE_ALL_TO_SELLER
+  REFUND_ALL_TO_BUYER
+  SPLIT_SETTLEMENT
+  CANCEL_VOID
+}
+
+enum KYCStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PromoTargetType {
+  USER
+  ORDER
+}
+
+enum VoucherType {
+  PERCENTAGE
+  FIXED
+}
+
+enum VoucherStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum ActivityType {
+  LOGIN
+  LOGOUT
+  ORDER_CREATE
+  PAYMENT_SUCCESS
+  TRANSACTION_CREATED
+  TRANSACTION_UPDATED
+  PROFILE_UPDATED
+  WALLET_TOPUP
+  WALLET_WITHDRAW
+}
+
+enum LedgerAccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum ScheduledJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum JournalType {
+  TRANSACTION
+  ADJUSTMENT
+  DEPOSIT
+  WITHDRAWAL
+  ESCROW_LOCK
+  ESCROW_RELEASE
+  TRANSFER
+  FEE
+  REFUND
+}
+
+enum PaymentProvider {
+  XENDIT
+  MIDTRANS
+}
+
+enum PaymentType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum PaymentMethod {
+  VIRTUAL_ACCOUNT
+  EWALLET
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+  PROCESSING
+}
+
+enum BankAccountType {
+  SAVINGS
+  CHECKING
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  COMPLETED
+  FAILED
+  REJECTED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum WebhookStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum DepositStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ReferralStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+}
+
+enum ReferralRewardType {
+  CASHBACK
+  COMMISSION
+}
+
+enum ReferralRewardStatus {
+  PENDING
+  CLAIMED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+enum NotificationType {
+  TRANSACTION
+  DISPUTE
+  PAYMENT
+  SYSTEM
+  WALLET
+  KYC
+}
+
+enum WalletTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  ESCROW_LOCK
+  ESCROW_RELEASE
+  REFUND
+  FEE
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  PAYMENT_CONFIRMED
+  COMPLETED
+  DISPUTED
+  CANCELLED
+  REFUNDED
+}

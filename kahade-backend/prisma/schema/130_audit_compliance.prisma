@@ -1,0 +1,28 @@
+// ============================================================================
+// AUDIT & COMPLIANCE
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String
+  performedBy String?  @map("performed_by")
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
+  details     Json
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Tamper-evidence chain
+  rowHash       String? @map("row_hash")
+  prevHash      String? @map("prev_hash")
+  correlationId String? @map("correlation_id")
+
+  user        User?    @relation(fields: [performedBy], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([performedBy, createdAt])
+  @@index([correlationId])
+  @@map("audit_logs")
+}

@@ -1,0 +1,3 @@
+# LedgerSystem
+
+Placeholder documentation content.

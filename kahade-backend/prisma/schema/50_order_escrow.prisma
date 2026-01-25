@@ -1,0 +1,148 @@
+// ============================================================================
+// ORDER & ESCROW MODELS (ENHANCED WITH TIMEOUT ENFORCEMENT)
+// ============================================================================
+
+model Order {
+  id                String        @id @default(uuid())
+  orderNumber       String        @unique @map("order_number")
+
+  initiatorId       String        @map("initiator_id")
+  counterpartyId    String?       @map("counterparty_id")
+  initiatorRole     InitiatorRole @map("initiator_role")
+
+  title             String
+  description       String        @db.Text
+  category          OrderCategory
+
+  currency          Currency      @default(IDR)
+  amountMinor       BigInt        @map("amount_minor") @db.BigInt
+
+  feePayer          FeePayer      @map("fee_payer")
+  platformFeeMinor  BigInt        @map("platform_fee_minor") @db.BigInt
+
+  holdingPeriodDays Int           @map("holding_period_days")
+  customTerms       String?       @map("custom_terms") @db.Text
+
+  status            OrderStatus   @default(PENDING_ACCEPT)
+
+  inviteToken       String        @unique @map("invite_token")
+  inviteExpiresAt   DateTime      @map("invite_expires_at") @db.Timestamptz
+
+  acceptedAt        DateTime?     @map("accepted_at") @db.Timestamptz
+  paidAt            DateTime?     @map("paid_at") @db.Timestamptz
+  
+  // CRITICAL FIX: Escrow timeout enforcement
+  autoReleaseAt     DateTime?     @map("auto_release_at") @db.Timestamptz
+  autoReleaseJobId  String?       @unique @map("auto_release_job_id") // Link to scheduled job
+  
+  completedAt       DateTime?     @map("completed_at") @db.Timestamptz
+  cancelledAt       DateTime?     @map("cancelled_at") @db.Timestamptz
+
+  // Soft delete with FK
+  deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz
+  deletedByUserId   String?       @map("deleted_by_user_id")
+
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  initiator         User          @relation("OrderInitiator", fields: [initiatorId], references: [id], onDelete: Restrict)
+  counterparty      User?         @relation("OrderCounterparty", fields: [counterpartyId], references: [id], onDelete: Restrict)
+  deletedByUser     User?         @relation("OrderDeletedBy", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+
+  escrowHold        EscrowHold?
+  settlement        OrderSettlement?
+  deliveryProof     DeliveryProof?
+  dispute           Dispute?
+  ratings           Rating[]
+  comments          OrderComment[]
+  payments          Payment[]
+
+  // Journal-centric: order can have multiple journals across lifecycle
+  journals          LedgerJournal[] @relation("OrderJournals")
+
+  @@index([status])
+  @@index([inviteToken])
+  @@index([autoReleaseAt, status])
+  @@index([inviteExpiresAt])
+  @@index([initiatorId, status, createdAt])
+  @@index([counterpartyId, status, createdAt])
+  @@index([status, autoReleaseAt]) // For scheduled job queries
+  @@map("orders")
+}
+
+model EscrowHold {
+  id             String           @id @default(uuid())
+  orderId        String           @unique @map("order_id")
+
+  buyerWalletId  String           @map("buyer_wallet_id")
+  sellerWalletId String?          @map("seller_wallet_id")
+
+  currency       Currency         @default(IDR)
+  amountMinor    BigInt           @map("amount_minor") @db.BigInt
+
+  status         EscrowHoldStatus @default(ACTIVE)
+  
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  resolvedAt     DateTime?        @map("resolved_at") @db.Timestamptz
+  
+  // CRITICAL FIX: Timeout enforcement for auto-release
+  timeoutAt      DateTime?        @map("timeout_at") @db.Timestamptz
+  timeoutJobId   String?          @unique @map("timeout_job_id") // Link to scheduled job
+
+  order          Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  buyerWallet    Wallet           @relation("BuyerWallet", fields: [buyerWalletId], references: [id], onDelete: Restrict)
+  sellerWallet   Wallet?          @relation("SellerWallet", fields: [sellerWalletId], references: [id], onDelete: Restrict)
+
+  // Journal-centric: escrow hold lifecycle journals (hold/release/refund/fee/adjustment)
+  journals       LedgerJournal[]  @relation("EscrowHoldJournals")
+
+  @@index([status, createdAt])
+  @@index([buyerWalletId])
+  @@index([sellerWalletId])
+  @@index([timeoutAt, status]) // For scheduled timeout job queries
+  @@map("escrow_holds")
+}
+
+model OrderSettlement {
+  id                String    @id @default(uuid())
+  orderId           String    @unique @map("order_id")
+
+  currency          Currency  @default(IDR)
+  sellerUserId      String    @map("seller_user_id")
+  buyerUserId       String    @map("buyer_user_id")
+
+  sellerAmountMinor BigInt    @map("seller_amount_minor") @db.BigInt
+  buyerRefundMinor  BigInt    @map("buyer_refund_minor") @db.BigInt
+  platformFeeMinor  BigInt    @map("platform_fee_minor") @db.BigInt
+
+  settledAt         DateTime  @default(now()) @map("settled_at") @db.Timestamptz
+
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  seller            User      @relation("SettlementSeller", fields: [sellerUserId], references: [id], onDelete: Restrict)
+  buyer             User      @relation("SettlementBuyer", fields: [buyerUserId], references: [id], onDelete: Restrict)
+
+  // Journal-centric: optional 1:1 journal for settlement posting/traceability
+  journal           LedgerJournal? @relation("OrderSettlementJournal")
+
+  @@index([orderId])
+  @@index([sellerUserId])
+  @@index([buyerUserId])
+  @@index([settledAt])
+  @@map("order_settlements")
+}
+
+model DeliveryProof {
+  id             String    @id @default(uuid())
+  orderId        String    @unique @map("order_id")
+  courier        String?
+  trackingNumber String?   @map("tracking_number")
+  fileUrls       Json      @map("file_urls")
+  notes          String    @db.Text
+  submittedAt    DateTime  @default(now()) @map("submitted_at") @db.Timestamptz
+
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@map("delivery_proofs")
+}

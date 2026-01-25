@@ -1,0 +1,50 @@
+// ============================================================================
+// RATING & REPUTATION SYSTEM (ENHANCED MODERATION)
+// ============================================================================
+
+model Rating {
+  id               String    @id @default(uuid())
+  orderId          String    @map("order_id")
+  fromUserId       String    @map("from_user_id")
+  toUserId         String    @map("to_user_id")
+  
+  // Rating score (1-5 stars)
+  score            Int       @db.SmallInt // 1-5
+  
+  // Review text
+  review           String?   @db.Text
+  
+  // Moderation fields (CRITICAL FIX: Complete implementation)
+  isModerated      Boolean   @default(false) @map("is_moderated")
+  moderatedAt      DateTime? @map("moderated_at") @db.Timestamptz
+  moderatedBy      String?   @map("moderated_by")
+  moderationAction String?   @map("moderation_action") // 'approved', 'flagged', 'hidden', 'edited'
+  moderationNotes  String?   @map("moderation_notes") @db.Text
+  
+  // Visibility & status
+  isHidden         Boolean   @default(false) @map("is_hidden")
+  hiddenReason     String?   @map("hidden_reason") @db.Text
+  
+  // Automated flags
+  containsProfanity Boolean  @default(false) @map("contains_profanity")
+  toxicityScore    Decimal?  @map("toxicity_score") @db.Decimal(5,2) // AI-based toxicity score
+  
+  // Response from rated user
+  hasResponse      Boolean   @default(false) @map("has_response")
+  responseText     String?   @map("response_text") @db.Text
+  respondedAt      DateTime? @map("responded_at") @db.Timestamptz
+  
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  fromUser         User      @relation("RatingFrom", fields: [fromUserId], references: [id], onDelete: Restrict)
+  toUser           User      @relation("RatingTo", fields: [toUserId], references: [id], onDelete: Restrict)
+  moderator        User?     @relation("RatingModerator", fields: [moderatedBy], references: [id], onDelete: SetNull)
+  
+  @@unique([orderId, fromUserId]) // One rating per user per order
+  @@index([toUserId, isHidden, createdAt])
+  @@index([score, createdAt])
+  @@index([isModerated, containsProfanity])
+  @@map("ratings")
+}
