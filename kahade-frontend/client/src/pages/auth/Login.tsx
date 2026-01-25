@@ -1,10 +1,11 @@
 /*
  * KAHADE LOGIN PAGE
  * Design: Glassmorphic centered form with brand elements
+ * Multi-subdomain: Redirects to appropriate subdomain after login
  */
 
 import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
-  const [, setLocation] = useLocation();
   const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,17 +33,12 @@ export default function Login() {
     }
 
     try {
-      const user = await login(formData.email, formData.password);
+      // Login will handle redirect automatically via AuthContext
+      await login(formData.email, formData.password);
       toast.success('Login berhasil!');
-      
-      // Redirect based on user role
-      if (user?.role === 'ADMIN') {
-        setLocation('/admin');
-      } else {
-        setLocation('/app');
-      }
+      // Note: Redirect is handled in AuthContext.login()
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Email atau password salah.';
+      const message = error.message || 'Email atau password salah.';
       toast.error('Login gagal', { description: message });
     }
   };

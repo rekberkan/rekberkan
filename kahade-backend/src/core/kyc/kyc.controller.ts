@@ -1,4 +1,4 @@
-import { 
+import {
   Controller, 
   Get, 
   Post, 
@@ -16,6 +16,9 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Express } from 'express';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // ============================================================================
 // KYC CONTROLLER - Production Ready
@@ -24,6 +27,7 @@ import { Express } from 'express';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const UPLOAD_DIR = process.env.UPLOAD_DEST || './uploads';
 
 @ApiTags('kyc')
 @Controller('kyc')
@@ -32,7 +36,39 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 export class KycController {
   private readonly logger = new Logger(KycController.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    // Ensure upload directory exists
+    this.ensureUploadDir();
+  }
+
+  private ensureUploadDir(): void {
+    const kycDir = path.join(UPLOAD_DIR, 'kyc');
+    if (!fs.existsSync(kycDir)) {
+      fs.mkdirSync(kycDir, { recursive: true });
+    }
+  }
+
+  private generateFileHash(buffer: Buffer): string {
+    return crypto.createHash('sha256').update(buffer).digest('hex');
+  }
+
+  private async saveFile(file: Express.Multer.File, userId: string): Promise<{ path: string; hash: string }> {
+    const userDir = path.join(UPLOAD_DIR, 'kyc', userId);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
+    }
+
+    const fileHash = this.generateFileHash(file.buffer);
+    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${Date.now()}_${fileHash.substring(0, 8)}.${fileExt}`;
+    const filePath = path.join(userDir, fileName);
+    const relativePath = `/uploads/kyc/${userId}/${fileName}`;
+
+    // Write file to disk
+    fs.writeFileSync(filePath, file.buffer);
+
+    return { path: relativePath, hash: fileHash };
+  }
 
   @Get('health')
   health() {
@@ -69,7 +105,15 @@ export class KycController {
   }
 
   @Post('submit')
-  @UseInterceptors(FileInterceptor('document'))
+  @UseInterceptors(FileInterceptor('document', {
+    limits: { fileSize: MAX_FILE_SIZE },
+    fileFilter: (req, file, callback) => {
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        return callback(new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF'), false);
+      }
+      callback(null, true);
+    },
+  }))
   @ApiOperation({ summary: 'Submit KYC document' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -142,24 +186,19 @@ export class KycController {
       throw new BadRequestException('You already have a pending KYC submission');
     }
 
-    // Generate secure file path
-    const fileExt = file.originalname.split('.').pop();
-    const fileName = `kyc_${userId}_${Date.now()}.${fileExt}`;
-    const filePath = `/uploads/kyc/${userId}/${fileName}`;
-
-    // TODO: In production, upload to S3/cloud storage
-    // const uploadedUrl = await this.storageService.upload(file, filePath);
+    // Save file and generate hash
+    const { path: filePath, hash: fileHash } = await this.saveFile(file, userId);
 
     // Create KYC submission
     const submission = await this.prisma.$transaction(async (tx) => {
-      // Create submission record with encrypted data fields
+      // Create submission record
       const kycSubmission = await tx.kYCSubmission.create({
         data: {
           userId,
           idCardObjectKey: filePath,
-          selfieObjectKey: filePath,
-          idCardHash: 'placeholder-hash',
-          selfieHash: 'placeholder-hash',
+          selfieObjectKey: filePath, // Same file for now, can be separate in future
+          idCardHash: fileHash,
+          selfieHash: fileHash,
           fullNameEnc: body.fullName.trim(),
           idNumberEnc: sanitizedIdNumber,
           dateOfBirthEnc: body.dateOfBirth || '',
@@ -213,9 +252,19 @@ export class KycController {
     @Param('id') submissionId: string,
   ) {
     const submission = await this.prisma.kYCSubmission.findFirst({
-      where: {
+      where: { 
         id: submissionId,
         userId, // Ensure user can only access their own submissions
+      },
+      select: {
+        id: true,
+        status: true,
+        rejectionReason: true,
+        submittedAt: true,
+        verifiedAt: true,
+        fullNameEnc: true,
+        dateOfBirthEnc: true,
+        addressEnc: true,
       },
     });
 
@@ -223,6 +272,15 @@ export class KycController {
       throw new BadRequestException('Submission not found');
     }
 
-    return submission;
+    return {
+      id: submission.id,
+      status: submission.status,
+      rejectionReason: submission.rejectionReason,
+      submittedAt: submission.submittedAt,
+      verifiedAt: submission.verifiedAt,
+      fullName: submission.fullNameEnc,
+      dateOfBirth: submission.dateOfBirthEnc,
+      address: submission.addressEnc,
+    };
   }
 }

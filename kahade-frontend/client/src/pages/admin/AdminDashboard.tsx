@@ -1,56 +1,47 @@
 /*
  * KAHADE ADMIN DASHBOARD
+ * Real data from API
  */
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users, ArrowLeftRight, Wallet, AlertTriangle, TrendingUp,
-  TrendingDown, ArrowUpRight, ArrowDownRight
+  TrendingDown, Loader2
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar
 } from 'recharts';
 import AdminLayout from '@/components/layout/AdminLayout';
+import { adminApi } from '@/lib/api';
 
-// Mock data
-const stats = [
-  { label: 'Total Pengguna', value: '10,234', change: '+12%', trend: 'up', icon: Users },
-  { label: 'Transaksi Aktif', value: '1,456', change: '+8%', trend: 'up', icon: ArrowLeftRight },
-  { label: 'Volume Transaksi', value: 'Rp 2.5M', change: '+15%', trend: 'up', icon: Wallet },
-  { label: 'Dispute Aktif', value: '23', change: '-5%', trend: 'down', icon: AlertTriangle },
-];
+interface DashboardStats {
+  totalUsers: number;
+  activeTransactions: number;
+  transactionVolume: number;
+  activeDisputes: number;
+  usersChange?: number;
+  transactionsChange?: number;
+  volumeChange?: number;
+  disputesChange?: number;
+}
 
-const transactionData = [
-  { name: 'Jan', value: 400 },
-  { name: 'Feb', value: 300 },
-  { name: 'Mar', value: 600 },
-  { name: 'Apr', value: 800 },
-  { name: 'May', value: 500 },
-  { name: 'Jun', value: 900 },
-  { name: 'Jul', value: 700 },
-];
+interface Transaction {
+  id: string;
+  orderNumber: string;
+  amount: number;
+  status: string;
+  initiator?: { username: string };
+}
 
-const categoryData = [
-  { name: 'Elektronik', value: 450 },
-  { name: 'Jasa', value: 300 },
-  { name: 'Fashion', value: 200 },
-  { name: 'Digital', value: 150 },
-  { name: 'Lainnya', value: 100 },
-];
-
-const recentTransactions = [
-  { id: '1', orderNumber: 'KHD-2025-0001', amount: 18500000, status: 'PAID', user: 'johndoe' },
-  { id: '2', orderNumber: 'KHD-2025-0002', amount: 2500000, status: 'PENDING', user: 'janedoe' },
-  { id: '3', orderNumber: 'KHD-2025-0003', amount: 15000000, status: 'COMPLETED', user: 'bobsmith' },
-  { id: '4', orderNumber: 'KHD-2025-0004', amount: 5000000, status: 'DISPUTED', user: 'alicew' },
-];
-
-const recentDisputes = [
-  { id: '1', orderNumber: 'KHD-2025-0005', reason: 'Barang tidak sesuai', status: 'OPEN', priority: 'HIGH' },
-  { id: '2', orderNumber: 'KHD-2025-0006', reason: 'Pengiriman terlambat', status: 'IN_REVIEW', priority: 'MEDIUM' },
-  { id: '3', orderNumber: 'KHD-2025-0007', reason: 'Barang rusak', status: 'OPEN', priority: 'HIGH' },
-];
+interface Dispute {
+  id: string;
+  order?: { orderNumber: string };
+  reason: string;
+  status: string;
+  priority?: string;
+}
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -63,10 +54,14 @@ const formatCurrency = (amount: number) => {
 
 const statusColors: Record<string, string> = {
   PAID: 'text-emerald-500 bg-emerald-500/10',
+  FUNDED: 'text-emerald-500 bg-emerald-500/10',
   PENDING: 'text-amber-500 bg-amber-500/10',
+  PENDING_ACCEPT: 'text-amber-500 bg-amber-500/10',
+  WAITING_COUNTERPARTY: 'text-amber-500 bg-amber-500/10',
   COMPLETED: 'text-emerald-500 bg-emerald-500/10',
   DISPUTED: 'text-red-500 bg-red-500/10',
   OPEN: 'text-red-500 bg-red-500/10',
+  UNDER_ARBITRATION: 'text-amber-500 bg-amber-500/10',
   IN_REVIEW: 'text-amber-500 bg-amber-500/10',
 };
 
@@ -77,12 +72,106 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [recentDisputes, setRecentDisputes] = useState<Dispute[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const [dashboardRes, transactionsRes, disputesRes] = await Promise.all([
+          adminApi.getDashboardStats().catch(() => ({ data: null })),
+          adminApi.getTransactions({ limit: 5 }).catch(() => ({ data: { data: [] } })),
+          adminApi.getDisputes({ limit: 5 }).catch(() => ({ data: { data: [] } })),
+        ]);
+
+        if (dashboardRes.data) {
+          setStats(dashboardRes.data);
+        } else {
+          // Fallback mock data if API fails
+          setStats({
+            totalUsers: 0,
+            activeTransactions: 0,
+            transactionVolume: 0,
+            activeDisputes: 0,
+          });
+        }
+
+        const txData = transactionsRes.data?.data || transactionsRes.data?.transactions || [];
+        setRecentTransactions(Array.isArray(txData) ? txData.slice(0, 5) : []);
+
+        const disputeData = disputesRes.data?.data || disputesRes.data?.disputes || [];
+        setRecentDisputes(Array.isArray(disputeData) ? disputeData.slice(0, 5) : []);
+
+      } catch (err: any) {
+        console.error('Failed to fetch dashboard data:', err);
+        setError('Gagal memuat data dashboard');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <AdminLayout title="Dashboard" subtitle="Overview platform Kahade">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const statsDisplay = [
+    { 
+      label: 'Total Pengguna', 
+      value: stats?.totalUsers?.toLocaleString() || '0', 
+      change: stats?.usersChange ? `${stats.usersChange > 0 ? '+' : ''}${stats.usersChange}%` : '+0%', 
+      trend: (stats?.usersChange || 0) >= 0 ? 'up' : 'down', 
+      icon: Users 
+    },
+    { 
+      label: 'Transaksi Aktif', 
+      value: stats?.activeTransactions?.toLocaleString() || '0', 
+      change: stats?.transactionsChange ? `${stats.transactionsChange > 0 ? '+' : ''}${stats.transactionsChange}%` : '+0%', 
+      trend: (stats?.transactionsChange || 0) >= 0 ? 'up' : 'down', 
+      icon: ArrowLeftRight 
+    },
+    { 
+      label: 'Volume Transaksi', 
+      value: formatCurrency(stats?.transactionVolume || 0), 
+      change: stats?.volumeChange ? `${stats.volumeChange > 0 ? '+' : ''}${stats.volumeChange}%` : '+0%', 
+      trend: (stats?.volumeChange || 0) >= 0 ? 'up' : 'down', 
+      icon: Wallet 
+    },
+    { 
+      label: 'Dispute Aktif', 
+      value: stats?.activeDisputes?.toLocaleString() || '0', 
+      change: stats?.disputesChange ? `${stats.disputesChange > 0 ? '+' : ''}${stats.disputesChange}%` : '-0%', 
+      trend: (stats?.disputesChange || 0) <= 0 ? 'down' : 'up', 
+      icon: AlertTriangle 
+    },
+  ];
+
   return (
     <AdminLayout title="Dashboard" subtitle="Overview platform Kahade">
       <div className="space-y-6">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-500">
+            {error}
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
+          {statsDisplay.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
@@ -99,128 +188,79 @@ export default function AdminDashboard() {
                   {stat.change}
                 </div>
               </div>
-              <div className="text-2xl font-display font-bold mb-1">{stat.value}</div>
+              <div className="text-2xl font-bold mb-1">{stat.value}</div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </motion.div>
           ))}
         </div>
-        
-        {/* Charts Row */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Transaction Trend */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glass-card p-6"
-          >
-            <h3 className="text-lg font-display font-semibold mb-4">Tren Transaksi</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={transactionData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" />
-                  <YAxis stroke="rgba(255,255,255,0.5)" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(15,23,42,0.9)', 
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#22D3EE" 
-                    strokeWidth={2}
-                    dot={{ fill: '#22D3EE' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-          
-          {/* Category Distribution */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="glass-card p-6"
-          >
-            <h3 className="text-lg font-display font-semibold mb-4">Kategori Transaksi</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis type="number" stroke="rgba(255,255,255,0.5)" />
-                  <YAxis dataKey="name" type="category" stroke="rgba(255,255,255,0.5)" width={80} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(15,23,42,0.9)', 
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="value" fill="#4338CA" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-        </div>
-        
-        {/* Tables Row */}
+
+        {/* Recent Transactions & Disputes */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Recent Transactions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="glass-card p-6"
+            transition={{ delay: 0.4 }}
+            className="glass-card p-5"
           >
-            <h3 className="text-lg font-display font-semibold mb-4">Transaksi Terbaru</h3>
+            <h3 className="text-lg font-semibold mb-4">Transaksi Terbaru</h3>
             <div className="space-y-3">
-              {recentTransactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                  <div>
-                    <div className="font-mono text-sm">{tx.orderNumber}</div>
-                    <div className="text-xs text-muted-foreground">@{tx.user}</div>
+              {recentTransactions.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Belum ada transaksi</p>
+              ) : (
+                recentTransactions.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                    <div>
+                      <div className="font-medium text-sm">{tx.orderNumber || tx.id}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {tx.initiator?.username || 'Unknown'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-sm">{formatCurrency(tx.amount || 0)}</div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[tx.status] || 'text-gray-500 bg-gray-500/10'}`}>
+                        {tx.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">{formatCurrency(tx.amount)}</div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[tx.status]}`}>
-                      {tx.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </motion.div>
-          
-          {/* Active Disputes */}
+
+          {/* Recent Disputes */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="glass-card p-6"
+            transition={{ delay: 0.5 }}
+            className="glass-card p-5"
           >
-            <h3 className="text-lg font-display font-semibold mb-4">Dispute Aktif</h3>
+            <h3 className="text-lg font-semibold mb-4">Dispute Terbaru</h3>
             <div className="space-y-3">
-              {recentDisputes.map((dispute) => (
-                <div key={dispute.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                  <div>
-                    <div className="font-mono text-sm">{dispute.orderNumber}</div>
-                    <div className="text-xs text-muted-foreground">{dispute.reason}</div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-xs font-medium ${priorityColors[dispute.priority]}`}>
-                      {dispute.priority}
-                    </span>
-                    <div className={`text-xs px-2 py-0.5 rounded-full mt-1 ${statusColors[dispute.status]}`}>
-                      {dispute.status}
+              {recentDisputes.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Tidak ada dispute aktif</p>
+              ) : (
+                recentDisputes.map((dispute) => (
+                  <div key={dispute.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                    <div>
+                      <div className="font-medium text-sm">{dispute.order?.orderNumber || dispute.id}</div>
+                      <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        {dispute.reason || 'No reason provided'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[dispute.status] || 'text-gray-500 bg-gray-500/10'}`}>
+                        {dispute.status}
+                      </span>
+                      {dispute.priority && (
+                        <div className={`text-xs mt-1 ${priorityColors[dispute.priority] || ''}`}>
+                          {dispute.priority}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </motion.div>
         </div>

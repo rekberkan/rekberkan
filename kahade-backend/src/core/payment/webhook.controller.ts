@@ -1,9 +1,10 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, BadRequestException, Logger, RawBodyRequest, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, BadRequestException, Logger, RawBodyRequest, Req, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { Request } from 'express';
+import { PrismaService } from '@common/prisma/prisma.service';
 
 // ============================================================================
 // BANK-GRADE WEBHOOK CONTROLLER
@@ -31,6 +32,8 @@ interface MidtransWebhookPayload {
   payment_type: string;
   transaction_time: string;
   signature_key?: string;
+  status_code?: string;
+  fraud_status?: string;
 }
 
 @ApiTags('webhooks')
@@ -39,7 +42,10 @@ export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
   private readonly processedWebhooks = new Set<string>();
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('health')
   health() {
@@ -91,8 +97,8 @@ export class WebhookController {
       // Mark as processed
       this.processedWebhooks.add(webhookId);
       
-      // TODO: Implement actual payment processing
-      // await this.paymentService.processXenditInvoice(payload);
+      // Process payment based on status
+      await this.processXenditPayment(payload);
 
       return { 
         status: 'processed', 
@@ -129,8 +135,8 @@ export class WebhookController {
     this.logger.log(`Processing Xendit disbursement webhook: ${payload.id}`);
     this.processedWebhooks.add(webhookId);
 
-    // TODO: Process withdrawal status update
-    // await this.withdrawalService.processXenditDisbursement(payload);
+    // Process withdrawal status update
+    await this.processXenditDisbursement(payload);
 
     return { status: 'processed' };
   }
@@ -156,7 +162,7 @@ export class WebhookController {
 
     const expectedSignature = this.generateMidtransSignature(
       payload.order_id,
-      payload.transaction_status,
+      payload.status_code || '200',
       payload.gross_amount,
       serverKey,
     );
@@ -181,10 +187,173 @@ export class WebhookController {
     this.logger.log(`Processing Midtrans notification: ${payload.transaction_id}, status: ${payload.transaction_status}`);
     this.processedWebhooks.add(webhookId);
 
-    // TODO: Process payment
-    // await this.paymentService.processMidtransNotification(payload);
+    // Process payment
+    await this.processMidtransPayment(payload);
 
     return { status: 'processed' };
+  }
+
+  // ============================================================================
+  // PAYMENT PROCESSING METHODS
+  // ============================================================================
+
+  private async processXenditPayment(payload: XenditWebhookPayload): Promise<void> {
+    const { external_id, status, amount, paid_amount } = payload;
+    
+    // external_id format: "topup_{walletId}_{timestamp}" or "order_{orderId}"
+    const parts = external_id.split('_');
+    const type = parts[0];
+    const entityId = parts[1];
+
+    if (type === 'topup') {
+      // Process wallet top-up
+      await this.processTopUpPayment(entityId, status, paid_amount || amount);
+    } else if (type === 'order') {
+      // Process order payment
+      await this.processOrderPayment(entityId, status, paid_amount || amount);
+    }
+  }
+
+  private async processTopUpPayment(walletId: string, status: string, amount: number): Promise<void> {
+    if (status === 'PAID' || status === 'SETTLED') {
+      // Credit wallet
+      await this.prisma.$transaction(async (tx) => {
+        await tx.wallet.update({
+          where: { id: walletId },
+          data: {
+            balanceMinor: { increment: Math.round(amount * 100) },
+          },
+        });
+
+        // Create transaction record
+        await tx.walletTransaction.create({
+          data: {
+            walletId,
+            type: 'CREDIT',
+            amountMinor: Math.round(amount * 100),
+            description: 'Top-up via Xendit',
+            status: 'COMPLETED',
+          },
+        });
+      });
+
+      this.logger.log(`Top-up completed for wallet ${walletId}: ${amount}`);
+    }
+  }
+
+  private async processOrderPayment(orderId: string, status: string, amount: number): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { initiator: true, counterparty: true },
+    });
+
+    if (!order) {
+      this.logger.warn(`Order not found: ${orderId}`);
+      return;
+    }
+
+    if (status === 'PAID' || status === 'SETTLED') {
+      // Update order status to FUNDED
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { 
+          status: 'FUNDED',
+          paidAt: new Date(),
+        },
+      });
+
+      this.logger.log(`Order ${orderId} payment completed`);
+    } else if (status === 'EXPIRED' || status === 'FAILED') {
+      // Update order status
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'PAYMENT_FAILED' },
+      });
+
+      this.logger.log(`Order ${orderId} payment failed: ${status}`);
+    }
+  }
+
+  private async processXenditDisbursement(payload: any): Promise<void> {
+    const { external_id, status, amount } = payload;
+    
+    // external_id format: "withdrawal_{withdrawalId}"
+    const parts = external_id.split('_');
+    if (parts[0] !== 'withdrawal') return;
+    
+    const withdrawalId = parts[1];
+
+    if (status === 'COMPLETED') {
+      await this.prisma.withdrawal.update({
+        where: { id: withdrawalId },
+        data: { 
+          status: 'COMPLETED',
+          completedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`Withdrawal ${withdrawalId} completed`);
+    } else if (status === 'FAILED') {
+      // Refund the locked amount
+      const withdrawal = await this.prisma.withdrawal.findUnique({
+        where: { id: withdrawalId },
+      });
+
+      if (withdrawal) {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.withdrawal.update({
+            where: { id: withdrawalId },
+            data: { 
+              status: 'FAILED',
+              failureReason: payload.failure_code || 'Unknown error',
+            },
+          });
+
+          // Unlock the amount back to wallet
+          await tx.wallet.update({
+            where: { id: withdrawal.walletId },
+            data: {
+              lockedMinor: { decrement: withdrawal.amountMinor + withdrawal.feeMinor },
+            },
+          });
+        });
+      }
+
+      this.logger.log(`Withdrawal ${withdrawalId} failed`);
+    }
+  }
+
+  private async processMidtransPayment(payload: MidtransWebhookPayload): Promise<void> {
+    const { order_id, transaction_status, gross_amount, fraud_status } = payload;
+    
+    // order_id format: "topup_{walletId}_{timestamp}" or "order_{orderId}"
+    const parts = order_id.split('_');
+    const type = parts[0];
+    const entityId = parts[1];
+    const amount = parseFloat(gross_amount);
+
+    // Check fraud status
+    if (fraud_status === 'deny') {
+      this.logger.warn(`Payment denied due to fraud: ${order_id}`);
+      return;
+    }
+
+    // Map Midtrans status to our status
+    const isPaid = ['capture', 'settlement'].includes(transaction_status) && 
+                   (fraud_status === 'accept' || !fraud_status);
+    const isFailed = ['deny', 'cancel', 'expire'].includes(transaction_status);
+
+    if (type === 'topup') {
+      if (isPaid) {
+        await this.processTopUpPayment(entityId, 'PAID', amount);
+      }
+    } else if (type === 'order') {
+      if (isPaid) {
+        await this.processOrderPayment(entityId, 'PAID', amount);
+      } else if (isFailed) {
+        await this.processOrderPayment(entityId, 'FAILED', amount);
+      }
+    }
   }
 
   // ============================================================================

@@ -2,12 +2,14 @@
  * KAHADE API SERVICE
  * Centralized API client for backend communication
  * SECURITY: Implements secure token handling, request validation, and error handling
+ * MULTI-SUBDOMAIN: Supports cross-subdomain authentication via shared cookies
  */
 
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { APP_URLS, COOKIE_CONFIG } from '@/config/app.config';
 
-// Base API URL - will be configured based on environment
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+// Base API URL - from centralized config
+const API_BASE_URL = APP_URLS.api;
 
 // Request timeout
 const REQUEST_TIMEOUT = 30000;
@@ -23,7 +25,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: REQUEST_TIMEOUT,
-  withCredentials: true, // Enable cookies for CSRF
+  withCredentials: true, // Enable cookies for CSRF and cross-subdomain auth
 });
 
 // Generate unique request ID for tracing
@@ -121,9 +123,10 @@ function clearAuth(): void {
 }
 
 function redirectToLogin(): void {
+  const loginUrl = `${APP_URLS.landing}/login`;
   if (!window.location.pathname.includes('/login') && 
       !window.location.pathname.includes('/register')) {
-    window.location.href = '/login';
+    window.location.href = loginUrl;
   }
 }
 

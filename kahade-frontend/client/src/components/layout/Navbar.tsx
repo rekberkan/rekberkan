@@ -3,6 +3,7 @@
  * 
  * Design: Glass effect with blur, sticky positioning
  * Colors: Transparent with white/10 border, cyan accent on hover
+ * Multi-subdomain: Links to appropriate subdomains
  */
 
 import { useState, useEffect } from 'react';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { APP_URLS, canAccessAdmin, navigateToApp, navigateToAdmin } from '@/config/app.config';
 
 const navLinks = [
   { href: '/', label: 'Beranda' },
@@ -33,6 +35,14 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleDashboardClick = () => {
+    if (canAccessAdmin(user)) {
+      navigateToAdmin();
+    } else {
+      navigateToApp();
+    }
+  };
 
   return (
     <nav
@@ -81,11 +91,9 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
           {isAuthenticated ? (
-            <Link href={user?.isAdmin ? '/admin' : '/app'}>
-              <Button className="btn-primary">
-                Dashboard
-              </Button>
-            </Link>
+            <Button className="btn-primary" onClick={handleDashboardClick}>
+              Dashboard
+            </Button>
           ) : (
             <>
               <Link href="/login">
@@ -141,11 +149,9 @@ export default function Navbar() {
                   <ThemeToggle />
                 </div>
                 {isAuthenticated ? (
-                  <Link href={user?.isAdmin ? '/admin' : '/app'}>
-                    <Button className="w-full btn-primary">
-                      Dashboard
-                    </Button>
-                  </Link>
+                  <Button className="w-full btn-primary" onClick={handleDashboardClick}>
+                    Dashboard
+                  </Button>
                 ) : (
                   <>
                     <Link href="/login" className="block">

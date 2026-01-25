@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '@/lib/api';
+import { APP_URLS, getAppMode, navigateToApp, navigateToAdmin, canAccessAdmin } from '@/config/app.config';
 
 interface User {
   id: string;
@@ -44,11 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const mapUserData = (userData: any, defaultUsername?: string): User => {
     return {
       id: userData.id,
-      username: userData.username || defaultUsername || userData.email?.split('@')[0],
+      username: userData.username || userData.name || defaultUsername || userData.email?.split('@')[0],
       email: userData.email,
       phone: userData.phone,
       role: userData.role || 'USER',
-      isAdmin: userData.role === 'ADMIN' || userData.isAdmin,
+      isAdmin: userData.role === 'ADMIN' || userData.isAdmin === true,
       kycStatus: userData.kycStatus || 'NONE',
       reputationScore: userData.reputationScore || 0,
       totalTransactions: userData.totalTransactions || 0,
@@ -78,6 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('kahade_token');
+      
+      // Also check for cached user data for faster initial render
+      const cachedUser = localStorage.getItem('kahade_user');
+      if (cachedUser) {
+        try {
+          setUser(JSON.parse(cachedUser));
+        } catch (e) {
+          localStorage.removeItem('kahade_user');
+        }
+      }
+      
       if (token) {
         try {
           await fetchCurrentUser();
@@ -108,6 +120,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         mappedUser = await fetchCurrentUser();
       }
+      
+      // Redirect based on app mode and user role
+      const appMode = getAppMode();
+      if (appMode === 'landing') {
+        // After login on landing, redirect to appropriate app
+        if (canAccessAdmin(mappedUser)) {
+          // Admin users can choose, default to app
+          navigateToApp();
+        } else {
+          navigateToApp();
+        }
+      }
+      
       return mappedUser;
     } catch (error: any) {
       localStorage.removeItem('kahade_token');
@@ -140,6 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           await fetchCurrentUser();
         }
+        
+        // Redirect to app after registration
+        const appMode = getAppMode();
+        if (appMode === 'landing') {
+          navigateToApp();
+        }
       }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
@@ -157,6 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('kahade_token');
       localStorage.removeItem('kahade_user');
       setUser(null);
+      
+      // Redirect to landing page after logout
+      const appMode = getAppMode();
+      if (appMode !== 'landing') {
+        window.location.href = APP_URLS.landing;
+      }
     }
   };
 

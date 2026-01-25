@@ -1,10 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { getAppMode, navigateToApp, navigateToAdmin, canAccessAdmin } from "./config/app.config";
+import { ReactNode, useEffect } from "react";
 
 // Landing Pages
 import Home from "./pages/Home";
@@ -35,43 +37,175 @@ import AdminDisputes from "./pages/admin/AdminDisputes";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
 import AdminSettings from "./pages/admin/AdminSettings";
 
-function Router() {
+// Protected Route Component
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    // Redirect to login on landing page
+    window.location.href = `${import.meta.env.VITE_LANDING_URL || ''}/login`;
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+// Admin Protected Route Component
+function AdminProtectedRoute({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    window.location.href = `${import.meta.env.VITE_LANDING_URL || ''}/login`;
+    return null;
+  }
+
+  if (!canAccessAdmin(user)) {
+    // Redirect non-admin users to user app
+    navigateToApp();
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+// Landing Router - for domain.com
+function LandingRouter() {
   return (
     <Switch>
-      {/* Landing Pages */}
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/how-it-works" component={HowItWorks} />
       <Route path="/contact" component={Contact} />
-      
-      {/* Auth Pages */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
-      
-      {/* User Dashboard - app.kahade.com */}
-      <Route path="/app" component={Dashboard} />
-      <Route path="/app/transactions" component={Transactions} />
-      <Route path="/app/transactions/new" component={CreateTransaction} />
-      <Route path="/app/transactions/:id" component={TransactionDetail} />
-      <Route path="/app/wallet" component={Wallet} />
-      <Route path="/app/notifications" component={Notifications} />
-      <Route path="/app/profile" component={Profile} />
-      <Route path="/app/settings" component={Settings} />
-      
-      {/* Admin Dashboard */}
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/users" component={AdminUsers} />
-      <Route path="/admin/transactions" component={AdminTransactions} />
-      <Route path="/admin/disputes" component={AdminDisputes} />
-      <Route path="/admin/audit-logs" component={AdminAuditLogs} />
-      <Route path="/admin/settings" component={AdminSettings} />
-      
-      {/* 404 */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+// App Router - for app.domain.com
+function AppRouter() {
+  return (
+    <Switch>
+      <Route path="/">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/transactions">
+        <ProtectedRoute>
+          <Transactions />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/transactions/new">
+        <ProtectedRoute>
+          <CreateTransaction />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/transactions/:id">
+        {(params) => (
+          <ProtectedRoute>
+            <TransactionDetail />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/wallet">
+        <ProtectedRoute>
+          <Wallet />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/notifications">
+        <ProtectedRoute>
+          <Notifications />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/404" component={NotFound} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// Admin Router - for admin.domain.com
+function AdminRouter() {
+  return (
+    <Switch>
+      <Route path="/">
+        <AdminProtectedRoute>
+          <AdminDashboard />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/users">
+        <AdminProtectedRoute>
+          <AdminUsers />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/transactions">
+        <AdminProtectedRoute>
+          <AdminTransactions />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/disputes">
+        <AdminProtectedRoute>
+          <AdminDisputes />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/audit-logs">
+        <AdminProtectedRoute>
+          <AdminAuditLogs />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <AdminProtectedRoute>
+          <AdminSettings />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/404" component={NotFound} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// Main Router - selects based on app mode
+function Router() {
+  const appMode = getAppMode();
+
+  switch (appMode) {
+    case 'admin':
+      return <AdminRouter />;
+    case 'app':
+      return <AppRouter />;
+    case 'landing':
+    default:
+      return <LandingRouter />;
+  }
 }
 
 function App() {

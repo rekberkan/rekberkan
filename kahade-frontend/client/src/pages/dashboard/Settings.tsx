@@ -122,9 +122,18 @@ export default function Settings() {
         toast.error(error.response?.data?.message || 'Gagal mengaktifkan 2FA');
       }
     } else {
-      // Disable 2FA
+      // Disable 2FA - requires password and current 2FA code
+      // In production, show a modal to collect password and code
+      const password = prompt('Masukkan password Anda:');
+      const code = prompt('Masukkan kode 2FA dari authenticator:');
+      
+      if (!password || !code) {
+        toast.error('Password dan kode 2FA diperlukan');
+        return;
+      }
+      
       try {
-        await authApi.disable2FA();
+        await authApi.disable2FA({ password, code });
         setTwoFactor(false);
         toast.success('2FA dinonaktifkan');
       } catch (error: any) {
