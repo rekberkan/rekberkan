@@ -75,6 +75,15 @@ export class SessionRepository {
   }
 
   /**
+   * BANK-GRADE: Find session by id
+   */
+  async findById(sessionId: string) {
+    return this.prisma.session.findUnique({
+      where: { id: sessionId },
+    });
+  }
+
+  /**
    * BANK-GRADE: Revoke session by token
    */
   async revoke(token: string, reason: string = 'revoked') {
@@ -92,6 +101,28 @@ export class SessionRepository {
 
     if (result.count > 0) {
       this.logger.debug(`Revoked session: ${reason}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * BANK-GRADE: Revoke session by id and user
+   */
+  async revokeById(sessionId: string, userId: string) {
+    const result = await this.prisma.session.updateMany({
+      where: {
+        id: sessionId,
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    if (result.count > 0) {
+      this.logger.debug(`Revoked session ${sessionId} for user ${userId}`);
     }
 
     return result;

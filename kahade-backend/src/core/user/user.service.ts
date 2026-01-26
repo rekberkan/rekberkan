@@ -19,6 +19,7 @@ import * as crypto from 'crypto';
 export class UserService {
   private readonly logger = new Logger(UserService.name);
   private readonly AVATAR_UPLOAD_DIR = process.env.AVATAR_UPLOAD_DEST || './uploads/avatars';
+  private readonly KYC_UPLOAD_DIR = process.env.UPLOAD_DEST || './uploads';
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -166,12 +167,22 @@ export class UserService {
     file: Express.Multer.File,
     payload: UploadKycDto,
   ): Promise<{ message: string; status: string }> {
-    const user = await this.findById(userId);
+    await this.findById(userId);
 
     // In production, upload to S3/cloud storage
-    // For now, we'll store the file path
-    const filePath = `/uploads/kyc/${userId}/${Date.now()}-${file.originalname}`;
+    // For now, we'll store the file on disk
+    const userDir = path.join(this.KYC_UPLOAD_DIR, 'kyc', userId);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
+    }
+
+    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
     const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const fileName = `${Date.now()}_${fileHash.substring(0, 8)}.${fileExt}`;
+    const filePath = `/uploads/kyc/${userId}/${fileName}`;
+    const fullPath = path.join(userDir, fileName);
+
+    fs.writeFileSync(fullPath, file.buffer);
 
     await this.prisma.kYCSubmission.create({
       data: {

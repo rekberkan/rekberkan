@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UserModule } from '../user/user.module';
 
 import { SessionRepository } from './session.repository';
+import { MFAService } from './mfa.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SessionRepository } from './session.repository';
     JwtStrategy,
     LocalStrategy,
     SessionRepository,
+    MFAService,
   ],
   exports: [AuthService],
 })

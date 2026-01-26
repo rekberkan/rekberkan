@@ -9,6 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { CryptoUtil, HashUtil as BackupCodeHashUtil } from '@common/utils/crypto.util';
 import * as crypto from 'crypto';
 
 // ============================================================================
@@ -248,24 +249,52 @@ export class MfaGuard implements CanActivate {
     code: string,
   ): Promise<boolean> {
     try {
-      const codes = backupCodesHash as { hash: string; used: boolean }[];
-      const codeHash = crypto.createHash('sha256').update(code).digest('hex');
-      
-      const matchingCode = codes.find(c => c.hash === codeHash && !c.used);
-      
-      if (matchingCode) {
-        // Mark code as used
-        matchingCode.used = true;
-        
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { backupCodesHash: codes },
-        });
-        
-        this.logger.log(`Backup code used for user ${userId}`);
-        return true;
+      const codes = backupCodesHash as { hash: string; used?: boolean }[] | string[];
+
+      if (!Array.isArray(codes) || codes.length === 0) {
+        return false;
       }
-      
+
+      if (typeof codes[0] === 'string') {
+        for (let i = 0; i < codes.length; i++) {
+          const hash = codes[i] as string;
+          const isValid = await BackupCodeHashUtil.verify(code, hash);
+          if (isValid) {
+            const updatedCodes = codes.filter((_, idx) => idx !== i);
+            await this.prisma.user.update({
+              where: { id: userId },
+              data: { backupCodesHash: updatedCodes },
+            });
+            this.logger.log(`Backup code used for user ${userId}`);
+            return true;
+          }
+        }
+        return false;
+      }
+
+      const hashedCodes = codes as { hash: string; used?: boolean }[];
+      for (const entry of hashedCodes) {
+        if (entry.used) {
+          continue;
+        }
+
+        let isValid = await BackupCodeHashUtil.verify(code, entry.hash);
+        if (!isValid) {
+          const codeHash = crypto.createHash('sha256').update(code).digest('hex');
+          isValid = entry.hash === codeHash;
+        }
+
+        if (isValid) {
+          entry.used = true;
+          await this.prisma.user.update({
+            where: { id: userId },
+            data: { backupCodesHash: hashedCodes },
+          });
+          this.logger.log(`Backup code used for user ${userId}`);
+          return true;
+        }
+      }
+
       return false;
     } catch (error) {
       this.logger.error(`Backup code verification error: ${error.message}`);
@@ -284,15 +313,7 @@ export class MfaGuard implements CanActivate {
     }
     
     try {
-      const [ivHex, encrypted] = encryptedSecret.split(':');
-      const iv = Buffer.from(ivHex, 'hex');
-      const key = crypto.scryptSync(encryptionKey, 'salt', 32);
-      const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-      
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-      
-      return decrypted;
+      return CryptoUtil.decrypt(encryptedSecret, encryptionKey);
     } catch (error) {
       this.logger.error(`Secret decryption error: ${error.message}`);
       throw new Error('Failed to decrypt MFA secret');

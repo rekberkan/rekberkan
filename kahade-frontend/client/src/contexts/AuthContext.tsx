@@ -155,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         username: data.username,
         password: data.password,
+        phone: data.phone,
       });
       
       const { accessToken, token, refreshToken, user: userData } = response.data;

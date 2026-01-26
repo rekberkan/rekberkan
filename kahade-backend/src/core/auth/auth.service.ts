@@ -8,6 +8,8 @@ import { HashUtil } from '@common/utils/hash.util';
 import { IUserResponse } from '@common/interfaces/user.interface';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { SessionRepository } from './session.repository';
+import { MFAService } from './mfa.service';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -47,6 +49,8 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly sessionRepository: SessionRepository,
+    private readonly mfaService: MFAService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ============================================================================
@@ -98,7 +102,7 @@ export class AuthService {
   // LOGIN WITH BRUTE FORCE PROTECTION
   // ============================================================================
 
-  async login(loginDto: LoginDto): Promise<IAuthResponse> {
+  async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<IAuthResponse> {
     const email = loginDto.email.toLowerCase();
 
     // Check if account is locked
@@ -132,6 +136,10 @@ export class AuthService {
       });
     }
 
+    if (user.mfaEnabled) {
+      await this.verifyMfaOrThrow(user, loginDto.mfaCode);
+    }
+
     // Clear failed attempts on successful login
     this.failedAttempts.delete(email);
 
@@ -146,6 +154,8 @@ export class AuthService {
         userId: user.id,
         token: tokens.refreshToken,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        ipAddress,
+        userAgent,
       });
     } catch (error) {
       this.logger.error(`Failed to store session in DB: ${error.message}`);
@@ -279,6 +289,7 @@ export class AuthService {
 
     // Revoke all sessions for this user
     const revokedCount = await this.sessionRepository.revokeAllByUserId(userId);
+    await this.tokenBlacklistService.revokeAllUserTokens(userId);
 
     this.logger.log(`User ${userId} logged out from all ${revokedCount} sessions`);
 
@@ -323,6 +334,7 @@ export class AuthService {
 
     // Revoke all sessions (force re-login)
     await this.sessionRepository.revokeAllByUserId(userId);
+    await this.tokenBlacklistService.revokeAllUserTokens(userId);
 
     this.logger.log(`Password changed for user ${userId}`);
 
@@ -374,6 +386,7 @@ export class AuthService {
 
     // Revoke all sessions
     await this.sessionRepository.revokeAllByUserId(user.id);
+    await this.tokenBlacklistService.revokeAllUserTokens(user.id);
 
     // Clear any lockouts
     this.failedAttempts.delete(user.email);
@@ -408,6 +421,99 @@ export class AuthService {
     this.logger.log(`Verification email resent to ${email}`);
 
     return { message: 'If an account exists with this email, a verification link has been sent.' };
+  }
+
+  // ============================================================================
+  // MFA MANAGEMENT
+  // ============================================================================
+
+  async setupMfa(userId: string) {
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const setup = await this.mfaService.setupMFA(user.id, user.email);
+    const backupCodes = setup.backupCodes.map((hash) => ({ hash, used: false }));
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        totpSecretEnc: setup.secret,
+        backupCodesHash: backupCodes,
+        mfaEnabled: false,
+      },
+    });
+
+    return {
+      secret: setup.secret,
+      qrCodeUrl: setup.qrCodeDataURL,
+      backupCodes: setup.backupCodesPlain,
+    };
+  }
+
+  async enableMfa(userId: string, code: string): Promise<{ message: string }> {
+    const user = await this.userService.findById(userId);
+    if (!user?.totpSecretEnc) {
+      throw new BadRequestException('MFA setup is required before enabling');
+    }
+
+    await this.verifyMfaOrThrow(user, code);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mfaEnabled: true },
+    });
+
+    return { message: 'MFA enabled successfully' };
+  }
+
+  async disableMfa(userId: string, password: string, code: string): Promise<{ message: string }> {
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isPasswordValid = await HashUtil.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    await this.verifyMfaOrThrow(user, code);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        mfaEnabled: false,
+        totpSecretEnc: null,
+        backupCodesHash: null,
+      },
+    });
+
+    return { message: 'MFA disabled successfully' };
+  }
+
+  async listSessions(userId: string) {
+    return this.sessionRepository.findActiveByUserId(userId);
+  }
+
+  async revokeSession(userId: string, sessionId: string): Promise<{ message: string }> {
+    const session = await this.sessionRepository.findById(sessionId);
+    if (!session || session.userId !== userId) {
+      throw new BadRequestException('Session not found');
+    }
+
+    await this.sessionRepository.revokeById(sessionId, userId);
+    await this.tokenBlacklistService.revokeRefreshTokenHash(session.refreshHash);
+
+    return { message: 'Session revoked' };
+  }
+
+  async revokeAllSessions(userId: string): Promise<{ message: string; sessionsRevoked: number }> {
+    const revokedCount = await this.sessionRepository.revokeAllByUserId(userId);
+    await this.tokenBlacklistService.revokeAllUserTokens(userId);
+
+    return { message: 'All sessions revoked', sessionsRevoked: revokedCount };
   }
 
   // ============================================================================
@@ -550,6 +656,70 @@ export class AuthService {
         return value * 86400;
       default:
         return 900; // 15 minutes default
+    }
+  }
+
+  private async verifyMfaOrThrow(user: { id: string; mfaEnabled: boolean; totpSecretEnc?: string | null; backupCodesHash?: any }, code?: string) {
+    if (!code) {
+      throw new UnauthorizedException({
+        code: 'MFA_TOKEN_REQUIRED',
+        message: 'MFA token required',
+      });
+    }
+
+    const normalizedCode = String(code).trim();
+    let valid = false;
+
+    if (user.totpSecretEnc) {
+      valid = await this.mfaService.verifyTOTP(user.totpSecretEnc, normalizedCode);
+    }
+
+    if (!valid && user.backupCodesHash) {
+      const backupCodes = user.backupCodesHash as { hash: string; used?: boolean }[] | string[];
+
+      if (Array.isArray(backupCodes) && backupCodes.length > 0) {
+        if (typeof backupCodes[0] === 'string') {
+          for (let i = 0; i < backupCodes.length; i++) {
+            const isValid = await this.mfaService.verifyBackupCode([backupCodes[i] as string], normalizedCode);
+            if (isValid.valid) {
+              backupCodes.splice(i, 1);
+              await this.prisma.user.update({
+                where: { id: user.id },
+                data: { backupCodesHash: backupCodes },
+              });
+              valid = true;
+              break;
+            }
+          }
+        } else {
+          const hashedCodes = backupCodes as { hash: string; used?: boolean }[];
+          for (let i = 0; i < hashedCodes.length; i++) {
+            const entry = hashedCodes[i];
+            if (entry.used) continue;
+            let isValid = await this.mfaService.verifyBackupCode([entry.hash], normalizedCode);
+            if (!isValid.valid) {
+              const codeHash = crypto.createHash('sha256').update(normalizedCode).digest('hex');
+              isValid = { valid: entry.hash === codeHash };
+            }
+            if (isValid.valid) {
+              entry.used = true;
+              await this.prisma.user.update({
+                where: { id: user.id },
+                data: { backupCodesHash: hashedCodes },
+              });
+              valid = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (!valid) {
+      throw new UnauthorizedException({
+        code: 'MFA_INVALID',
+        message: 'Invalid MFA token',
+      });
     }
   }
 }
