@@ -1,15 +1,9 @@
-import { IsNumber, IsString, Min, Max, MinLength, MaxLength, IsNotEmpty, Matches, IsIn } from 'class-validator';
+import { IsNumber, IsString, Min, Max, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 
 // ============================================================================
 // WITHDRAW DTO
 // ============================================================================
-
-const VALID_BANK_CODES = [
-  'BCA', 'BNI', 'MANDIRI', 'BRI', 'PERMATA', 'CIMB', 'DANAMON',
-  'BTN', 'MEGA', 'PANIN', 'BSI', 'OCBC', 'MAYBANK', 'UOB',
-];
 
 export class WithdrawDto {
   @ApiProperty({ 
@@ -23,38 +17,11 @@ export class WithdrawDto {
   @Max(50000000, { message: 'Maximum withdrawal amount is Rp 50,000,000' })
   amount: number;
 
-  @ApiProperty({ 
-    description: 'Bank code',
-    enum: VALID_BANK_CODES,
-    example: 'BCA',
+  @ApiProperty({
+    description: 'Bank account ID linked to the user',
+    example: 'b7f1c6a5-4b9c-4d1a-9e2b-3b7a0b0c1234',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Bank code is required' })
-  @IsIn(VALID_BANK_CODES, { message: 'Invalid bank code' })
-  @Transform(({ value }) => value?.toUpperCase())
-  bankCode: string;
-
-  @ApiProperty({ 
-    description: 'Bank account number (8-20 digits)',
-    example: '1234567890',
-  })
-  @IsString()
-  @IsNotEmpty({ message: 'Account number is required' })
-  @MinLength(8, { message: 'Account number must be at least 8 digits' })
-  @MaxLength(20, { message: 'Account number must not exceed 20 digits' })
-  @Matches(/^[0-9]+$/, { message: 'Account number must contain only digits' })
-  @Transform(({ value }) => value?.replace(/\s/g, ''))
-  accountNumber: string;
-
-  @ApiProperty({ 
-    description: 'Account holder name (as registered in bank)',
-    example: 'JOHN DOE',
-  })
-  @IsString()
-  @IsNotEmpty({ message: 'Account name is required' })
-  @MinLength(3, { message: 'Account name must be at least 3 characters' })
-  @MaxLength(100, { message: 'Account name must not exceed 100 characters' })
-  @Matches(/^[a-zA-Z\s\.\-']+$/, { message: 'Account name contains invalid characters' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
-  accountName: string;
+  @IsNotEmpty({ message: 'Bank account ID is required' })
+  bankAccountId: string;
 }

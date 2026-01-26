@@ -5,7 +5,9 @@ import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util'
 import { IUserResponse, KYCStatus } from '@common/interfaces/user.interface';
 import { User } from '@common/shims/prisma-types.shim';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { UploadKycDto } from './dto/upload-kyc.dto';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 // ============================================================================
 // USER SERVICE - Production Ready
@@ -159,20 +161,26 @@ export class UserService {
   async uploadKYCDocument(
     userId: string,
     file: Express.Multer.File,
-    documentType: string,
+    payload: UploadKycDto,
   ): Promise<{ message: string; status: string }> {
     const user = await this.findById(userId);
 
     // In production, upload to S3/cloud storage
     // For now, we'll store the file path
     const filePath = `/uploads/kyc/${userId}/${Date.now()}-${file.originalname}`;
+    const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
 
-    // Create KYC document record
-    await (this.prisma as any).kycDocument.create({
+    await this.prisma.kYCSubmission.create({
       data: {
         userId,
-        type: documentType.toUpperCase(),
-        fileUrl: filePath,
+        idCardObjectKey: filePath,
+        selfieObjectKey: filePath,
+        idCardHash: fileHash,
+        selfieHash: fileHash,
+        fullNameEnc: payload.fullName.trim(),
+        idNumberEnc: payload.idNumber.trim(),
+        dateOfBirthEnc: payload.dateOfBirth,
+        addressEnc: payload.address?.trim() ?? '',
         status: 'PENDING',
       },
     });
@@ -201,9 +209,9 @@ export class UserService {
     recentRatings: any[];
   }> {
     const ratings = await (this.prisma as any).rating.findMany({
-      where: { ratedUserId: userId },
+      where: { toUserId: userId },
       include: {
-        rater: { select: { id: true, name: true, username: true } },
+        fromUser: { select: { id: true, username: true } },
         order: { select: { id: true, title: true, orderNumber: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -227,8 +235,8 @@ export class UserService {
       recentRatings: ratings.slice(0, 10).map((r: any) => ({
         id: r.id,
         score: r.score,
-        comment: r.comment,
-        rater: r.rater,
+        review: r.review,
+        rater: r.fromUser,
         order: r.order,
         createdAt: r.createdAt,
       })),

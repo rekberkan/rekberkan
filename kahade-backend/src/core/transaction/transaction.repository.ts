@@ -27,13 +27,7 @@ interface UpdateTransactionData {
   paidAt?: Date;
   completedAt?: Date;
   cancelledAt?: Date;
-  cancelReason?: string;
-  deliveredAt?: Date;
   autoReleaseAt?: Date;
-  disputeReason?: string;
-  disputeDescription?: string;
-  disputedAt?: Date;
-  disputedBy?: string;
 }
 
 interface FindByUserOptions {
@@ -65,8 +59,8 @@ export class TransactionRepository {
         customTerms: data.terms,
       },
       include: {
-        initiator: { select: { id: true, name: true, email: true, username: true } },
-        counterparty: { select: { id: true, name: true, email: true, username: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
       },
     });
   }
@@ -75,8 +69,8 @@ export class TransactionRepository {
     return (this.prisma as any).order.findUnique({
       where: { id },
       include: {
-        initiator: { select: { id: true, name: true, email: true, username: true } },
-        counterparty: { select: { id: true, name: true, email: true, username: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
         escrowHold: true,
         deliveryProof: true,
         dispute: true,
@@ -89,8 +83,8 @@ export class TransactionRepository {
     return (this.prisma as any).order.findUnique({
       where: { orderNumber },
       include: {
-        initiator: { select: { id: true, name: true, email: true, username: true } },
-        counterparty: { select: { id: true, name: true, email: true, username: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
       },
     });
   }
@@ -102,8 +96,8 @@ export class TransactionRepository {
         inviteExpiresAt: { gt: new Date() },
       },
       include: {
-        initiator: { select: { id: true, name: true, email: true, username: true } },
-        counterparty: { select: { id: true, name: true, email: true, username: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
       },
     });
   }
@@ -146,8 +140,8 @@ export class TransactionRepository {
         take,
         orderBy: { createdAt: 'desc' },
         include: {
-          initiator: { select: { id: true, name: true, email: true, username: true } },
-          counterparty: { select: { id: true, name: true, email: true, username: true } },
+          initiator: { select: { id: true, username: true, email: true } },
+          counterparty: { select: { id: true, username: true, email: true } },
         },
       }),
       (this.prisma as any).order.count({ where }),
@@ -164,8 +158,8 @@ export class TransactionRepository {
         updatedAt: new Date(),
       },
       include: {
-        initiator: { select: { id: true, name: true, email: true, username: true } },
-        counterparty: { select: { id: true, name: true, email: true, username: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
       },
     });
   }
@@ -198,8 +192,8 @@ export class TransactionRepository {
         take,
         orderBy: { createdAt: 'desc' },
         include: {
-          initiator: { select: { id: true, name: true, email: true, username: true } },
-          counterparty: { select: { id: true, name: true, email: true, username: true } },
+          initiator: { select: { id: true, username: true, email: true } },
+          counterparty: { select: { id: true, username: true, email: true } },
         },
       }),
       (this.prisma as any).order.count({ where }),
@@ -229,8 +223,8 @@ export class TransactionRepository {
         deletedAt: null,
       },
       include: {
-        initiator: { select: { id: true, name: true, email: true } },
-        counterparty: { select: { id: true, name: true, email: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
         escrowHold: true,
       },
     });

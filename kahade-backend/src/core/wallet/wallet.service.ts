@@ -175,12 +175,14 @@ export class WalletService {
       type !== 'withdrawal' ? (this.prisma as any).deposit.findMany({
         where: depositsWhere,
         orderBy: { createdAt: 'desc' },
+        include: { payment: true },
         take: limit,
         skip: type === 'deposit' ? skip : 0,
       }) : [],
       type !== 'deposit' ? (this.prisma as any).withdrawal.findMany({
         where: { wallet: { userId } },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { requestedAt: 'desc' },
+        include: { bankAccount: true },
         take: limit,
         skip: type === 'withdrawal' ? skip : 0,
       }) : [],
@@ -194,18 +196,20 @@ export class WalletService {
         id: d.id,
         type: 'deposit',
         amount: Number(d.amountMinor) / 100,
-        description: `Top up via ${d.paymentMethod || 'Virtual Account'}`,
+        description: `Top up via ${d.payment?.paymentMethod || 'Virtual Account'}`,
         status: d.status,
         createdAt: d.createdAt,
-        referenceId: d.externalId,
+        referenceId: d.payment?.providerInvoiceId || d.paymentId,
       })),
       ...withdrawals.map((w: any) => ({
         id: w.id,
         type: 'withdrawal',
         amount: -Number(w.amountMinor) / 100,
-        description: `Withdrawal to ${w.bankCode} - ${w.accountNumber}`,
+        description: w.bankAccount
+          ? `Withdrawal to ${w.bankAccount.bankName} ••••${w.bankAccount.accountNumberLast4}`
+          : 'Withdrawal',
         status: w.status,
-        createdAt: w.createdAt,
+        createdAt: w.requestedAt,
         referenceId: w.id,
       })),
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -250,18 +254,43 @@ export class WalletService {
     // Generate external ID
     const externalId = `TOPUP-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // Create deposit record
-    const deposit = await (this.prisma as any).deposit.create({
-      data: {
-        walletId: wallet.id,
-        amountMinor: BigInt(Math.round(amount * 100)),
-        currency: 'IDR',
-        paymentMethod: method,
-        paymentProvider: 'XENDIT',
-        externalId,
-        status: 'PENDING',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      },
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const amountMinor = BigInt(Math.round(amount * 100));
+    const paymentMethod = method.startsWith('va_')
+      ? 'VIRTUAL_ACCOUNT'
+      : (method.startsWith('ewallet_') || method === 'qris')
+        ? 'EWALLET'
+        : null;
+
+    // Create payment + deposit record
+    const deposit = await this.prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.create({
+        data: {
+          userId,
+          provider: 'XENDIT',
+          providerInvoiceId: externalId,
+          paymentType: 'DEPOSIT',
+          paymentMethod: paymentMethod ?? undefined,
+          amountMinor,
+          currency: 'IDR',
+          status: 'PENDING',
+          expiresAt,
+          paymentDetails: {
+            method,
+            externalId,
+          },
+        },
+      });
+
+      return tx.deposit.create({
+        data: {
+          walletId: wallet.id,
+          paymentId: payment.id,
+          amountMinor,
+          currency: 'IDR',
+          status: 'PENDING',
+        },
+      });
     });
 
     // Generate VA number (simulated for now)
@@ -274,7 +303,7 @@ export class WalletService {
       amount,
       method,
       vaNumber,
-      expiresAt: deposit.expiresAt,
+      expiresAt,
     };
   }
 
@@ -284,15 +313,12 @@ export class WalletService {
   async withdraw(userId: string, withdrawDto: WithdrawDto): Promise<{
     id: string;
     amount: number;
-    fee: number;
     netAmount: number;
-    bankCode: string;
-    accountNumber: string;
-    accountName: string;
+    bankAccountId: string;
     status: string;
     estimatedArrival: Date;
   }> {
-    const { amount, bankCode, accountNumber, accountName } = withdrawDto;
+    const { amount, bankAccountId } = withdrawDto;
 
     // Validate minimum amount
     if (amount < 50000) {
@@ -308,12 +334,8 @@ export class WalletService {
       throw new WalletNotFoundError(userId);
     }
 
-    // Calculate fee (Rp 6,500 flat fee)
-    const fee = 6500;
-    const totalDeduction = amount + fee;
     const amountMinor = BigInt(Math.round(amount * 100));
-    const feeMinor = BigInt(fee * 100);
-    const totalMinor = amountMinor + feeMinor;
+    const totalMinor = amountMinor;
 
     // Check available balance
     const availableBalance = wallet.balanceMinor - wallet.lockedMinor;
@@ -321,10 +343,17 @@ export class WalletService {
       throw new InsufficientBalanceError(availableBalance, totalMinor);
     }
 
-    // Validate bank code
-    const bank = this.SUPPORTED_BANKS.find(b => b.code === bankCode.toUpperCase());
-    if (!bank) {
-      throw new BadRequestException(`Unsupported bank code: ${bankCode}`);
+    const bankAccount = await this.prisma.bankAccount.findFirst({
+      where: {
+        id: bankAccountId,
+        userId,
+        isActive: true,
+        deletedAt: null,
+      },
+    });
+
+    if (!bankAccount) {
+      throw new BadRequestException('Invalid or inactive bank account');
     }
 
     // Create withdrawal record and lock balance in transaction
@@ -342,12 +371,10 @@ export class WalletService {
       return (tx as any).withdrawal.create({
         data: {
           walletId: wallet.id,
+          userId,
+          bankAccountId,
           amountMinor,
-          feeMinor,
           currency: 'IDR',
-          bankCode: bankCode.toUpperCase(),
-          accountNumber,
-          accountName,
           status: 'PENDING',
         },
       });
@@ -358,11 +385,8 @@ export class WalletService {
     return {
       id: withdrawal.id,
       amount,
-      fee,
       netAmount: amount,
-      bankCode: bankCode.toUpperCase(),
-      accountNumber,
-      accountName,
+      bankAccountId,
       status: 'PENDING',
       estimatedArrival: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours
     };
@@ -789,7 +813,8 @@ export class WalletService {
     const [withdrawals, total] = await Promise.all([
       (this.prisma as any).withdrawal.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { requestedAt: 'desc' },
+        include: { bankAccount: true },
         take: limit,
         skip,
       }),
@@ -800,13 +825,16 @@ export class WalletService {
       data: withdrawals.map((w: any) => ({
         id: w.id,
         amount: Number(w.amountMinor) / 100,
-        fee: Number(w.feeMinor) / 100,
         netAmount: Number(w.amountMinor) / 100,
-        bankCode: w.bankCode,
-        accountNumber: w.accountNumber,
-        accountName: w.accountName,
+        bankAccount: w.bankAccount
+          ? {
+            id: w.bankAccount.id,
+            bankName: w.bankAccount.bankName,
+            accountNumberLast4: w.bankAccount.accountNumberLast4,
+          }
+          : null,
         status: w.status,
-        createdAt: w.createdAt,
+        requestedAt: w.requestedAt,
         processedAt: w.processedAt,
         rejectionReason: w.rejectionReason,
       })),
@@ -845,11 +873,11 @@ export class WalletService {
       // Update withdrawal status
       await (tx as any).withdrawal.update({
         where: { id: withdrawalId },
-        data: { status: 'CANCELLED' },
+        data: { status: 'REJECTED', rejectionReason: 'Cancelled by user' },
       });
 
       // Unlock the balance
-      const totalLocked = withdrawal.amountMinor + withdrawal.feeMinor;
+      const totalLocked = withdrawal.amountMinor;
       await tx.wallet.update({
         where: { userId },
         data: {

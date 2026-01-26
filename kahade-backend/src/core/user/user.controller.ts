@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UploadKycDto } from './dto/upload-kyc.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -51,9 +52,9 @@ export class UserController {
   async uploadKYC(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: { documentType: string },
+    @Body() dto: UploadKycDto,
   ) {
-    return this.userService.uploadKYCDocument(userId, file, dto.documentType);
+    return this.userService.uploadKYCDocument(userId, file, dto);
   }
 
   @Get(':id/ratings')

@@ -87,8 +87,8 @@ export class AdminController {
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: {
-          initiator: { select: { id: true, name: true, email: true } },
-          counterparty: { select: { id: true, name: true, email: true } },
+          initiator: { select: { id: true, username: true, email: true } },
+          counterparty: { select: { id: true, username: true, email: true } },
         },
       }),
     ]);
@@ -367,8 +367,8 @@ export class AdminController {
       (this.prisma as any).order.findMany({
         where,
         include: {
-          initiator: { select: { id: true, name: true, email: true } },
-          counterparty: { select: { id: true, name: true, email: true } },
+          initiator: { select: { id: true, username: true, email: true } },
+          counterparty: { select: { id: true, username: true, email: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -405,8 +405,8 @@ export class AdminController {
     const transaction = await (this.prisma as any).order.findUnique({
       where: { id },
       include: {
-        initiator: { select: { id: true, name: true, email: true, username: true } },
-        counterparty: { select: { id: true, name: true, email: true, username: true } },
+        initiator: { select: { id: true, username: true, email: true } },
+        counterparty: { select: { id: true, username: true, email: true } },
         escrowHold: true,
         dispute: true,
         ratings: true,
@@ -488,8 +488,6 @@ export class AdminController {
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
-        cancelReason: dto.reason,
-        adminNotes: `Force cancelled by admin: ${dto.reason}`,
       },
     });
 
@@ -533,13 +531,13 @@ export class AdminController {
         include: {
           order: {
             include: {
-              initiator: { select: { id: true, name: true, email: true } },
-              counterparty: { select: { id: true, name: true, email: true } },
+              initiator: { select: { id: true, username: true, email: true } },
+              counterparty: { select: { id: true, username: true, email: true } },
             },
           },
-          openedBy: { select: { id: true, name: true, email: true } },
+          openedBy: { select: { id: true, username: true, email: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { openedAt: 'desc' },
         skip,
         take: limit,
       }),
@@ -564,11 +562,11 @@ export class AdminController {
       include: {
         order: {
           include: {
-            initiator: { select: { id: true, name: true, email: true, username: true } },
-            counterparty: { select: { id: true, name: true, email: true, username: true } },
+            initiator: { select: { id: true, username: true, email: true } },
+            counterparty: { select: { id: true, username: true, email: true } },
           },
         },
-        openedBy: { select: { id: true, name: true, email: true } },
+        openedBy: { select: { id: true, username: true, email: true } },
         evidences: true,
       },
     });
@@ -680,23 +678,21 @@ export class AdminController {
       include: {
         wallet: {
           include: {
-            user: { select: { id: true, name: true, email: true, kycStatus: true } },
+            user: { select: { id: true, username: true, email: true, kycStatus: true } },
           },
         },
+        bankAccount: { select: { id: true, bankName: true, accountNumberLast4: true } },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { requestedAt: 'asc' },
     });
 
     return withdrawals.map((w: any) => ({
       id: w.id,
       amount: Number(w.amountMinor) / 100,
-      fee: Number(w.feeMinor) / 100,
-      bankCode: w.bankCode,
-      accountNumber: w.accountNumber,
-      accountName: w.accountName,
+      bankAccount: w.bankAccount,
       status: w.status,
       user: w.wallet.user,
-      createdAt: w.createdAt,
+      requestedAt: w.requestedAt,
     }));
   }
 
@@ -734,8 +730,8 @@ export class AdminController {
       await tx.wallet.update({
         where: { id: withdrawal.walletId },
         data: {
-          balanceMinor: { decrement: withdrawal.amountMinor + withdrawal.feeMinor },
-          lockedMinor: { decrement: withdrawal.amountMinor + withdrawal.feeMinor },
+          balanceMinor: { decrement: withdrawal.amountMinor },
+          lockedMinor: { decrement: withdrawal.amountMinor },
         },
       });
     });
@@ -788,7 +784,7 @@ export class AdminController {
       await tx.wallet.update({
         where: { id: withdrawal.walletId },
         data: {
-          lockedMinor: { decrement: withdrawal.amountMinor + withdrawal.feeMinor },
+          lockedMinor: { decrement: withdrawal.amountMinor },
         },
       });
     });
@@ -830,7 +826,7 @@ export class AdminController {
         where,
         include: {
           user: {
-            select: { id: true, name: true, email: true },
+            select: { id: true, username: true, email: true },
           },
         },
         orderBy: { createdAt: 'desc' },

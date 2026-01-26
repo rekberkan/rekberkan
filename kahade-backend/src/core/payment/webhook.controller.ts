@@ -4,7 +4,7 @@ import { Public } from '@common/decorators/public.decorator';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { Request } from 'express';
-import { PrismaService } from '@common/prisma/prisma.service';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 
 // ============================================================================
 // BANK-GRADE WEBHOOK CONTROLLER
@@ -225,16 +225,6 @@ export class WebhookController {
           },
         });
 
-        // Create transaction record
-        await tx.walletTransaction.create({
-          data: {
-            walletId,
-            type: 'CREDIT',
-            amountMinor: Math.round(amount * 100),
-            description: 'Top-up via Xendit',
-            status: 'COMPLETED',
-          },
-        });
       });
 
       this.logger.log(`Top-up completed for wallet ${walletId}: ${amount}`);
@@ -253,11 +243,11 @@ export class WebhookController {
     }
 
     if (status === 'PAID' || status === 'SETTLED') {
-      // Update order status to FUNDED
+      // Update order status to PAID
       await this.prisma.order.update({
         where: { id: orderId },
         data: { 
-          status: 'FUNDED',
+          status: 'PAID',
           paidAt: new Date(),
         },
       });
@@ -267,7 +257,7 @@ export class WebhookController {
       // Update order status
       await this.prisma.order.update({
         where: { id: orderId },
-        data: { status: 'PAYMENT_FAILED' },
+        data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
 
       this.logger.log(`Order ${orderId} payment failed: ${status}`);
@@ -305,7 +295,7 @@ export class WebhookController {
             where: { id: withdrawalId },
             data: { 
               status: 'FAILED',
-              failureReason: payload.failure_code || 'Unknown error',
+              rejectionReason: payload.failure_code || 'Unknown error',
             },
           });
 
@@ -313,7 +303,7 @@ export class WebhookController {
           await tx.wallet.update({
             where: { id: withdrawal.walletId },
             data: {
-              lockedMinor: { decrement: withdrawal.amountMinor + withdrawal.feeMinor },
+              lockedMinor: { decrement: withdrawal.amountMinor },
             },
           });
         });

@@ -1,15 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsOptional, MinLength, IsEnum } from 'class-validator';
-import { UserRole } from '@common/shims/prisma-types.shim';
+import { IsEmail, IsString, IsOptional, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()
   email: string;
-
-  @ApiProperty({ example: 'John Doe' })
-  @IsString()
-  name: string;
 
   @ApiProperty({ example: 'password123', minLength: 8 })
   @IsString()
@@ -20,9 +15,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   phone?: string;
-
-  @ApiProperty({ enum: UserRole, required: false })
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
 }

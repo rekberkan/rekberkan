@@ -29,7 +29,7 @@
     "verify:build": "npm run lint:check && npm run format:check && npm run build && npm run test",
     "verify:types": "tsc --noEmit",
     "prepare:prod": "npm run audit:security && npm run verify:types && npm run verify:build",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate --schema prisma/schema",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio",

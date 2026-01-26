@@ -94,10 +94,8 @@ export interface ITransactionResponse {
   inviteExpiresAt?: Date;
   acceptedAt?: Date | null;
   paidAt?: Date | null;
-  deliveredAt?: Date | null;
   completedAt?: Date | null;
   cancelledAt?: Date | null;
-  disputedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   initiator?: any;

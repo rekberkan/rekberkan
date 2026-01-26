@@ -239,7 +239,6 @@ export class TransactionService {
     const updated = await this.transactionRepository.update(id, {
       status: 'CANCELLED',
       cancelledAt: new Date(),
-      cancelReason: reason || 'Rejected by counterparty',
     });
 
     this.logger.log(`Transaction ${id} rejected by user ${userId}`);
@@ -288,11 +287,25 @@ export class TransactionService {
       throw new BadRequestException('Insufficient balance to pay for this transaction');
     }
 
+    const buyerWallet = await this.prisma.wallet.findUnique({
+      where: { userId: buyerId as string },
+    });
+
+    if (!buyerWallet) {
+      throw new BadRequestException('Buyer wallet not found');
+    }
+
+    const sellerId = transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
+    const sellerWallet = sellerId
+      ? await this.prisma.wallet.findUnique({ where: { userId: sellerId } })
+      : null;
+
     // Create escrow hold record
     await (this.prisma as any).escrowHold.create({
       data: {
         orderId: transaction.id,
-        buyerId: buyerId as string,
+        buyerWalletId: buyerWallet.id,
+        sellerWalletId: sellerWallet?.id,
         amountMinor: totalToPay,
         status: 'HELD',
       },
@@ -306,7 +319,6 @@ export class TransactionService {
     this.logger.log(`Transaction ${id} paid by user ${userId}`);
 
     // Notify seller
-    const sellerId = transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
     if (sellerId) {
       await this.notificationService.sendTransactionNotification(
         sellerId,
@@ -342,8 +354,8 @@ export class TransactionService {
       await (this.prisma as any).deliveryProof.create({
         data: {
           orderId: transaction.id,
-          proofUrl,
-          submittedBy: userId,
+          fileUrls: [proofUrl],
+          notes: 'Delivery proof submitted',
         },
       });
     }
@@ -352,7 +364,6 @@ export class TransactionService {
     const autoReleaseAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     const updated = await this.transactionRepository.update(id, {
-      deliveredAt: new Date(),
       autoReleaseAt,
     });
 
@@ -421,7 +432,7 @@ export class TransactionService {
       // Update escrow hold status
       await (this.prisma as any).escrowHold.updateMany({
         where: { orderId: transaction.id },
-        data: { status: 'RELEASED', releasedAt: new Date() },
+        data: { status: 'RELEASED', resolvedAt: new Date() },
       });
 
       const updated = await this.transactionRepository.update(id, {
@@ -462,22 +473,21 @@ export class TransactionService {
     }
 
     // Create dispute record
+    const disputeReason = data.description
+      ? `${data.reason} - ${data.description}`
+      : data.reason;
+
     await (this.prisma as any).dispute.create({
       data: {
         orderId: transaction.id,
-        openedById: userId,
-        reason: data.reason,
-        description: data.description,
+        openedBy: userId,
+        reason: disputeReason,
         status: 'OPEN',
       },
     });
 
     const updated = await this.transactionRepository.update(id, {
       status: 'DISPUTED',
-      disputeReason: data.reason,
-      disputeDescription: data.description,
-      disputedAt: new Date(),
-      disputedBy: userId,
     });
 
     this.logger.log(`Transaction ${id} disputed by user ${userId}`);
@@ -518,7 +528,6 @@ export class TransactionService {
     const updated = await this.transactionRepository.update(id, {
       status: 'CANCELLED',
       cancelledAt: new Date(),
-      cancelReason: reason || 'Cancelled by user',
     });
 
     this.logger.log(`Transaction ${id} cancelled by user ${userId}`);
@@ -563,7 +572,7 @@ export class TransactionService {
     const existingRating = await (this.prisma as any).rating.findFirst({
       where: {
         orderId: transaction.id,
-        raterId: userId,
+        fromUserId: userId,
       },
     });
 
@@ -575,10 +584,10 @@ export class TransactionService {
     await (this.prisma as any).rating.create({
       data: {
         orderId: transaction.id,
-        raterId: userId,
-        ratedUserId,
+        fromUserId: userId,
+        toUserId: ratedUserId,
         score: data.score,
-        comment: data.comment,
+        review: data.comment,
       },
     });
 
@@ -732,10 +741,8 @@ export class TransactionService {
       inviteExpiresAt: transaction.inviteExpiresAt,
       acceptedAt: transaction.acceptedAt,
       paidAt: transaction.paidAt,
-      deliveredAt: transaction.deliveredAt,
       completedAt: transaction.completedAt,
       cancelledAt: transaction.cancelledAt,
-      disputedAt: transaction.disputedAt,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt,
       initiator: transaction.initiator,
