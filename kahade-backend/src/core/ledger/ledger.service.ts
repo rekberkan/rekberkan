@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { LedgerJournal, LedgerEntry, LedgerAccount, JournalType } from '@common/shims/prisma-types.shim';
+import { LedgerJournal, LedgerEntry, LedgerAccount, JournalType, LedgerAccountType } from '@common/shims/prisma-types.shim';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 
@@ -221,7 +221,7 @@ export class LedgerService {
     tx?: Prisma.TransactionClient,
   ): Promise<JournalWithEntries> {
     return this.createJournal({
-      type: 'ESCROW_HOLD' as JournalType,
+      type: 'ESCROW_LOCK' as JournalType,
       amountMinor,
       description: `Escrow hold for order ${orderId}`,
       escrowHoldId,
@@ -280,7 +280,7 @@ export class LedgerService {
     tx?: Prisma.TransactionClient,
   ): Promise<JournalWithEntries> {
     return this.createJournal({
-      type: 'ESCROW_REFUND' as JournalType,
+      type: 'REFUND' as JournalType,
       amountMinor,
       description: `Escrow refund for order ${orderId}`,
       escrowHoldId,
@@ -327,7 +327,7 @@ export class LedgerService {
     }
 
     return this.createJournal({
-      type: 'DISPUTE_RESOLUTION' as JournalType,
+      type: 'ADJUSTMENT' as JournalType,
       amountMinor: totalEscrow,
       description: `Dispute resolution for order ${orderId}`,
       disputeId,
@@ -347,7 +347,7 @@ export class LedgerService {
    */
   async getOrCreateUserAccount(
     walletId: string,
-    type: string = 'USER_WALLET',
+    type: LedgerAccountType = LedgerAccountType.ASSET,
     currency: string = 'IDR',
     tx?: Prisma.TransactionClient,
   ): Promise<LedgerAccount> {
@@ -356,7 +356,7 @@ export class LedgerService {
     const existing = await prisma.ledgerAccount.findFirst({
       where: {
         walletId,
-        type: type as any,
+        type,
         currency: currency as any,
       },
     });
@@ -368,7 +368,7 @@ export class LedgerService {
     return prisma.ledgerAccount.create({
       data: {
         walletId,
-        type: type as any,
+        type,
         currency: currency as any,
       },
     });
@@ -379,7 +379,7 @@ export class LedgerService {
    */
   async getOrCreatePlatformAccount(
     platformKey: string,
-    type: string,
+    type: LedgerAccountType,
     currency: string = 'IDR',
     tx?: Prisma.TransactionClient,
   ): Promise<LedgerAccount> {
@@ -388,7 +388,7 @@ export class LedgerService {
     const existing = await prisma.ledgerAccount.findFirst({
       where: {
         platformKey,
-        type: type as any,
+        type,
         currency: currency as any,
       },
     });
@@ -400,7 +400,7 @@ export class LedgerService {
     return prisma.ledgerAccount.create({
       data: {
         platformKey,
-        type: type as any,
+        type,
         currency: currency as any,
       },
     });

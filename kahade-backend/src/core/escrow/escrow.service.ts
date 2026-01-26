@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { EscrowHold, EscrowHoldStatus, Order, OrderStatus } from '@common/shims/prisma-types.shim';
+import { EscrowHold, EscrowHoldStatus, Order, OrderStatus, LedgerAccountType } from '@common/shims/prisma-types.shim';
 import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../wallet/wallet.service';
 import { LedgerService } from '../ledger/ledger.service';
@@ -270,14 +270,14 @@ export class EscrowService {
       // Get or create accounts for ledger
       const buyerAccount = await this.ledgerService.getOrCreateUserAccount(
         buyerWallet.id,
-        'USER_WALLET',
+        LedgerAccountType.ASSET,
         'IDR',
         tx,
       );
 
       const escrowAccount = await this.ledgerService.getOrCreatePlatformAccount(
         'ESCROW_HOLDING',
-        'ESCROW',
+        LedgerAccountType.LIABILITY,
         'IDR',
         tx,
       );
@@ -344,21 +344,21 @@ export class EscrowService {
       // Get accounts
       const escrowAccount = await this.ledgerService.getOrCreatePlatformAccount(
         'ESCROW_HOLDING',
-        'ESCROW',
+        LedgerAccountType.LIABILITY,
         'IDR',
         tx,
       );
 
       const sellerAccount = await this.ledgerService.getOrCreateUserAccount(
         escrow.sellerWallet!.id,
-        'USER_WALLET',
+        LedgerAccountType.ASSET,
         'IDR',
         tx,
       );
 
       const platformFeeAccount = await this.ledgerService.getOrCreatePlatformAccount(
         'PLATFORM_FEES',
-        'REVENUE',
+        LedgerAccountType.REVENUE,
         'IDR',
         tx,
       );
@@ -452,14 +452,14 @@ export class EscrowService {
       // Get accounts
       const escrowAccount = await this.ledgerService.getOrCreatePlatformAccount(
         'ESCROW_HOLDING',
-        'ESCROW',
+        LedgerAccountType.LIABILITY,
         'IDR',
         tx,
       );
 
       const buyerAccount = await this.ledgerService.getOrCreateUserAccount(
         escrow.buyerWallet.id,
-        'USER_WALLET',
+        LedgerAccountType.ASSET,
         'IDR',
         tx,
       );
@@ -605,14 +605,14 @@ export class EscrowService {
       // Get accounts
       const escrowAccount = await this.ledgerService.getOrCreatePlatformAccount(
         'ESCROW_HOLDING',
-        'ESCROW',
+        LedgerAccountType.LIABILITY,
         'IDR',
         tx,
       );
 
       const buyerAccount = await this.ledgerService.getOrCreateUserAccount(
         escrow.buyerWallet.id,
-        'USER_WALLET',
+        LedgerAccountType.ASSET,
         'IDR',
         tx,
       );
@@ -620,7 +620,7 @@ export class EscrowService {
       const sellerAccount = escrow.sellerWallet
         ? await this.ledgerService.getOrCreateUserAccount(
             escrow.sellerWallet.id,
-            'USER_WALLET',
+            LedgerAccountType.ASSET,
             'IDR',
             tx,
           )
@@ -628,7 +628,7 @@ export class EscrowService {
 
       const platformFeeAccount = await this.ledgerService.getOrCreatePlatformAccount(
         'PLATFORM_FEES',
-        'REVENUE',
+        LedgerAccountType.REVENUE,
         'IDR',
         tx,
       );

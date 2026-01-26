@@ -28,22 +28,6 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({ 
-    example: 'John Doe',
-    description: 'Full name (2-100 characters)',
-    minLength: 2,
-    maxLength: 100,
-  })
-  @IsString()
-  @IsNotEmpty({ message: 'Name is required' })
-  @MinLength(2, { message: 'Name must be at least 2 characters' })
-  @MaxLength(100, { message: 'Name must not exceed 100 characters' })
-  @Matches(/^[a-zA-Z\s\-'\.]+$/, { 
-    message: 'Name can only contain letters, spaces, hyphens, apostrophes, and periods' 
-  })
-  @Transform(({ value }) => value?.trim())
-  name: string;
-
-  @ApiProperty({ 
     example: 'johndoe',
     description: 'Username (3-30 characters, alphanumeric and underscore only)',
     minLength: 3,
