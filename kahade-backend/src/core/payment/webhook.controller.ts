@@ -1,10 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, BadRequestException, Logger, RawBodyRequest, Req, Inject } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, BadRequestException, Logger, RawBodyRequest, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { Request } from 'express';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { CacheService } from '@infrastructure/cache/cache.service';
 
 // ============================================================================
 // BANK-GRADE WEBHOOK CONTROLLER
@@ -40,11 +41,12 @@ interface MidtransWebhookPayload {
 @Controller('webhooks')
 export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
-  private readonly processedWebhooks = new Set<string>();
+  private readonly webhookTtlSeconds = 24 * 60 * 60;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {}
 
   @Get('health')
@@ -79,7 +81,9 @@ export class WebhookController {
 
     // Step 2: Check idempotency
     const webhookId = `xendit_invoice_${payload.id}`;
-    if (this.processedWebhooks.has(webhookId)) {
+    const idempotencyKey = `webhook:xendit:invoice:${webhookId}`;
+    const lockAcquired = await this.cacheService.setnx(idempotencyKey, true, this.webhookTtlSeconds);
+    if (!lockAcquired) {
       this.logger.log(`Duplicate webhook ignored: ${webhookId}`);
       return { status: 'duplicate', message: 'Webhook already processed' };
     }
@@ -94,11 +98,11 @@ export class WebhookController {
     try {
       this.logger.log(`Processing Xendit invoice webhook: ${payload.id}, status: ${payload.status}`);
       
-      // Mark as processed
-      this.processedWebhooks.add(webhookId);
-      
       // Process payment based on status
       await this.processXenditPayment(payload);
+
+      // Mark as processed
+      await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
       return { 
         status: 'processed', 
@@ -106,6 +110,7 @@ export class WebhookController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      await this.cacheService.del(idempotencyKey);
       this.logger.error(`Failed to process Xendit webhook: ${error.message}`);
       throw error;
     }
@@ -128,17 +133,24 @@ export class WebhookController {
     }
 
     const webhookId = `xendit_disbursement_${payload.id}`;
-    if (this.processedWebhooks.has(webhookId)) {
+    const idempotencyKey = `webhook:xendit:disbursement:${webhookId}`;
+    const lockAcquired = await this.cacheService.setnx(idempotencyKey, true, this.webhookTtlSeconds);
+    if (!lockAcquired) {
       return { status: 'duplicate' };
     }
 
     this.logger.log(`Processing Xendit disbursement webhook: ${payload.id}`);
-    this.processedWebhooks.add(webhookId);
+    try {
+      // Process withdrawal status update
+      await this.processXenditDisbursement(payload);
 
-    // Process withdrawal status update
-    await this.processXenditDisbursement(payload);
+      await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
-    return { status: 'processed' };
+      return { status: 'processed' };
+    } catch (error) {
+      await this.cacheService.del(idempotencyKey);
+      throw error;
+    }
   }
 
   // ============================================================================
@@ -167,14 +179,21 @@ export class WebhookController {
       serverKey,
     );
 
-    if (payload.signature_key && !this.secureCompare(payload.signature_key, expectedSignature)) {
+    if (!payload.signature_key) {
+      this.logger.warn('Missing Midtrans signature');
+      throw new BadRequestException('Invalid signature');
+    }
+
+    if (!this.secureCompare(payload.signature_key, expectedSignature)) {
       this.logger.warn('Invalid Midtrans signature');
       throw new BadRequestException('Invalid signature');
     }
 
     // Step 2: Check idempotency
     const webhookId = `midtrans_${payload.transaction_id}`;
-    if (this.processedWebhooks.has(webhookId)) {
+    const idempotencyKey = `webhook:midtrans:notification:${webhookId}`;
+    const lockAcquired = await this.cacheService.setnx(idempotencyKey, true, this.webhookTtlSeconds);
+    if (!lockAcquired) {
       return { status: 'duplicate' };
     }
 
@@ -185,12 +204,17 @@ export class WebhookController {
 
     // Step 4: Process
     this.logger.log(`Processing Midtrans notification: ${payload.transaction_id}, status: ${payload.transaction_status}`);
-    this.processedWebhooks.add(webhookId);
+    try {
+      // Process payment
+      await this.processMidtransPayment(payload);
 
-    // Process payment
-    await this.processMidtransPayment(payload);
+      await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
-    return { status: 'processed' };
+      return { status: 'processed' };
+    } catch (error) {
+      await this.cacheService.del(idempotencyKey);
+      throw error;
+    }
   }
 
   // ============================================================================

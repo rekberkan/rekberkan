@@ -13,16 +13,18 @@ export class EmailService {
       port: this.configService.get<number>('email.port'),
       secure: this.configService.get<boolean>('email.secure'),
       auth: {
-        user: this.configService.get<string>('email.auth.user'),
-        pass: this.configService.get<string>('email.auth.pass'),
+        user: this.configService.get<string>('email.user'),
+        pass: this.configService.get<string>('email.password'),
       },
     });
   }
 
   async sendEmail(to: string, subject: string, html: string) {
     try {
+      const fromAddress = this.configService.get<string>('email.from');
+      const fromName = this.configService.get<string>('email.fromName');
       const info = await this.transporter.sendMail({
-        from: this.configService.get<string>('email.from'),
+        from: fromName && fromAddress ? `${fromName} <${fromAddress}>` : fromAddress,
         to,
         subject,
         html,
