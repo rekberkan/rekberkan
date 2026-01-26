@@ -439,4 +439,53 @@ export class DisputeService {
 
     this.logger.log(`Evidence submitted for dispute ${disputeId} by ${userId}`);
   }
+
+  async getMessages(disputeId: string, userId: string) {
+    const dispute = await this.findOne(disputeId, userId);
+
+    const messages = await this.prisma.disputeTimeline.findMany({
+      where: {
+        disputeId: dispute.id,
+        action: 'MESSAGE',
+      },
+      include: {
+        user: { select: { id: true, username: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return messages.map((message: any) => ({
+      id: message.id,
+      message: message.details?.message,
+      createdAt: message.createdAt,
+      sender: message.user,
+    }));
+  }
+
+  async addMessage(disputeId: string, userId: string, message: string) {
+    const dispute = await this.findOne(disputeId, userId);
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: dispute.orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.initiatorId !== userId && order.counterpartyId !== userId) {
+      throw new ForbiddenException('Not authorized to message in this dispute');
+    }
+
+    await this.prisma.disputeTimeline.create({
+      data: {
+        disputeId,
+        action: 'MESSAGE',
+        performedBy: userId,
+        details: { message },
+      },
+    });
+
+    return { message: 'Message sent' };
+  }
 }

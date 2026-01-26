@@ -34,6 +34,14 @@ export class NotificationController {
     return { count };
   }
 
+  @Get('unread-count')
+  @ApiOperation({ summary: 'Get unread notifications count (legacy route)' })
+  @ApiResponse({ status: 200, description: 'Returns count' })
+  async countUnreadLegacy(@CurrentUser('id') userId: string) {
+    const count = await this.notificationService.countUnread(userId);
+    return { count };
+  }
+
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiResponse({ status: 200, description: 'Notification marked as read' })
@@ -54,5 +62,13 @@ export class NotificationController {
   async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
     await this.notificationService.delete(id, userId);
     return { message: 'Notification deleted successfully' };
+  }
+
+  @Delete()
+  @ApiOperation({ summary: 'Delete all notifications' })
+  @ApiResponse({ status: 200, description: 'Notifications deleted' })
+  async deleteAll(@CurrentUser('id') userId: string) {
+    const result = await this.notificationService.deleteAll(userId);
+    return { message: 'Notifications deleted successfully', ...result };
   }
 }
