@@ -220,6 +220,31 @@ export class TokenBlacklistService {
   }
 
   /**
+   * BANK-GRADE: Revoke refresh token by hash
+   */
+  async revokeRefreshTokenHash(tokenHash: string, reason: string = 'revoked'): Promise<void> {
+    if (this.redis) {
+      try {
+        const data = await this.redis.get(`refresh:${tokenHash}`);
+        if (data) {
+          const parsed = JSON.parse(data);
+          await this.redis.srem(`user_tokens:${parsed.userId}`, tokenHash);
+        }
+        await this.redis.del(`refresh:${tokenHash}`);
+        return;
+      } catch (error) {
+        this.logger.error(`Redis error revoking refresh token by hash: ${error.message}`);
+      }
+    }
+
+    const entry = this.refreshTokens.get(tokenHash);
+    if (entry) {
+      entry.revokedAt = Date.now();
+      entry.revokeReason = reason;
+    }
+  }
+
+  /**
    * BANK-GRADE: Revoke all refresh tokens for a user
    */
   async revokeAllUserTokens(userId: string, reason: string = 'logout_all'): Promise<number> {

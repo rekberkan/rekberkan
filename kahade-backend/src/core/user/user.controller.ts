@@ -10,6 +10,9 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Express } from 'express';
 
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 @ApiTags('user')
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -49,12 +52,29 @@ export class UserController {
   @ApiOperation({ summary: 'Upload KYC documents' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'KYC documents uploaded' })
-  @UseInterceptors(FileInterceptor('document'))
+  @UseInterceptors(FileInterceptor('document', {
+    limits: { fileSize: MAX_FILE_SIZE },
+    fileFilter: (req, file, callback) => {
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        return callback(new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF'), false);
+      }
+      callback(null, true);
+    },
+  }))
   async uploadKYC(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadKycDto,
   ) {
+    if (!file) {
+      throw new BadRequestException('Document file is required');
+    }
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF');
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      throw new BadRequestException('File size exceeds 5MB limit');
+    }
     return this.userService.uploadKYCDocument(userId, file, dto);
   }
 

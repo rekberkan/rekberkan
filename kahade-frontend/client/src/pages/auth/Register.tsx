@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, User, Phone, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Register() {
-  const [, setLocation] = useLocation();
   const { register, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -59,7 +58,6 @@ export default function Register() {
       toast.success('Registrasi berhasil!', {
         description: 'Silakan cek email Anda untuk verifikasi.'
       });
-      setLocation('/app');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Silakan coba lagi.';
       toast.error('Registrasi gagal', { description: message });

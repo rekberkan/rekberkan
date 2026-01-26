@@ -321,10 +321,19 @@ export class XenditWebhookController {
 
     // Xendit uses a simple token comparison
     // For production, use timing-safe comparison to prevent timing attacks
-    return crypto.timingSafeEqual(
-      Buffer.from(callbackToken),
-      Buffer.from(this.webhookToken),
-    );
+    if (callbackToken.length !== this.webhookToken.length) {
+      return false;
+    }
+
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(callbackToken),
+        Buffer.from(this.webhookToken),
+      );
+    } catch (error) {
+      this.logger.error(`Callback token comparison error: ${error.message}`);
+      return false;
+    }
   }
 
   /**
@@ -340,10 +349,19 @@ export class XenditWebhookController {
       .update(payload)
       .digest('hex');
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature),
-    );
+    if (signature.length !== expectedSignature.length) {
+      return false;
+    }
+
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature),
+      );
+    } catch (error) {
+      this.logger.error(`HMAC comparison error: ${error.message}`);
+      return false;
+    }
   }
 
   // ============================================================================

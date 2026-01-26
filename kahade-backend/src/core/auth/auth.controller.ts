@@ -1,11 +1,12 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Request, Get, Ip, Headers } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Request, Get, Ip, Headers, Delete, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto, ForgotPasswordDto, ChangePasswordDto } from './dto/reset-password.dto';
+import { MfaVerifyDto, MfaDisableDto } from './dto/mfa-verify.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
@@ -53,7 +54,7 @@ export class AuthController {
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.authService.login(loginDto);
+    return this.authService.login(loginDto, ip, userAgent);
   }
 
   // ============================================================================
@@ -183,5 +184,84 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async resendVerification(@Body() dto: { email: string }) {
     return this.authService.resendVerificationEmail(dto.email);
+  }
+
+  // ============================================================================
+  // MFA / 2FA
+  // ============================================================================
+
+  @Post('2fa/enable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Initiate MFA setup' })
+  @ApiResponse({ status: 200, description: 'Returns MFA setup details' })
+  async setupMfa(@CurrentUser('id') userId: string) {
+    return this.authService.setupMfa(userId);
+  }
+
+  @Post('2fa/verify')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Verify MFA and enable' })
+  @ApiResponse({ status: 200, description: 'MFA enabled' })
+  async verifyMfa(
+    @CurrentUser('id') userId: string,
+    @Body() dto: MfaVerifyDto,
+  ) {
+    return this.authService.enableMfa(userId, dto.code);
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Disable MFA' })
+  @ApiResponse({ status: 200, description: 'MFA disabled' })
+  async disableMfa(
+    @CurrentUser('id') userId: string,
+    @Body() dto: MfaDisableDto,
+  ) {
+    return this.authService.disableMfa(userId, dto.password, dto.code);
+  }
+
+  // ============================================================================
+  // SESSIONS
+  // ============================================================================
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'List active sessions' })
+  @ApiResponse({ status: 200, description: 'Returns active sessions' })
+  async getSessions(@CurrentUser('id') userId: string) {
+    const sessions = await this.authService.listSessions(userId);
+    return sessions.map((session) => ({
+      id: session.id,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      userAgent: session.userAgent,
+      ipAddress: session.ipAddress,
+      revokedAt: session.revokedAt,
+    }));
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Revoke a session' })
+  @ApiResponse({ status: 200, description: 'Session revoked' })
+  async revokeSession(
+    @CurrentUser('id') userId: string,
+    @Param('id') sessionId: string,
+  ) {
+    return this.authService.revokeSession(userId, sessionId);
+  }
+
+  @Delete('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Revoke all sessions' })
+  @ApiResponse({ status: 200, description: 'All sessions revoked' })
+  async revokeAllSessions(@CurrentUser('id') userId: string) {
+    return this.authService.revokeAllSessions(userId);
   }
 }

@@ -32,7 +32,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('app.port', 3000);
+  const port = configService.get<number>('app.port', 3001);
   const apiPrefix = configService.get<string>('app.apiPrefix', 'api');
 
   // ============================================================================
@@ -78,6 +78,7 @@ async function bootstrap() {
 
   // BANK-GRADE: CORS configuration
   const corsOrigin = configService.get<string>('app.corsOrigin');
+  const corsCredentials = configService.get<boolean>('app.corsCredentials', true);
   
   // Validate CORS in production
   if (isProduction && (!corsOrigin || corsOrigin === '*')) {
@@ -95,7 +96,7 @@ async function bootstrap() {
         return;
       }
 
-      const allowedOrigins = (corsOrigin || 'http://localhost:3001')
+      const allowedOrigins = (corsOrigin || 'http://localhost:5000,http://localhost:5001,http://localhost:5002')
         .split(',')
         .map(o => o.trim());
 
@@ -106,7 +107,7 @@ async function bootstrap() {
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true,
+    credentials: corsCredentials,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -189,7 +190,7 @@ async function bootstrap() {
   // SWAGGER DOCUMENTATION (Non-production only)
   // ============================================================================
 
-  const enableSwagger = configService.get<boolean>('app.enableSwagger', true);
+  const enableSwagger = configService.get<boolean>('app.enableSwagger', false);
   
   if (isProduction && enableSwagger) {
     logger.warn(
