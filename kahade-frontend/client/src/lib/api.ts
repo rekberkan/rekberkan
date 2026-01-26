@@ -89,6 +89,9 @@ api.interceptors.response.use(
         originalRequest._retry = true;
         
         try {
+          if (!localStorage.getItem(REFRESH_TOKEN_KEY)) {
+            throw new Error('Refresh token missing');
+          }
           const refreshResponse = await authApi.refreshToken();
           const newToken = refreshResponse.data.accessToken || refreshResponse.data.token;
           const newRefreshToken = refreshResponse.data.refreshToken;
@@ -182,7 +185,10 @@ export const authApi = {
   
   refreshToken: () => {
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    return api.post('/auth/refresh', refreshToken ? { refreshToken } : {});
+    if (!refreshToken) {
+      return Promise.reject(new Error('Refresh token missing'));
+    }
+    return api.post('/auth/refresh', { refreshToken });
   },
   
   // 2FA
