@@ -34,6 +34,8 @@ export interface IUser {
   reputationScore: number;
   totalTransactions: number;
   isAdmin: boolean;
+  avatarUrl?: string | null;
+  notificationSettings?: Record<string, boolean> | null;
   deletedAt?: Date;
   deletedByUserId?: string;
   createdAt: Date;
@@ -49,6 +51,8 @@ export interface IUserResponse {
   reputationScore: number;
   totalTransactions: number;
   isAdmin: boolean;
+  avatarUrl?: string | null;
+  notificationSettings?: Record<string, boolean> | null;
   createdAt: Date;
   updatedAt: Date;
 }

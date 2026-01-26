@@ -21,6 +21,8 @@ export interface IUpdateUser {
   lastLoginAt?: Date;
   failedLoginCount?: number;
   lockedUntil?: Date;
+  avatarUrl?: string | null;
+  notificationSettings?: Record<string, boolean> | null;
   // Password management
   passwordHash?: string;
   passwordUpdatedAt?: Date;

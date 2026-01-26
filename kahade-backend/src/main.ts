@@ -118,8 +118,9 @@ async function bootstrap() {
       'X-Idempotency-Key',
       'X-MFA-Token',
       'X-Request-ID',
+      'X-XSRF-Token',
     ],
-    exposedHeaders: ['X-Request-ID', 'X-RateLimit-Remaining'],
+    exposedHeaders: ['X-Request-ID', 'X-RateLimit-Remaining', 'X-CSRF-Token'],
     maxAge: 86400, // 24 hours
   });
 

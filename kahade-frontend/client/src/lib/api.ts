@@ -6,7 +6,8 @@
  */
 
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { APP_URLS, COOKIE_CONFIG } from '@/config/app.config';
+import { APP_URLS } from '@/config/app.config';
+import { SecureStorage } from '@/lib/secure-storage';
 
 // Base API URL - from centralized config
 const API_BASE_URL = APP_URLS.api;
@@ -17,6 +18,7 @@ const REQUEST_TIMEOUT = 30000;
 // Token storage keys
 const TOKEN_KEY = 'kahade_token';
 const USER_KEY = 'kahade_user';
+const REFRESH_TOKEN_KEY = 'kahade_refresh_token';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -42,6 +44,11 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    const csrfToken = SecureStorage.getCsrfToken();
+    if (csrfToken) {
+      config.headers['x-xsrf-token'] = csrfToken;
+    }
+
     // Add request ID for tracing
     config.headers['X-Request-ID'] = generateRequestId();
 
@@ -65,7 +72,13 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    const csrfToken = response.headers['x-csrf-token'];
+    if (csrfToken) {
+      SecureStorage.setCsrfToken(csrfToken);
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
@@ -76,13 +89,20 @@ api.interceptors.response.use(
         originalRequest._retry = true;
         
         try {
+          if (!localStorage.getItem(REFRESH_TOKEN_KEY)) {
+            throw new Error('Refresh token missing');
+          }
           const refreshResponse = await authApi.refreshToken();
           const newToken = refreshResponse.data.accessToken || refreshResponse.data.token;
+          const newRefreshToken = refreshResponse.data.refreshToken;
           
           if (newToken) {
             localStorage.setItem(TOKEN_KEY, newToken);
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            }
+            if (newRefreshToken) {
+              localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
             }
             return api(originalRequest);
           }
@@ -120,6 +140,7 @@ api.interceptors.response.use(
 function clearAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 function redirectToLogin(): void {
@@ -155,11 +176,20 @@ export const authApi = {
   
   me: () => api.get('/auth/me'),
   
-  logout: () => api.post('/auth/logout'),
+  logout: () => {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    return api.post('/auth/logout', refreshToken ? { refreshToken } : {});
+  },
   
   logoutAll: () => api.post('/auth/logout-all'),
   
-  refreshToken: () => api.post('/auth/refresh'),
+  refreshToken: () => {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
+      return Promise.reject(new Error('Refresh token missing'));
+    }
+    return api.post('/auth/refresh', { refreshToken });
+  },
   
   // 2FA
   enable2FA: () => api.post('/auth/2fa/enable'),
@@ -180,16 +210,16 @@ export const authApi = {
 
 // User API
 export const userApi = {
-  getProfile: () => api.get('/users/me'),
+  getProfile: () => api.get('/user/profile'),
   
   updateProfile: (data: { username?: string; phone?: string }) =>
-    api.patch('/users/me', data),
+    api.patch('/user/profile', data),
   
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    api.post('/users/me/change-password', data),
+    api.post('/user/change-password', data),
   
   uploadAvatar: (data: FormData) =>
-    api.post('/users/me/avatar', data, {
+    api.post('/user/avatar', data, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   
@@ -200,14 +230,14 @@ export const userApi = {
   
   getKYCStatus: () => api.get('/kyc/status'),
   
-  getStats: () => api.get('/users/me/stats'),
+  getStats: () => api.get('/user/stats'),
   
   updateNotificationSettings: (data: {
     email?: boolean;
     push?: boolean;
     transaction?: boolean;
     marketing?: boolean;
-  }) => api.patch('/users/me/notification-settings', data),
+  }) => api.patch('/user/notification-settings', data),
   
   getPublicProfile: (userId: string) => api.get(`/users/${userId}`),
   
@@ -288,7 +318,7 @@ export const notificationApi = {
   list: (params?: { read?: boolean; page?: number; limit?: number }) =>
     api.get('/notifications', { params }),
   
-  getUnreadCount: () => api.get('/notifications/unread-count'),
+  getUnreadCount: () => api.get('/notifications/unread/count'),
   
   markRead: (id: string) => api.patch(`/notifications/${id}/read`),
   
@@ -317,10 +347,8 @@ export const disputeApi = {
   respond: (id: string, response: string) =>
     api.post(`/disputes/${id}/respond`, { response }),
   
-  addEvidence: (id: string, data: FormData) =>
-    api.post(`/disputes/${id}/evidence`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  addEvidence: (id: string, data: { fileUrls: string[]; description: string }) =>
+    api.post(`/disputes/${id}/evidence`, data),
   
   addMessage: (id: string, message: string) =>
     api.post(`/disputes/${id}/messages`, { message }),

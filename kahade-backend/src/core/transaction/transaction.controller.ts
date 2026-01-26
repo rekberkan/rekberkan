@@ -276,4 +276,36 @@ export class TransactionController {
     }
     return this.transactionService.sendMessage(id, userId, message.trim());
   }
+
+  // ============================================================================
+  // TRANSACTION RATING
+  // ============================================================================
+
+  @Post(':id/rating')
+  @Throttle({ default: { limit: 10, ttl: 3600000 } })
+  @ApiOperation({ summary: 'Rate completed transaction' })
+  @ApiParam({ name: 'id', description: 'Transaction ID' })
+  @ApiBody({
+    schema: {
+      properties: {
+        score: { type: 'number', minimum: 1, maximum: 5 },
+        comment: { type: 'string', maxLength: 1000 },
+      },
+      required: ['score'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Rating submitted' })
+  async rateTransaction(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() data: { score: number; comment?: string },
+  ) {
+    if (!data.score || data.score < 1 || data.score > 5) {
+      throw new BadRequestException('Score must be between 1 and 5');
+    }
+    if (data.comment && data.comment.length > 1000) {
+      throw new BadRequestException('Comment must not exceed 1000 characters');
+    }
+    return this.transactionService.rate(id, userId, data);
+  }
 }

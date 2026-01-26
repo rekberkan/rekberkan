@@ -18,6 +18,8 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { DisputeService } from '../dispute/dispute.service';
+import { DisputeDecision } from '@common/shims/prisma-types.shim';
 
 // ============================================================================
 // ADMIN CONTROLLER - Production Ready
@@ -30,7 +32,10 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@ne
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly disputeService: DisputeService,
+  ) {}
 
   // ============================================================================
   // DASHBOARD
@@ -614,55 +619,72 @@ export class AdminController {
   async resolveDispute(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() dto: { winner: 'buyer' | 'seller' | 'split'; resolution: string },
+    @Body()
+    dto: {
+      winner?: 'buyer' | 'seller' | 'split';
+      resolution?: string;
+      decision?: DisputeDecision;
+      resolutionNotes?: string;
+      buyerRefundMinor?: string;
+      sellerAmountMinor?: string;
+    },
   ) {
-    if (!dto.resolution) {
+    const resolutionNotes = dto.resolutionNotes || dto.resolution;
+
+    if (!resolutionNotes) {
       throw new BadRequestException('Resolution details required');
     }
 
-    const dispute = await (this.prisma as any).dispute.findUnique({
-      where: { id },
-      include: { order: true },
-    });
+    let decision = dto.decision;
 
-    if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+    if (!decision) {
+      if (dto.winner === 'buyer') {
+        decision = DisputeDecision.REFUND_ALL_TO_BUYER;
+      } else if (dto.winner === 'seller') {
+        decision = DisputeDecision.RELEASE_ALL_TO_SELLER;
+      } else {
+        decision = DisputeDecision.SPLIT_SETTLEMENT;
+      }
     }
 
-    let decision = 'SPLIT_SETTLEMENT';
-    if (dto.winner === 'buyer') {
-      decision = 'REFUND_ALL_TO_BUYER';
-    } else if (dto.winner === 'seller') {
-      decision = 'RELEASE_ALL_TO_SELLER';
-    }
-
-    await (this.prisma as any).dispute.update({
-      where: { id },
-      data: {
-        status: 'CLOSED',
-        decision,
-        resolution: dto.resolution,
-        resolvedAt: new Date(),
-        resolvedBy: adminId,
-      },
-    });
-
-    // Update order status
-    const orderStatus = dto.winner === 'buyer' ? 'REFUNDED' : 'COMPLETED';
-    await (this.prisma as any).order.update({
-      where: { id: dispute.orderId },
-      data: { status: orderStatus },
+    await this.disputeService.resolve(id, adminId, {
+      decision,
+      resolutionNotes,
+      buyerRefundMinor: dto.buyerRefundMinor,
+      sellerAmountMinor: dto.sellerAmountMinor,
     });
 
     await this.createAuditLog(adminId, 'UPDATE', 'Dispute', id, {
       action: 'RESOLVED',
-      winner: dto.winner,
-      resolution: dto.resolution,
+      decision,
+      resolutionNotes,
     });
 
     this.logger.log(`Dispute ${id} resolved by admin ${adminId}`);
 
     return { message: 'Dispute resolved successfully' };
+  }
+
+  @Post('disputes/:id/assign')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Assign arbitrator to dispute' })
+  async assignArbitrator(
+    @Param('id') id: string,
+    @CurrentUser('id') adminId: string,
+    @Body('arbitratorId') arbitratorId: string,
+  ) {
+    if (!arbitratorId) {
+      throw new BadRequestException('Arbitrator ID is required');
+    }
+
+    await this.disputeService.assignArbitrator(id, adminId, arbitratorId);
+
+    await this.createAuditLog(adminId, 'UPDATE', 'Dispute', id, {
+      action: 'ARBITRATOR_ASSIGNED',
+      arbitratorId,
+    });
+
+    return { message: 'Arbitrator assigned successfully' };
   }
 
   // ============================================================================
