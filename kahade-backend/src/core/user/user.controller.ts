@@ -9,6 +9,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Express } from 'express';
+import { memoryStorage } from 'multer';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -53,6 +54,7 @@ export class UserController {
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'KYC documents uploaded' })
   @UseInterceptors(FileInterceptor('document', {
+    storage: memoryStorage(),
     limits: { fileSize: MAX_FILE_SIZE },
     fileFilter: (req, file, callback) => {
       if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
@@ -82,7 +84,7 @@ export class UserController {
   @ApiOperation({ summary: 'Upload user avatar' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 200, description: 'Avatar updated successfully' })
-  @UseInterceptors(FileInterceptor('avatar'))
+  @UseInterceptors(FileInterceptor('avatar', { storage: memoryStorage() }))
   async uploadAvatar(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,

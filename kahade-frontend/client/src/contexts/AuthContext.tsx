@@ -130,8 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (appMode === 'landing') {
         // After login on landing, redirect to appropriate app
         if (canAccessAdmin(mappedUser)) {
-          // Admin users can choose, default to app
-          navigateToApp();
+          navigateToAdmin();
         } else {
           navigateToApp();
         }

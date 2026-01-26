@@ -26,7 +26,10 @@ export class WebhookValidatorService {
     grossAmount: string,
     signatureKey: string,
   ): boolean {
-    const serverKey = this.configService.get<string>('midtrans.serverKey');
+    const serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY');
+    if (!serverKey || !signatureKey) {
+      return false;
+    }
     
     const expectedSignature = crypto
       .createHash('sha512')
@@ -43,6 +46,9 @@ export class WebhookValidatorService {
     callbackToken: string,
     expectedToken: string,
   ): boolean {
+    if (!callbackToken || !expectedToken) {
+      return false;
+    }
     return callbackToken === expectedToken;
   }
 
@@ -125,13 +131,16 @@ export class WebhookValidatorService {
 
       case 'xendit':
         const expectedToken = this.configService.get<string>(
-          'xendit.callbackToken',
+          'XENDIT_CALLBACK_TOKEN',
         ) || '';
         isValid = this.validateXenditSignature(signature, expectedToken);
         break;
 
       case 'custom':
-        const secret = this.configService.get<string>('webhook.secret') || '';
+        const secret =
+          this.configService.get<string>('WEBHOOK_SECRET') ||
+          this.configService.get<string>('payment.secret') ||
+          '';
         const payload = JSON.stringify(body);
         isValid = this.validateHMACSignature(payload, signature, secret);
         break;

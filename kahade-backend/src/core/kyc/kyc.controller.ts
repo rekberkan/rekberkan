@@ -19,6 +19,7 @@ import { Express } from 'express';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { memoryStorage } from 'multer';
 
 // ============================================================================
 // KYC CONTROLLER - Production Ready
@@ -106,6 +107,7 @@ export class KycController {
 
   @Post('submit')
   @UseInterceptors(FileInterceptor('document', {
+    storage: memoryStorage(),
     limits: { fileSize: MAX_FILE_SIZE },
     fileFilter: (req, file, callback) => {
       if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
