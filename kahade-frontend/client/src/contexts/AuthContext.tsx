@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       localStorage.removeItem('kahade_token');
       localStorage.removeItem('kahade_user');
+      localStorage.removeItem('kahade_refresh_token');
       setUser(null);
       throw error;
     }
@@ -107,10 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authApi.login({ email, password });
-      const { accessToken, token, user: userData } = response.data;
+      const { accessToken, token, refreshToken, user: userData } = response.data;
       
       const authToken = accessToken || token;
       localStorage.setItem('kahade_token', authToken);
+      if (refreshToken) {
+        localStorage.setItem('kahade_refresh_token', refreshToken);
+      }
       
       let mappedUser: User;
       if (userData) {
@@ -137,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       localStorage.removeItem('kahade_token');
       localStorage.removeItem('kahade_user');
+      localStorage.removeItem('kahade_refresh_token');
       throw new Error(error.response?.data?.message || 'Login failed');
     } finally {
       setIsLoading(false);
@@ -152,10 +157,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: data.password,
       });
       
-      const { accessToken, token, user: userData } = response.data;
+      const { accessToken, token, refreshToken, user: userData } = response.data;
       
       if (accessToken || token) {
         localStorage.setItem('kahade_token', accessToken || token);
+        if (refreshToken) {
+          localStorage.setItem('kahade_refresh_token', refreshToken);
+        }
         
         if (userData) {
           const mappedUser = mapUserData(userData, data.username);
@@ -187,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem('kahade_token');
       localStorage.removeItem('kahade_user');
+      localStorage.removeItem('kahade_refresh_token');
       setUser(null);
       
       // Redirect to landing page after logout

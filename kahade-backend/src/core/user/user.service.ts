@@ -6,6 +6,8 @@ import { IUserResponse, KYCStatus } from '@common/interfaces/user.interface';
 import { User } from '@common/shims/prisma-types.shim';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { UploadKycDto } from './dto/upload-kyc.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -16,6 +18,7 @@ import * as crypto from 'crypto';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+  private readonly AVATAR_UPLOAD_DIR = process.env.AVATAR_UPLOAD_DEST || './uploads/avatars';
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -195,6 +198,75 @@ export class UserService {
     return {
       message: 'KYC document uploaded successfully',
       status: 'PENDING',
+    };
+  }
+
+  // ============================================================================
+  // PROFILE & SETTINGS
+  // ============================================================================
+
+  async updateNotificationSettings(
+    userId: string,
+    settings: Record<string, boolean>,
+  ): Promise<IUserResponse> {
+    const updated = await this.userRepository.update(userId, {
+      notificationSettings: settings,
+    });
+    return this.sanitizeUser(updated);
+  }
+
+  async updateAvatar(userId: string, file: Express.Multer.File): Promise<IUserResponse> {
+    if (!fs.existsSync(this.AVATAR_UPLOAD_DIR)) {
+      fs.mkdirSync(this.AVATAR_UPLOAD_DIR, { recursive: true });
+    }
+
+    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const fileName = `${Date.now()}_${fileHash.substring(0, 8)}.${fileExt}`;
+    const filePath = path.join(this.AVATAR_UPLOAD_DIR, fileName);
+    const relativePath = `/uploads/avatars/${fileName}`;
+
+    fs.writeFileSync(filePath, file.buffer);
+
+    const updated = await this.userRepository.update(userId, {
+      avatarUrl: relativePath,
+    });
+
+    this.logger.log(`Avatar updated for user ${userId}`);
+
+    return this.sanitizeUser(updated);
+  }
+
+  async getStats(userId: string): Promise<{
+    totalTransactions: number;
+    completedTransactions: number;
+    disputeCount: number;
+  }> {
+    const where = {
+      deletedAt: null,
+      OR: [{ initiatorId: userId }, { counterpartyId: userId }],
+    };
+
+    const [totalTransactions, completedTransactions, disputeCount] = await Promise.all([
+      (this.prisma as any).order.count({ where }),
+      (this.prisma as any).order.count({
+        where: {
+          ...where,
+          status: 'COMPLETED',
+        },
+      }),
+      (this.prisma as any).order.count({
+        where: {
+          ...where,
+          status: 'DISPUTED',
+        },
+      }),
+    ]);
+
+    return {
+      totalTransactions,
+      completedTransactions,
+      disputeCount,
     };
   }
 

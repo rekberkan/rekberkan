@@ -35,6 +35,8 @@ model User {
   reputationScore   Decimal   @default(0) @db.Decimal(5, 2)
   totalTransactions Int       @default(0) @map("total_transactions")
   isAdmin           Boolean   @default(false) @map("is_admin")
+  avatarUrl         String?   @map("avatar_url")
+  notificationSettings Json?  @map("notification_settings")
 
   // Soft delete with FK to admin user
   deletedAt         DateTime? @map("deleted_at") @db.Timestamptz

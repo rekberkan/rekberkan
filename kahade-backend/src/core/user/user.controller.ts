@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { UserService } from './user.service';
@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Roles } from '@common/decorators/roles.decorator';
+import { Express } from 'express';
 
 @ApiTags('user')
 @Controller('user')
@@ -55,6 +56,56 @@ export class UserController {
     @Body() dto: UploadKycDto,
   ) {
     return this.userService.uploadKYCDocument(userId, file, dto);
+  }
+
+  @Post('avatar')
+  @ApiOperation({ summary: 'Upload user avatar' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 200, description: 'Avatar updated successfully' })
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Avatar file is required');
+    }
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('Avatar must be an image');
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('Avatar file size must not exceed 5MB');
+    }
+
+    return this.userService.updateAvatar(userId, file);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get user statistics' })
+  @ApiResponse({ status: 200, description: 'Returns user statistics' })
+  async getStats(@CurrentUser('id') userId: string) {
+    return this.userService.getStats(userId);
+  }
+
+  @Patch('notification-settings')
+  @ApiOperation({ summary: 'Update notification settings' })
+  @ApiResponse({ status: 200, description: 'Notification settings updated' })
+  async updateNotificationSettings(
+    @CurrentUser('id') userId: string,
+    @Body()
+    settings: {
+      email?: boolean;
+      push?: boolean;
+      transaction?: boolean;
+      marketing?: boolean;
+    },
+  ) {
+    return this.userService.updateNotificationSettings(userId, {
+      email: !!settings.email,
+      push: !!settings.push,
+      transaction: !!settings.transaction,
+      marketing: !!settings.marketing,
+    });
   }
 
   @Get(':id/ratings')

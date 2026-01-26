@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DisputeService, CreateDisputeDto as ServiceCreateDisputeDto, ResolveDisputeDto as ServiceResolveDisputeDto } from './dispute.service';
 import { CreateDisputeDto } from './dto/create-dispute.dto';
@@ -44,6 +44,67 @@ export class DisputeController {
   @ApiResponse({ status: 404, description: 'Dispute not found' })
   async findOne(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.disputeService.findOne(id, userId);
+  }
+
+  @Post(':id/respond')
+  @ApiOperation({ summary: 'Respond to dispute (counterparty)' })
+  @ApiResponse({ status: 200, description: 'Dispute responded' })
+  async respond(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('response') response: string,
+  ) {
+    if (!response || response.trim().length < 5) {
+      throw new BadRequestException('Response must be at least 5 characters');
+    }
+    return this.disputeService.respond(id, userId, response.trim());
+  }
+
+  @Post(':id/evidence')
+  @ApiOperation({ summary: 'Submit dispute evidence' })
+  @ApiResponse({ status: 200, description: 'Evidence submitted' })
+  async submitEvidence(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body()
+    body: {
+      fileUrls: string[];
+      description: string;
+    },
+  ) {
+    if (!body.fileUrls || body.fileUrls.length === 0) {
+      throw new BadRequestException('Evidence file URLs are required');
+    }
+    if (!body.description || body.description.trim().length < 10) {
+      throw new BadRequestException('Evidence description must be at least 10 characters');
+    }
+
+    await this.disputeService.submitEvidence(id, userId, body.fileUrls, body.description.trim());
+    return { message: 'Evidence submitted successfully' };
+  }
+
+  @Get(':id/messages')
+  @ApiOperation({ summary: 'Get dispute messages' })
+  @ApiResponse({ status: 200, description: 'Returns dispute messages' })
+  async getMessages(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.disputeService.getMessages(id, userId);
+  }
+
+  @Post(':id/messages')
+  @ApiOperation({ summary: 'Add dispute message' })
+  @ApiResponse({ status: 201, description: 'Message sent' })
+  async addMessage(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('message') message: string,
+  ) {
+    if (!message || message.trim().length === 0) {
+      throw new BadRequestException('Message cannot be empty');
+    }
+    if (message.length > 1000) {
+      throw new BadRequestException('Message must not exceed 1000 characters');
+    }
+    return this.disputeService.addMessage(id, userId, message.trim());
   }
 
   @Put(':id/resolve')
