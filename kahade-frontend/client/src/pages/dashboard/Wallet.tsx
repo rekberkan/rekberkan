@@ -1,13 +1,14 @@
 /*
  * KAHADE WALLET PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Wallet as WalletIcon, ArrowUpRight, ArrowDownRight, Plus, 
-  CreditCard, Building2, Smartphone, History, Loader2
-} from 'lucide-react';
+  CreditCard, Bank, DeviceMobile, ClockCounterClockwise, Spinner
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,22 +50,22 @@ interface WalletTransaction {
   referenceId?: string;
 }
 
-interface Bank {
+interface BankInfo {
   code: string;
   name: string;
   logo?: string;
 }
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'IDR',
+    currency: 'USD',
     minimumFractionDigits: 0
   }).format(amount);
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('id-ID', {
+  return new Date(dateString).toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -76,7 +77,7 @@ const formatDate = (dateString: string) => {
 export default function Wallet() {
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [banks, setBanks] = useState<Bank[]>([]);
+  const [banks, setBanks] = useState<BankInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
@@ -105,15 +106,15 @@ export default function Wallet() {
       setBanks(banksRes.data.banks || banksRes.data || []);
     } catch (error) {
       console.error('Failed to fetch wallet data:', error);
-      toast.error('Gagal memuat data wallet');
+      toast.error('Failed to load wallet data');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleTopUp = async () => {
-    if (!topUpAmount || parseInt(topUpAmount) < 10000) {
-      toast.error('Minimal top up Rp 10.000');
+    if (!topUpAmount || parseInt(topUpAmount) < 10) {
+      toast.error('Minimum top up is $10');
       return;
     }
 
@@ -124,11 +125,10 @@ export default function Wallet() {
         method: topUpMethod,
       });
 
-      toast.success('Top up berhasil diproses!', {
-        description: 'Silakan selesaikan pembayaran.',
+      toast.success('Top up processed!', {
+        description: 'Please complete the payment.',
       });
 
-      // If there's a payment URL, redirect to it
       if (response.data.paymentUrl) {
         window.open(response.data.paymentUrl, '_blank');
       }
@@ -137,25 +137,25 @@ export default function Wallet() {
       setTopUpAmount('');
       fetchWalletData();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memproses top up');
+      toast.error(error.response?.data?.message || 'Failed to process top up');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || parseInt(withdrawAmount) < 50000) {
-      toast.error('Minimal penarikan Rp 50.000');
+    if (!withdrawAmount || parseInt(withdrawAmount) < 50) {
+      toast.error('Minimum withdrawal is $50');
       return;
     }
 
     if (!selectedBank || !accountNumber || !accountName) {
-      toast.error('Lengkapi data rekening bank');
+      toast.error('Please complete bank account details');
       return;
     }
 
     if (balance && parseInt(withdrawAmount) > balance.available) {
-      toast.error('Saldo tidak mencukupi');
+      toast.error('Insufficient balance');
       return;
     }
 
@@ -168,8 +168,8 @@ export default function Wallet() {
         accountName,
       });
 
-      toast.success('Penarikan diproses!', {
-        description: 'Dana akan masuk dalam 1-3 hari kerja.',
+      toast.success('Withdrawal processed!', {
+        description: 'Funds will arrive in 1-3 business days.',
       });
 
       setIsWithdrawOpen(false);
@@ -179,13 +179,13 @@ export default function Wallet() {
       setAccountName('');
       fetchWalletData();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memproses penarikan');
+      toast.error(error.response?.data?.message || 'Failed to process withdrawal');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const quickAmounts = [100000, 250000, 500000, 1000000];
+  const quickAmounts = [100, 250, 500, 1000];
 
   const filterTransactions = (type?: string) => {
     if (!type || type === 'all') return transactions;
@@ -198,16 +198,16 @@ export default function Wallet() {
 
   if (isLoading) {
     return (
-      <DashboardLayout title="Wallet" subtitle="Memuat...">
+      <DashboardLayout title="Wallet" subtitle="Loading...">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Wallet" subtitle="Kelola saldo dan transaksi keuangan Anda">
+    <DashboardLayout title="Wallet" subtitle="Manage your balance and transactions">
       <div className="space-y-6">
         {/* Balance Cards */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -218,39 +218,39 @@ export default function Wallet() {
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Saldo Tersedia</p>
-                <p className="text-3xl font-display font-bold gradient-text">
+                <p className="text-sm text-muted-foreground mb-1">Available Balance</p>
+                <p className="text-3xl font-bold gradient-text">
                   {formatCurrency(balance?.available || 0)}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <WalletIcon className="w-6 h-6 text-accent" />
+                <WalletIcon className="w-6 h-6 text-accent" weight="duotone" />
               </div>
             </div>
             <div className="flex gap-3">
               <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
                 <DialogTrigger asChild>
                   <Button className="btn-accent flex-1">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-2" weight="bold" />
                     Top Up
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Top Up Saldo</DialogTitle>
+                    <DialogTitle>Top Up Balance</DialogTitle>
                     <DialogDescription>
-                      Pilih nominal dan metode pembayaran
+                      Choose amount and payment method
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label>Nominal</Label>
+                      <Label>Amount</Label>
                       <Input
                         type="number"
                         value={topUpAmount}
                         onChange={(e) => setTopUpAmount(e.target.value)}
-                        placeholder="Masukkan nominal"
-                        min="10000"
+                        placeholder="Enter amount"
+                        min="10"
                       />
                       <div className="flex gap-2 flex-wrap">
                         {quickAmounts.map((amount) => (
@@ -266,30 +266,30 @@ export default function Wallet() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Metode Pembayaran</Label>
+                      <Label>Payment Method</Label>
                       <div className="grid grid-cols-3 gap-2">
                         <Button 
                           variant={topUpMethod === 'bank_transfer' ? 'default' : 'outline'} 
                           className="h-auto py-3 flex-col gap-1"
                           onClick={() => setTopUpMethod('bank_transfer')}
                         >
-                          <Building2 className="w-5 h-5" />
-                          <span className="text-xs">Transfer Bank</span>
+                          <Bank className="w-5 h-5" weight="duotone" />
+                          <span className="text-xs">Bank Transfer</span>
                         </Button>
                         <Button 
                           variant={topUpMethod === 'card' ? 'default' : 'outline'} 
                           className="h-auto py-3 flex-col gap-1"
                           onClick={() => setTopUpMethod('card')}
                         >
-                          <CreditCard className="w-5 h-5" />
-                          <span className="text-xs">Kartu</span>
+                          <CreditCard className="w-5 h-5" weight="duotone" />
+                          <span className="text-xs">Card</span>
                         </Button>
                         <Button 
                           variant={topUpMethod === 'ewallet' ? 'default' : 'outline'} 
                           className="h-auto py-3 flex-col gap-1"
                           onClick={() => setTopUpMethod('ewallet')}
                         >
-                          <Smartphone className="w-5 h-5" />
+                          <DeviceMobile className="w-5 h-5" weight="duotone" />
                           <span className="text-xs">E-Wallet</span>
                         </Button>
                       </div>
@@ -297,11 +297,11 @@ export default function Wallet() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsTopUpOpen(false)} disabled={isSubmitting}>
-                      Batal
+                      Cancel
                     </Button>
                     <Button className="btn-accent" onClick={handleTopUp} disabled={isSubmitting}>
-                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Lanjutkan
+                      {isSubmitting ? <Spinner className="w-4 h-4 animate-spin mr-2" weight="bold" /> : null}
+                      Continue
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -309,37 +309,37 @@ export default function Wallet() {
               
               <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="flex-1 bg-white/5">
-                    <ArrowUpRight className="w-4 h-4 mr-2" />
-                    Tarik Dana
+                  <Button variant="outline" className="flex-1 bg-white">
+                    <ArrowUpRight className="w-4 h-4 mr-2" weight="bold" />
+                    Withdraw
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Tarik Dana</DialogTitle>
+                    <DialogTitle>Withdraw Funds</DialogTitle>
                     <DialogDescription>
-                      Tarik saldo ke rekening bank Anda
+                      Withdraw balance to your bank account
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label>Nominal Penarikan</Label>
+                      <Label>Withdrawal Amount</Label>
                       <Input
                         type="number"
                         value={withdrawAmount}
                         onChange={(e) => setWithdrawAmount(e.target.value)}
-                        placeholder="Masukkan nominal"
-                        min="50000"
+                        placeholder="Enter amount"
+                        min="50"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Saldo tersedia: {formatCurrency(balance?.available || 0)}
+                        Available balance: {formatCurrency(balance?.available || 0)}
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Bank Tujuan</Label>
+                      <Label>Destination Bank</Label>
                       <Select value={selectedBank} onValueChange={setSelectedBank}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Pilih bank" />
+                          <SelectValue placeholder="Select bank" />
                         </SelectTrigger>
                         <SelectContent>
                           {banks.map((bank) => (
@@ -351,17 +351,17 @@ export default function Wallet() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Nomor Rekening</Label>
+                      <Label>Account Number</Label>
                       <Input 
-                        placeholder="Masukkan nomor rekening"
+                        placeholder="Enter account number"
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Nama Pemilik Rekening</Label>
+                      <Label>Account Holder Name</Label>
                       <Input 
-                        placeholder="Masukkan nama sesuai rekening"
+                        placeholder="Enter name as on account"
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                       />
@@ -369,11 +369,11 @@ export default function Wallet() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsWithdrawOpen(false)} disabled={isSubmitting}>
-                      Batal
+                      Cancel
                     </Button>
                     <Button className="btn-accent" onClick={handleWithdraw} disabled={isSubmitting}>
-                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Tarik Dana
+                      {isSubmitting ? <Spinner className="w-4 h-4 animate-spin mr-2" weight="bold" /> : null}
+                      Withdraw
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -389,17 +389,17 @@ export default function Wallet() {
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Saldo Terkunci</p>
-                <p className="text-3xl font-display font-bold text-amber-500">
+                <p className="text-sm text-muted-foreground mb-1">Locked Balance</p>
+                <p className="text-3xl font-bold text-amber-500">
                   {formatCurrency(balance?.locked || 0)}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <History className="w-6 h-6 text-amber-500" />
+                <ClockCounterClockwise className="w-6 h-6 text-amber-500" weight="duotone" />
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Dana dari transaksi yang sedang dalam proses. Akan tersedia setelah transaksi selesai.
+              Funds from transactions in progress. Will be available after transaction completion.
             </p>
           </motion.div>
         </div>
@@ -411,20 +411,20 @@ export default function Wallet() {
           transition={{ delay: 0.2 }}
           className="glass-card p-6"
         >
-          <h2 className="text-lg font-display font-semibold mb-4">Riwayat Transaksi</h2>
+          <h2 className="text-lg font-semibold mb-4">Transaction History</h2>
           
           <Tabs defaultValue="all">
             <TabsList className="mb-4">
-              <TabsTrigger value="all">Semua</TabsTrigger>
-              <TabsTrigger value="credit">Masuk</TabsTrigger>
-              <TabsTrigger value="debit">Keluar</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="credit">Incoming</TabsTrigger>
+              <TabsTrigger value="debit">Outgoing</TabsTrigger>
             </TabsList>
             
             {['all', 'credit', 'debit'].map((tabValue) => (
               <TabsContent key={tabValue} value={tabValue} className="space-y-3">
                 {filterTransactions(tabValue).length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    Belum ada transaksi
+                    No transactions yet
                   </div>
                 ) : (
                   filterTransactions(tabValue).map((tx) => {
@@ -433,10 +433,10 @@ export default function Wallet() {
                     return (
                       <div
                         key={tx.id}
-                        className="flex items-center gap-4 p-4 rounded-xl bg-white/5"
+                        className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50"
                       >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCredit ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                          {isCredit ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                          {isCredit ? <ArrowDownRight className="w-5 h-5" weight="bold" /> : <ArrowUpRight className="w-5 h-5" weight="bold" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium truncate">{tx.description}</div>
@@ -447,7 +447,7 @@ export default function Wallet() {
                             {isCredit ? '+' : '-'}{formatCurrency(displayAmount)}
                           </div>
                           <div className={`text-xs ${tx.status === 'completed' || tx.status === 'COMPLETED' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                            {tx.status === 'completed' || tx.status === 'COMPLETED' ? 'Selesai' : 'Pending'}
+                            {tx.status === 'completed' || tx.status === 'COMPLETED' ? 'Completed' : 'Pending'}
                           </div>
                         </div>
                       </div>

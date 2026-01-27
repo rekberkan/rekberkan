@@ -1,14 +1,14 @@
 /*
  * KAHADE ADMIN AUDIT LOGS PAGE
- * Uses real API for audit logs
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, Filter, FileText, User, ArrowLeftRight, Shield,
-  Wallet, Settings, Clock, ChevronDown, ChevronUp, Loader2
-} from 'lucide-react';
+  MagnifyingGlass, FileText, User, ArrowsLeftRight, Shield,
+  Wallet, Gear, Clock, CaretDown, CaretUp, Spinner
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -37,19 +37,19 @@ const actionConfig: Record<string, { label: string; icon: typeof User; color: st
   USER_LOGOUT: { label: 'User Logout', icon: User, color: 'text-gray-500 bg-gray-500/10' },
   USER_SUSPENDED: { label: 'User Suspended', icon: User, color: 'text-red-500 bg-red-500/10' },
   USER_ACTIVATED: { label: 'User Activated', icon: User, color: 'text-emerald-500 bg-emerald-500/10' },
-  TRANSACTION_CREATED: { label: 'Transaksi Dibuat', icon: ArrowLeftRight, color: 'text-emerald-500 bg-emerald-500/10' },
-  TRANSACTION_COMPLETED: { label: 'Transaksi Selesai', icon: ArrowLeftRight, color: 'text-emerald-500 bg-emerald-500/10' },
-  TRANSACTION_CANCELLED: { label: 'Transaksi Dibatalkan', icon: ArrowLeftRight, color: 'text-red-500 bg-red-500/10' },
-  KYC_SUBMITTED: { label: 'KYC Diajukan', icon: Shield, color: 'text-amber-500 bg-amber-500/10' },
-  KYC_APPROVED: { label: 'KYC Disetujui', icon: Shield, color: 'text-emerald-500 bg-emerald-500/10' },
-  KYC_REJECTED: { label: 'KYC Ditolak', icon: Shield, color: 'text-red-500 bg-red-500/10' },
-  WITHDRAWAL_REQUESTED: { label: 'Penarikan Diajukan', icon: Wallet, color: 'text-amber-500 bg-amber-500/10' },
-  WITHDRAWAL_PROCESSED: { label: 'Penarikan Diproses', icon: Wallet, color: 'text-emerald-500 bg-emerald-500/10' },
-  WITHDRAWAL_REJECTED: { label: 'Penarikan Ditolak', icon: Wallet, color: 'text-red-500 bg-red-500/10' },
-  DISPUTE_CREATED: { label: 'Dispute Dibuat', icon: Shield, color: 'text-amber-500 bg-amber-500/10' },
-  DISPUTE_RESOLVED: { label: 'Dispute Diselesaikan', icon: Shield, color: 'text-purple-500 bg-purple-500/10' },
-  PAYMENT_RECEIVED: { label: 'Pembayaran Diterima', icon: Wallet, color: 'text-emerald-500 bg-emerald-500/10' },
-  SETTINGS_UPDATED: { label: 'Pengaturan Diubah', icon: Settings, color: 'text-amber-500 bg-amber-500/10' },
+  TRANSACTION_CREATED: { label: 'Transaction Created', icon: ArrowsLeftRight, color: 'text-emerald-500 bg-emerald-500/10' },
+  TRANSACTION_COMPLETED: { label: 'Transaction Completed', icon: ArrowsLeftRight, color: 'text-emerald-500 bg-emerald-500/10' },
+  TRANSACTION_CANCELLED: { label: 'Transaction Cancelled', icon: ArrowsLeftRight, color: 'text-red-500 bg-red-500/10' },
+  KYC_SUBMITTED: { label: 'KYC Submitted', icon: Shield, color: 'text-amber-500 bg-amber-500/10' },
+  KYC_APPROVED: { label: 'KYC Approved', icon: Shield, color: 'text-emerald-500 bg-emerald-500/10' },
+  KYC_REJECTED: { label: 'KYC Rejected', icon: Shield, color: 'text-red-500 bg-red-500/10' },
+  WITHDRAWAL_REQUESTED: { label: 'Withdrawal Requested', icon: Wallet, color: 'text-amber-500 bg-amber-500/10' },
+  WITHDRAWAL_PROCESSED: { label: 'Withdrawal Processed', icon: Wallet, color: 'text-emerald-500 bg-emerald-500/10' },
+  WITHDRAWAL_REJECTED: { label: 'Withdrawal Rejected', icon: Wallet, color: 'text-red-500 bg-red-500/10' },
+  DISPUTE_CREATED: { label: 'Dispute Created', icon: Shield, color: 'text-amber-500 bg-amber-500/10' },
+  DISPUTE_RESOLVED: { label: 'Dispute Resolved', icon: Shield, color: 'text-purple-500 bg-purple-500/10' },
+  PAYMENT_RECEIVED: { label: 'Payment Received', icon: Wallet, color: 'text-emerald-500 bg-emerald-500/10' },
+  SETTINGS_UPDATED: { label: 'Settings Updated', icon: Gear, color: 'text-amber-500 bg-amber-500/10' },
 };
 
 const actorTypeConfig: Record<string, { label: string; color: string }> = {
@@ -59,7 +59,7 @@ const actorTypeConfig: Record<string, { label: string; color: string }> = {
 };
 
 const formatDate = (dateString: string) => {
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -133,40 +133,40 @@ export default function AdminAuditLogs() {
   };
 
   return (
-    <AdminLayout title="Audit Logs" subtitle="Riwayat aktivitas sistem">
+    <AdminLayout title="Audit Logs" subtitle="System activity history">
       <div className="space-y-6">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
             <Input
-              placeholder="Cari actor atau target..."
+              placeholder="Search actor or target..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white/5 border-white/10"
+              className="pl-10 bg-white border-border"
             />
           </div>
           <Select value={actionFilter} onValueChange={(value) => { setActionFilter(value); setPage(1); }}>
-            <SelectTrigger className="w-48 bg-white/5 border-white/10">
-              <SelectValue placeholder="Tipe Aksi" />
+            <SelectTrigger className="w-48 bg-white border-border">
+              <SelectValue placeholder="Action Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Aksi</SelectItem>
+              <SelectItem value="all">All Actions</SelectItem>
               <SelectItem value="USER_LOGIN">User Login</SelectItem>
-              <SelectItem value="TRANSACTION_CREATED">Transaksi Dibuat</SelectItem>
-              <SelectItem value="KYC_APPROVED">KYC Disetujui</SelectItem>
-              <SelectItem value="WITHDRAWAL_PROCESSED">Penarikan</SelectItem>
+              <SelectItem value="TRANSACTION_CREATED">Transaction Created</SelectItem>
+              <SelectItem value="KYC_APPROVED">KYC Approved</SelectItem>
+              <SelectItem value="WITHDRAWAL_PROCESSED">Withdrawal</SelectItem>
               <SelectItem value="DISPUTE_RESOLVED">Dispute Resolved</SelectItem>
-              <SelectItem value="PAYMENT_RECEIVED">Pembayaran</SelectItem>
+              <SelectItem value="PAYMENT_RECEIVED">Payment</SelectItem>
               <SelectItem value="SETTINGS_UPDATED">Settings Updated</SelectItem>
             </SelectContent>
           </Select>
           <Select value={actorFilter} onValueChange={(value) => { setActorFilter(value); setPage(1); }}>
-            <SelectTrigger className="w-36 bg-white/5 border-white/10">
+            <SelectTrigger className="w-36 bg-white border-border">
               <SelectValue placeholder="Actor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="USER">User</SelectItem>
               <SelectItem value="ADMIN">Admin</SelectItem>
               <SelectItem value="SYSTEM">System</SelectItem>
@@ -177,7 +177,7 @@ export default function AdminAuditLogs() {
         {/* Loading State */}
         {isLoading && page === 1 && (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+            <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
           </div>
         )}
         
@@ -188,6 +188,7 @@ export default function AdminAuditLogs() {
               const action = actionConfig[log.action] || { label: log.action, icon: FileText, color: 'text-gray-500 bg-gray-500/10' };
               const actorType = actorTypeConfig[log.actorType] || { label: log.actorType, color: 'text-gray-500' };
               const isExpanded = expandedLog === log.id;
+              const IconComponent = action.icon;
               
               return (
                 <motion.div
@@ -198,11 +199,11 @@ export default function AdminAuditLogs() {
                   className="glass-card overflow-hidden"
                 >
                   <div 
-                    className="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5"
+                    className="p-4 flex items-center gap-4 cursor-pointer hover:bg-secondary/30"
                     onClick={() => setExpandedLog(isExpanded ? null : log.id)}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${action.color}`}>
-                      <action.icon className="w-5 h-5" />
+                      <IconComponent className="w-5 h-5" weight="fill" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -220,14 +221,14 @@ export default function AdminAuditLogs() {
                     <div className="flex items-center gap-3">
                       <div className="text-right hidden sm:block">
                         <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                          <Clock className="w-3 h-3" weight="regular" />
                           {formatDate(log.timestamp)}
                         </div>
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                        <CaretUp className="w-5 h-5 text-muted-foreground" weight="bold" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                        <CaretDown className="w-5 h-5 text-muted-foreground" weight="bold" />
                       )}
                     </div>
                   </div>
@@ -237,10 +238,10 @@ export default function AdminAuditLogs() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-white/10 p-4 bg-white/5"
+                      className="border-t border-border p-4 bg-secondary/30"
                     >
-                      <div className="text-sm text-muted-foreground mb-2">Detail:</div>
-                      <pre className="text-sm font-mono bg-black/20 p-3 rounded-lg overflow-x-auto">
+                      <div className="text-sm text-muted-foreground mb-2">Details:</div>
+                      <pre className="text-sm font-mono bg-background p-3 rounded-lg overflow-x-auto">
                         {JSON.stringify(log.details, null, 2)}
                       </pre>
                     </motion.div>
@@ -259,11 +260,11 @@ export default function AdminAuditLogs() {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Memuat...
+                      <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" />
+                      Loading...
                     </>
                   ) : (
-                    'Muat Lebih Banyak'
+                    'Load More'
                   )}
                 </Button>
               </div>
@@ -273,12 +274,12 @@ export default function AdminAuditLogs() {
         
         {!isLoading && filteredLogs.length === 0 && (
           <div className="glass-card p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-muted-foreground" weight="regular" />
             </div>
-            <h3 className="font-display font-semibold mb-2">Tidak ada log</h3>
+            <h3 className="font-semibold mb-2">No logs found</h3>
             <p className="text-sm text-muted-foreground">
-              Tidak ada audit log yang sesuai dengan filter.
+              No audit logs match the current filter.
             </p>
           </div>
         )}

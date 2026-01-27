@@ -1,11 +1,12 @@
 /*
  * KAHADE FORGOT PASSWORD PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
-import { Shield, Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { Envelope, ArrowLeft, Spinner, CheckCircle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,14 +26,14 @@ export default function ForgotPassword() {
     
     setIsLoading(false);
     setIsSubmitted(true);
-    toast.success('Email terkirim!');
+    toast.success('Email sent!');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
+    <div className="min-h-screen flex items-center justify-center p-8 bg-[#FAFBFC]">
       {/* Background decorations */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -41,25 +42,24 @@ export default function ForgotPassword() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mb-8 justify-center">
-          <Shield className="w-8 h-8 text-accent" />
-          <span className="text-xl font-display font-bold">Kahade</span>
+          <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
         </Link>
         
         <div className="glass-card p-8">
           {!isSubmitted ? (
             <>
-              <h1 className="text-2xl font-display font-bold mb-2 text-center">
-                Lupa Password?
+              <h1 className="text-2xl font-bold mb-2 text-center">
+                Forgot Password?
               </h1>
               <p className="text-muted-foreground mb-8 text-center text-sm">
-                Masukkan email Anda dan kami akan mengirimkan link untuk reset password.
+                Enter your email and we'll send you a link to reset your password.
               </p>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                     <Input
                       id="email"
                       type="email"
@@ -67,7 +67,7 @@ export default function ForgotPassword() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@example.com"
                       required
-                      className="pl-10 bg-white/5 border-white/10"
+                      className="pl-10 bg-white border-border"
                     />
                   </div>
                 </div>
@@ -79,11 +79,11 @@ export default function ForgotPassword() {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                      Mengirim...
+                      <Spinner className="mr-2 w-4 h-4 animate-spin" weight="bold" />
+                      Sending...
                     </>
                   ) : (
-                    'Kirim Link Reset'
+                    'Send Reset Link'
                   )}
                 </Button>
               </form>
@@ -91,27 +91,27 @@ export default function ForgotPassword() {
           ) : (
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                <CheckCircle className="w-8 h-8 text-emerald-500" weight="fill" />
               </div>
-              <h2 className="text-xl font-display font-bold mb-2">Email Terkirim!</h2>
+              <h2 className="text-xl font-bold mb-2">Email Sent!</h2>
               <p className="text-muted-foreground text-sm mb-6">
-                Kami telah mengirimkan link reset password ke <strong className="text-foreground">{email}</strong>. 
-                Silakan cek inbox Anda.
+                We have sent a password reset link to <strong className="text-foreground">{email}</strong>. 
+                Please check your inbox.
               </p>
               <Button 
                 variant="outline" 
                 className="w-full"
                 onClick={() => setIsSubmitted(false)}
               >
-                Kirim Ulang
+                Resend Email
               </Button>
             </div>
           )}
           
           <div className="mt-6 text-center">
             <Link href="/login" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-accent">
-              <ArrowLeft className="w-4 h-4" />
-              Kembali ke Login
+              <ArrowLeft className="w-4 h-4" weight="bold" />
+              Back to Login
             </Link>
           </div>
         </div>

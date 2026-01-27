@@ -1,11 +1,12 @@
 /*
  * KAHADE CONTACT PAGE
  * Design: Contact form with company info
+ * Icons: Phosphor Icons only
  */
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from 'lucide-react';
+import { Envelope, Phone, MapPin, PaperPlaneTilt, ChatCircle, Clock } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,22 +24,22 @@ import Footer from '@/components/layout/Footer';
 
 const contactInfo = [
   {
-    icon: Mail,
+    icon: Envelope,
     title: 'Email',
     value: 'support@kahade.com',
-    description: 'Respon dalam 24 jam'
+    description: 'Response within 24 hours'
   },
   {
     icon: Phone,
-    title: 'Telepon',
-    value: '+62 21 1234 5678',
-    description: 'Senin - Jumat, 09:00 - 18:00'
+    title: 'Phone',
+    value: '+1 (555) 123-4567',
+    description: 'Mon - Fri, 9AM - 6PM'
   },
   {
     icon: MapPin,
-    title: 'Alamat',
-    value: 'Jakarta, Indonesia',
-    description: 'Gedung Cyber 2, Lantai 15'
+    title: 'Address',
+    value: 'San Francisco, CA',
+    description: '123 Market Street, Suite 500'
   }
 ];
 
@@ -58,8 +59,8 @@ export default function Contact() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    toast.success('Pesan terkirim!', {
-      description: 'Tim kami akan menghubungi Anda segera.'
+    toast.success('Message sent!', {
+      description: 'Our team will contact you shortly.'
     });
     
     setFormData({ name: '', email: '', subject: '', message: '' });
@@ -67,7 +68,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FAFBFC]">
       <Navbar />
       
       {/* Hero Section */}
@@ -78,11 +79,11 @@ export default function Contact() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6">
-              Hubungi <span className="gradient-text">Kami</span>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              Contact <span className="gradient-text">Us</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Punya pertanyaan atau butuh bantuan? Tim kami siap membantu Anda.
+              Have questions or need help? Our team is ready to assist you.
             </p>
           </motion.div>
         </div>
@@ -101,9 +102,9 @@ export default function Contact() {
                 className="glass-card p-6 text-center"
               >
                 <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                  <info.icon className="w-6 h-6 text-accent" />
+                  <info.icon className="w-6 h-6 text-accent" weight="duotone" />
                 </div>
-                <h3 className="font-display font-semibold mb-1">{info.title}</h3>
+                <h3 className="font-semibold mb-1">{info.title}</h3>
                 <p className="text-foreground mb-1">{info.value}</p>
                 <p className="text-sm text-muted-foreground">{info.description}</p>
               </motion.div>
@@ -122,19 +123,19 @@ export default function Contact() {
               animate={{ opacity: 1, x: 0 }}
               className="glass-card p-8"
             >
-              <h2 className="text-2xl font-display font-bold mb-6">Kirim Pesan</h2>
+              <h2 className="text-2xl font-bold mb-6">Send a Message</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nama Lengkap</Label>
+                    <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="John Doe"
                       required
-                      className="bg-white/5 border-white/10"
+                      className="bg-white border-border"
                     />
                   </div>
                   <div className="space-y-2">
@@ -146,40 +147,40 @@ export default function Contact() {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="john@example.com"
                       required
-                      className="bg-white/5 border-white/10"
+                      className="bg-white border-border"
                     />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subjek</Label>
+                  <Label htmlFor="subject">Subject</Label>
                   <Select 
                     value={formData.subject} 
                     onValueChange={(value) => setFormData({ ...formData, subject: value })}
                   >
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Pilih subjek" />
+                    <SelectTrigger className="bg-white border-border">
+                      <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="general">Pertanyaan Umum</SelectItem>
-                      <SelectItem value="support">Dukungan Teknis</SelectItem>
-                      <SelectItem value="billing">Pembayaran & Billing</SelectItem>
-                      <SelectItem value="partnership">Kerjasama</SelectItem>
-                      <SelectItem value="other">Lainnya</SelectItem>
+                      <SelectItem value="general">General Inquiry</SelectItem>
+                      <SelectItem value="support">Technical Support</SelectItem>
+                      <SelectItem value="billing">Payment & Billing</SelectItem>
+                      <SelectItem value="partnership">Partnership</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="message">Pesan</Label>
+                  <Label htmlFor="message">Message</Label>
                   <Textarea
                     id="message"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Tulis pesan Anda di sini..."
+                    placeholder="Write your message here..."
                     rows={5}
                     required
-                    className="bg-white/5 border-white/10 resize-none"
+                    className="bg-white border-border resize-none"
                   />
                 </div>
                 
@@ -189,11 +190,11 @@ export default function Contact() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <>Mengirim...</>
+                    <>Sending...</>
                   ) : (
                     <>
-                      Kirim Pesan
-                      <Send className="ml-2 w-4 h-4" />
+                      Send Message
+                      <PaperPlaneTilt className="ml-2 w-4 h-4" weight="bold" />
                     </>
                   )}
                 </Button>
@@ -209,15 +210,15 @@ export default function Contact() {
               <div className="glass-card p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-5 h-5 text-accent" />
+                    <ChatCircle className="w-5 h-5 text-accent" weight="duotone" />
                   </div>
                   <div>
-                    <h3 className="font-display font-semibold mb-2">Live Chat</h3>
+                    <h3 className="font-semibold mb-2">Live Chat</h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Butuh bantuan cepat? Tim support kami tersedia via live chat.
+                      Need quick help? Our support team is available via live chat.
                     </p>
-                    <Button className="btn-secondary" onClick={() => window.open('https://wa.me/6281234567890', '_blank')}>
-                      Mulai Chat
+                    <Button className="btn-secondary" onClick={() => window.open('https://wa.me/15551234567', '_blank')}>
+                      Start Chat
                     </Button>
                   </div>
                 </div>
@@ -225,23 +226,23 @@ export default function Contact() {
               
               <div className="glass-card p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Clock className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                    <Clock className="w-5 h-5 text-accent" weight="duotone" />
                   </div>
                   <div>
-                    <h3 className="font-display font-semibold mb-2">Jam Operasional</h3>
+                    <h3 className="font-semibold mb-2">Business Hours</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Senin - Jumat</span>
-                        <span>09:00 - 18:00 WIB</span>
+                        <span className="text-muted-foreground">Monday - Friday</span>
+                        <span>9:00 AM - 6:00 PM</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Sabtu</span>
-                        <span>09:00 - 15:00 WIB</span>
+                        <span className="text-muted-foreground">Saturday</span>
+                        <span>9:00 AM - 3:00 PM</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Minggu</span>
-                        <span className="text-muted-foreground">Tutup</span>
+                        <span className="text-muted-foreground">Sunday</span>
+                        <span className="text-muted-foreground">Closed</span>
                       </div>
                     </div>
                   </div>
@@ -249,12 +250,12 @@ export default function Contact() {
               </div>
               
               <div className="glass-card p-6">
-                <h3 className="font-display font-semibold mb-4">FAQ</h3>
+                <h3 className="font-semibold mb-4">FAQ</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Mungkin pertanyaan Anda sudah terjawab di halaman FAQ kami.
+                  Your question might already be answered in our FAQ section.
                 </p>
                 <Button variant="outline" className="w-full" asChild>
-                  <a href="/how-it-works#faq">Lihat FAQ</a>
+                  <a href="/how-it-works#faq">View FAQ</a>
                 </Button>
               </div>
             </motion.div>

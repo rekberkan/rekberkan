@@ -1,162 +1,205 @@
 /*
- * KAHADE FOOTER - Glassmorphic Footer
+ * KAHADE FOOTER - Exact Structure Required
  * 
- * Design: Multi-column layout with glass effect
- * Contains: Links, social, newsletter, legal
+ * Structure:
+ * - Logo at top
+ * - Slogan/description under logo
+ * - 4 link groups (Product, Support, Company, Legal) with 4 links each
+ * - Desktop: 2x2 grid layout (Product/Support left, Company/Legal right)
+ * - Social media icons (Phosphor only)
+ * - Copyright line
  */
 
 import { Link } from 'wouter';
-import { Shield, Mail, Phone, MapPin, Github, Twitter, Linkedin, Instagram } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { 
+  TwitterLogo, 
+  InstagramLogo, 
+  LinkedinLogo, 
+  GithubLogo,
+  YoutubeLogo,
+  DiscordLogo
+} from '@phosphor-icons/react';
 
 const footerLinks = {
-  product: [
-    { label: 'Cara Kerja', href: '/how-it-works' },
-    { label: 'Fitur', href: '/#features' },
-    { label: 'Harga', href: '/#pricing' },
-    { label: 'FAQ', href: '/#faq' },
-  ],
-  company: [
-    { label: 'Tentang Kami', href: '/about' },
-    { label: 'Karir', href: '/careers' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Kontak', href: '/contact' },
-  ],
-  legal: [
-    { label: 'Syarat & Ketentuan', href: '/terms' },
-    { label: 'Kebijakan Privasi', href: '/privacy' },
-    { label: 'Keamanan', href: '/security' },
-  ],
+  product: {
+    title: 'Product',
+    links: [
+      { label: 'Web App', href: '/app' },
+      { label: 'Mobile App', href: '/mobile-app' },
+      { label: 'Pricing', href: '/#pricing' },
+      { label: 'Blog', href: '/blog' },
+    ]
+  },
+  support: {
+    title: 'Support',
+    links: [
+      { label: 'Help Center', href: '/help' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Feedback', href: '/feedback' },
+      { label: 'Contact Us', href: '/contact' },
+    ]
+  },
+  company: {
+    title: 'Company',
+    links: [
+      { label: 'About Us', href: '/about' },
+      { label: 'Careers', href: '/careers' },
+      { label: 'Whitepaper', href: '/whitepaper' },
+      { label: 'Press / News', href: '/press' },
+    ]
+  },
+  legal: {
+    title: 'Legal',
+    links: [
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Cookie Policy', href: '/cookies' },
+      { label: 'Licenses', href: '/licenses' },
+    ]
+  }
 };
 
 const socialLinks = [
-  { icon: Twitter, href: 'https://twitter.com/kahade', label: 'Twitter' },
-  { icon: Instagram, href: 'https://instagram.com/kahade', label: 'Instagram' },
-  { icon: Linkedin, href: 'https://linkedin.com/company/kahade', label: 'LinkedIn' },
-  { icon: Github, href: 'https://github.com/rekberkan/kahade', label: 'GitHub' },
+  { icon: TwitterLogo, href: 'https://twitter.com/kahade', label: 'Twitter' },
+  { icon: InstagramLogo, href: 'https://instagram.com/kahade', label: 'Instagram' },
+  { icon: LinkedinLogo, href: 'https://linkedin.com/company/kahade', label: 'LinkedIn' },
+  { icon: GithubLogo, href: 'https://github.com/kahade', label: 'GitHub' },
+  { icon: YoutubeLogo, href: 'https://youtube.com/@kahade', label: 'YouTube' },
+  { icon: DiscordLogo, href: 'https://discord.gg/kahade', label: 'Discord' },
 ];
 
 export default function Footer() {
   return (
-    <footer className="relative mt-20 border-t border-white/10">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/50 pointer-events-none" />
-      
-      <div className="container relative py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
-          {/* Brand Column */}
-          <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <Shield className="w-8 h-8 text-accent" />
-              <span className="text-xl font-display font-bold">Kahade</span>
+    <footer className="bg-white border-t border-border">
+      <div className="container py-16">
+        {/* Top Section: Logo + Description + Links */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Logo & Description */}
+          <div className="lg:col-span-4">
+            <Link href="/" className="inline-block mb-4">
+              <img 
+                src="/images/logo.svg" 
+                alt="Kahade" 
+                className="h-10 w-auto"
+              />
             </Link>
-            <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-              Platform rekber/escrow P2P terpercaya untuk transaksi online yang aman dan transparan.
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
+              Kahade is the trusted P2P escrow platform for secure online transactions. 
+              We protect both buyers and sellers with our transparent and reliable escrow service.
             </p>
-            
-            {/* Newsletter */}
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Berlangganan Newsletter</p>
-              <div className="flex gap-2">
-                <Input 
-                  type="email" 
-                  placeholder="email@example.com"
-                  className="bg-white/5 border-white/10 focus:border-accent"
-                />
-                <Button className="btn-accent shrink-0">
-                  Langganan
-                </Button>
+          </div>
+          
+          {/* Link Groups - 2x2 Grid on Desktop */}
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {/* Left Column: Product (top) + Support (bottom) */}
+              <div className="space-y-8 md:contents">
+                {/* Product */}
+                <div>
+                  <h4 className="font-semibold text-foreground mb-4">
+                    {footerLinks.product.title}
+                  </h4>
+                  <ul className="space-y-3">
+                    {footerLinks.product.links.map((link) => (
+                      <li key={link.href}>
+                        <Link 
+                          href={link.href}
+                          className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {/* Support */}
+                <div>
+                  <h4 className="font-semibold text-foreground mb-4">
+                    {footerLinks.support.title}
+                  </h4>
+                  <ul className="space-y-3">
+                    {footerLinks.support.links.map((link) => (
+                      <li key={link.href}>
+                        <Link 
+                          href={link.href}
+                          className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              
+              {/* Right Column: Company (top) + Legal (bottom) */}
+              <div className="space-y-8 md:contents">
+                {/* Company */}
+                <div>
+                  <h4 className="font-semibold text-foreground mb-4">
+                    {footerLinks.company.title}
+                  </h4>
+                  <ul className="space-y-3">
+                    {footerLinks.company.links.map((link) => (
+                      <li key={link.href}>
+                        <Link 
+                          href={link.href}
+                          className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {/* Legal */}
+                <div>
+                  <h4 className="font-semibold text-foreground mb-4">
+                    {footerLinks.legal.title}
+                  </h4>
+                  <ul className="space-y-3">
+                    {footerLinks.legal.links.map((link) => (
+                      <li key={link.href}>
+                        <Link 
+                          href={link.href}
+                          className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
-          
-          {/* Product Links */}
-          <div>
-            <h4 className="font-display font-semibold mb-4">Produk</h4>
-            <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.href}>
-                  <Link 
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-accent transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          {/* Company Links */}
-          <div>
-            <h4 className="font-display font-semibold mb-4">Perusahaan</h4>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.href}>
-                  <Link 
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-accent transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          {/* Contact Info */}
-          <div>
-            <h4 className="font-display font-semibold mb-4">Kontak</h4>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="w-4 h-4 text-accent" />
-                support@kahade.com
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="w-4 h-4 text-accent" />
-                +62 21 1234 5678
-              </li>
-              <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                Jakarta, Indonesia
-              </li>
-            </ul>
-          </div>
         </div>
         
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            {footerLinks.legal.map((link) => (
-              <Link 
-                key={link.href}
-                href={link.href}
-                className="text-xs text-muted-foreground hover:text-accent transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Kahade. All rights reserved.
-          </p>
-          
-          {/* Social Links */}
-          <div className="flex items-center gap-3">
-            {socialLinks.map((social) => (
-              <a
-                key={social.label}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-accent transition-all"
-                aria-label={social.label}
-              >
-                <social.icon className="w-4 h-4" />
-              </a>
-            ))}
+        {/* Social Media Icons */}
+        <div className="mt-12 pt-8 border-t border-border">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Social Links */}
+            <div className="flex items-center gap-3">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg bg-secondary hover:bg-accent/10 flex items-center justify-center text-muted-foreground hover:text-accent transition-all"
+                  aria-label={social.label}
+                >
+                  <social.icon className="w-5 h-5" weight="regular" />
+                </a>
+              ))}
+            </div>
+            
+            {/* Copyright */}
+            <p className="text-sm text-muted-foreground">
+              © Kahade 2026 All rights reserved.
+            </p>
           </div>
         </div>
       </div>

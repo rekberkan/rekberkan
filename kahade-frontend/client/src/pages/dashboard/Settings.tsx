@@ -1,12 +1,13 @@
 /*
  * KAHADE SETTINGS PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Lock, Bell, Shield, Smartphone, Eye, EyeOff, Loader2, LogOut
-} from 'lucide-react';
+  Lock, Bell, ShieldCheck, DeviceMobile, Eye, EyeSlash, Spinner, SignOut
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,14 +60,12 @@ export default function Settings() {
     setIsLoadingSessions(true);
     try {
       const response = await authApi.getSessions();
-      // Handle both array response and object with sessions property
       const sessionsData = Array.isArray(response.data) 
         ? response.data 
         : (response.data.sessions || response.data.data || []);
       setSessions(sessionsData);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
-      // Set default current session
       setSessions([{
         id: 'current',
         userAgent: navigator.userAgent,
@@ -83,17 +82,17 @@ export default function Settings() {
     e.preventDefault();
     
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-      toast.error('Mohon isi semua field');
+      toast.error('Please fill in all fields');
       return;
     }
     
     if (passwordForm.newPassword.length < 8) {
-      toast.error('Password baru minimal 8 karakter');
+      toast.error('New password must be at least 8 characters');
       return;
     }
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Password baru tidak cocok');
+      toast.error('New passwords do not match');
       return;
     }
 
@@ -103,10 +102,10 @@ export default function Settings() {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       });
-      toast.success('Password berhasil diubah');
+      toast.success('Password changed successfully');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengubah password');
+      toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
     }
@@ -114,34 +113,30 @@ export default function Settings() {
 
   const handleToggle2FA = async () => {
     if (!twoFactor) {
-      // Enable 2FA
       try {
         const response = await authApi.enable2FA();
         if (response.data.qrCode) {
-          // Show QR code to user (simplified - in production would show modal with QR)
-          toast.info('Scan QR code dengan aplikasi authenticator Anda');
+          toast.info('Scan QR code with your authenticator app');
           setTwoFactor(true);
         }
       } catch (error: any) {
-        toast.error(error.response?.data?.message || 'Gagal mengaktifkan 2FA');
+        toast.error(error.response?.data?.message || 'Failed to enable 2FA');
       }
     } else {
-      // Disable 2FA - requires password and current 2FA code
-      // In production, show a modal to collect password and code
-      const password = prompt('Masukkan password Anda:');
-      const code = prompt('Masukkan kode 2FA dari authenticator:');
+      const password = prompt('Enter your password:');
+      const code = prompt('Enter 2FA code from authenticator:');
       
       if (!password || !code) {
-        toast.error('Password dan kode 2FA diperlukan');
+        toast.error('Password and 2FA code are required');
         return;
       }
       
       try {
         await authApi.disable2FA({ password, code });
         setTwoFactor(false);
-        toast.success('2FA dinonaktifkan');
+        toast.success('2FA disabled');
       } catch (error: any) {
-        toast.error(error.response?.data?.message || 'Gagal menonaktifkan 2FA');
+        toast.error(error.response?.data?.message || 'Failed to disable 2FA');
       }
     }
   };
@@ -150,9 +145,9 @@ export default function Settings() {
     setIsSavingNotifications(true);
     try {
       await userApi.updateNotificationSettings(notifications);
-      toast.success('Pengaturan notifikasi disimpan');
+      toast.success('Notification settings saved');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menyimpan pengaturan');
+      toast.error(error.response?.data?.message || 'Failed to save settings');
     } finally {
       setIsSavingNotifications(false);
     }
@@ -162,19 +157,19 @@ export default function Settings() {
     try {
       await authApi.revokeSession(sessionId);
       setSessions(sessions.filter(s => s.id !== sessionId));
-      toast.success('Sesi berhasil dihapus');
+      toast.success('Session revoked successfully');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menghapus sesi');
+      toast.error(error.response?.data?.message || 'Failed to revoke session');
     }
   };
 
   const handleRevokeAllSessions = async () => {
     try {
       await authApi.revokeAllSessions();
-      toast.success('Semua sesi lain berhasil dihapus');
+      toast.success('All other sessions revoked');
       fetchSessions();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menghapus sesi');
+      toast.error(error.response?.data?.message || 'Failed to revoke sessions');
     }
   };
 
@@ -192,14 +187,14 @@ export default function Settings() {
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
     
-    if (minutes < 5) return 'Aktif sekarang';
-    if (minutes < 60) return `${minutes} menit lalu`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)} jam lalu`;
-    return `${Math.floor(minutes / 1440)} hari lalu`;
+    if (minutes < 5) return 'Active now';
+    if (minutes < 60) return `${minutes} minutes ago`;
+    if (minutes < 1440) return `${Math.floor(minutes / 60)} hours ago`;
+    return `${Math.floor(minutes / 1440)} days ago`;
   };
 
   return (
-    <DashboardLayout title="Pengaturan" subtitle="Kelola preferensi akun Anda">
+    <DashboardLayout title="Settings" subtitle="Manage your account preferences">
       <div className="max-w-3xl space-y-6">
         {/* Change Password */}
         <motion.div
@@ -209,64 +204,64 @@ export default function Settings() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-accent" />
+              <Lock className="w-5 h-5 text-accent" weight="duotone" />
             </div>
             <div>
-              <h3 className="font-display font-semibold">Ubah Password</h3>
-              <p className="text-sm text-muted-foreground">Perbarui password akun Anda</p>
+              <h3 className="font-semibold">Change Password</h3>
+              <p className="text-sm text-muted-foreground">Update your account password</p>
             </div>
           </div>
           
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">Password Saat Ini</Label>
+              <Label htmlFor="currentPassword">Current Password</Label>
               <div className="relative">
                 <Input
                   id="currentPassword"
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="pr-10 bg-white/5 border-white/10"
+                  className="pr-10 bg-white border-border"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 >
-                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showCurrentPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
                 </button>
               </div>
             </div>
             
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="newPassword">Password Baru</Label>
+                <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
                     type={showNewPassword ? 'text' : 'password'}
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className="pr-10 bg-white/5 border-white/10"
+                    className="pr-10 bg-white border-border"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   >
-                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showNewPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
                   </button>
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="bg-white/5 border-white/10"
+                  className="bg-white border-border"
                 />
               </div>
             </div>
@@ -274,11 +269,11 @@ export default function Settings() {
             <Button type="submit" className="btn-accent" disabled={isChangingPassword}>
               {isChangingPassword ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Menyimpan...
+                  <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" />
+                  Saving...
                 </>
               ) : (
-                'Ubah Password'
+                'Change Password'
               )}
             </Button>
           </form>
@@ -291,15 +286,15 @@ export default function Settings() {
           transition={{ delay: 0.1 }}
           className="glass-card p-6"
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-emerald-500" />
+                <ShieldCheck className="w-5 h-5 text-emerald-500" weight="duotone" />
               </div>
               <div>
-                <h3 className="font-display font-semibold">Autentikasi Dua Faktor (2FA)</h3>
+                <h3 className="font-semibold">Two-Factor Authentication (2FA)</h3>
                 <p className="text-sm text-muted-foreground">
-                  Tambahkan lapisan keamanan ekstra dengan 2FA
+                  Add an extra layer of security with 2FA
                 </p>
               </div>
             </div>
@@ -309,11 +304,11 @@ export default function Settings() {
           {twoFactor && (
             <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <div className="flex items-center gap-2 text-emerald-500 mb-2">
-                <Shield className="w-4 h-4" />
-                <span className="font-medium">2FA Aktif</span>
+                <ShieldCheck className="w-4 h-4" weight="fill" />
+                <span className="font-medium">2FA Active</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Akun Anda dilindungi dengan autentikasi dua faktor.
+                Your account is protected with two-factor authentication.
               </p>
             </div>
           )}
@@ -328,19 +323,19 @@ export default function Settings() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-blue-500" />
+              <Bell className="w-5 h-5 text-blue-500" weight="duotone" />
             </div>
             <div>
-              <h3 className="font-display font-semibold">Notifikasi</h3>
-              <p className="text-sm text-muted-foreground">Kelola preferensi notifikasi</p>
+              <h3 className="font-semibold">Notifications</h3>
+              <p className="text-sm text-muted-foreground">Manage notification preferences</p>
             </div>
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">Notifikasi Email</div>
-                <div className="text-sm text-muted-foreground">Terima update via email</div>
+                <div className="font-medium">Email Notifications</div>
+                <div className="text-sm text-muted-foreground">Receive updates via email</div>
               </div>
               <Switch
                 checked={notifications.email}
@@ -348,10 +343,10 @@ export default function Settings() {
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">Push Notification</div>
-                <div className="text-sm text-muted-foreground">Notifikasi browser</div>
+                <div className="font-medium">Push Notifications</div>
+                <div className="text-sm text-muted-foreground">Browser notifications</div>
               </div>
               <Switch
                 checked={notifications.push}
@@ -359,10 +354,10 @@ export default function Settings() {
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">Update Transaksi</div>
-                <div className="text-sm text-muted-foreground">Notifikasi status transaksi</div>
+                <div className="font-medium">Transaction Updates</div>
+                <div className="text-sm text-muted-foreground">Transaction status notifications</div>
               </div>
               <Switch
                 checked={notifications.transaction}
@@ -370,10 +365,10 @@ export default function Settings() {
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">Email Marketing</div>
-                <div className="text-sm text-muted-foreground">Promo dan penawaran khusus</div>
+                <div className="font-medium">Marketing Emails</div>
+                <div className="text-sm text-muted-foreground">Promos and special offers</div>
               </div>
               <Switch
                 checked={notifications.marketing}
@@ -389,11 +384,11 @@ export default function Settings() {
           >
             {isSavingNotifications ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Menyimpan...
+                <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" />
+                Saving...
               </>
             ) : (
-              'Simpan Pengaturan'
+              'Save Settings'
             )}
           </Button>
         </motion.div>
@@ -408,31 +403,31 @@ export default function Settings() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                <Smartphone className="w-5 h-5 text-purple-500" />
+                <DeviceMobile className="w-5 h-5 text-purple-500" weight="duotone" />
               </div>
               <div>
-                <h3 className="font-display font-semibold">Perangkat Terhubung</h3>
-                <p className="text-sm text-muted-foreground">Kelola sesi login aktif</p>
+                <h3 className="font-semibold">Connected Devices</h3>
+                <p className="text-sm text-muted-foreground">Manage active login sessions</p>
               </div>
             </div>
             {sessions.length > 1 && (
               <Button variant="outline" size="sm" onClick={handleRevokeAllSessions}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout Semua
+                <SignOut className="w-4 h-4 mr-2" weight="bold" />
+                Logout All
               </Button>
             )}
           </div>
           
           {isLoadingSessions ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-accent" />
+              <Spinner className="w-6 h-6 animate-spin text-accent" weight="bold" />
             </div>
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => (
-                <div key={session.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+                <div key={session.id} className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
                   <div className="flex items-center gap-3">
-                    <Smartphone className="w-5 h-5 text-muted-foreground" />
+                    <DeviceMobile className="w-5 h-5 text-muted-foreground" weight="regular" />
                     <div>
                       <div className="font-medium">{parseUserAgent(session.userAgent)}</div>
                       <div className="text-sm text-muted-foreground">
@@ -442,7 +437,7 @@ export default function Settings() {
                   </div>
                   {session.isCurrent ? (
                     <span className="text-xs text-emerald-500 px-2 py-1 bg-emerald-500/10 rounded-full">
-                      Perangkat ini
+                      This device
                     </span>
                   ) : (
                     <Button 
@@ -451,7 +446,7 @@ export default function Settings() {
                       className="text-red-500 hover:bg-red-500/10"
                       onClick={() => handleRevokeSession(session.id)}
                     >
-                      <LogOut className="w-4 h-4" />
+                      <SignOut className="w-4 h-4" weight="bold" />
                     </Button>
                   )}
                 </div>
@@ -467,16 +462,16 @@ export default function Settings() {
           transition={{ delay: 0.4 }}
           className="glass-card p-6 border-red-500/20"
         >
-          <h3 className="font-display font-semibold text-red-500 mb-4">Zona Berbahaya</h3>
+          <h3 className="font-semibold text-red-500 mb-4">Danger Zone</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Tindakan ini tidak dapat dibatalkan. Harap berhati-hati.
+            This action cannot be undone. Please be careful.
           </p>
           <Button 
             variant="outline" 
             className="border-red-500/20 text-red-500 hover:bg-red-500/10"
-            onClick={() => toast.info('Silakan hubungi support untuk menghapus akun')}
+            onClick={() => toast.info('Please contact support to delete your account')}
           >
-            Hapus Akun
+            Delete Account
           </Button>
         </motion.div>
       </div>

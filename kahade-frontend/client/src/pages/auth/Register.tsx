@@ -1,12 +1,13 @@
 /*
  * KAHADE REGISTER PAGE
  * Design: Glassmorphic centered form with brand elements
+ * Icons: Phosphor Icons only
  */
 
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, User, Phone, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Envelope, Lock, Eye, EyeSlash, ArrowRight, Spinner, User, Phone, CheckCircle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,22 +31,22 @@ export default function Register() {
     e.preventDefault();
     
     if (!formData.username || !formData.email || !formData.password) {
-      toast.error('Mohon isi semua field yang wajib');
+      toast.error('Please fill in all required fields');
       return;
     }
 
     if (formData.password.length < 8) {
-      toast.error('Password minimal 8 karakter');
+      toast.error('Password must be at least 8 characters');
       return;
     }
     
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Password tidak cocok');
+      toast.error('Passwords do not match');
       return;
     }
     
     if (!formData.agreeTerms) {
-      toast.error('Anda harus menyetujui syarat dan ketentuan');
+      toast.error('You must agree to the terms and conditions');
       return;
     }
     
@@ -55,29 +56,29 @@ export default function Register() {
         email: formData.email,
         password: formData.password
       });
-      toast.success('Registrasi berhasil!', {
-        description: 'Silakan cek email Anda untuk verifikasi.'
+      toast.success('Registration successful!', {
+        description: 'Please check your email for verification.'
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Silakan coba lagi.';
-      toast.error('Registrasi gagal', { description: message });
+      const message = error.response?.data?.message || 'Please try again.';
+      toast.error('Registration failed', { description: message });
     }
   };
 
   const benefits = [
-    'Transaksi aman dengan sistem escrow',
-    'Perlindungan pembeli dan penjual',
-    'Dukungan pelanggan 24/7',
-    'Biaya kompetitif mulai 2.5%'
+    'Secure transactions with escrow system',
+    'Protection for buyers and sellers',
+    '24/7 customer support',
+    'Competitive fees starting at 2.5%'
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-[#FAFBFC]">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-white/[0.02] relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-white relative overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
         
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -85,14 +86,14 @@ export default function Register() {
           transition={{ delay: 0.2 }}
           className="relative z-10 max-w-md"
         >
-          <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center">
-            <Shield className="w-32 h-32 text-accent" />
+          <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center">
+            <ShieldCheck className="w-32 h-32 text-accent" weight="duotone" />
           </div>
-          <h2 className="text-2xl font-display font-bold mb-4 text-center">
-            Bergabung dengan Kahade
+          <h2 className="text-2xl font-bold mb-4 text-center">
+            Join Kahade Today
           </h2>
           <p className="text-muted-foreground text-center mb-8">
-            Nikmati berbagai keuntungan sebagai member Kahade.
+            Enjoy various benefits as a Kahade member.
           </p>
           
           <ul className="space-y-3">
@@ -104,7 +105,7 @@ export default function Register() {
                 transition={{ delay: 0.3 + index * 0.1 }}
                 className="flex items-center gap-3"
               >
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" weight="fill" />
                 <span className="text-foreground">{benefit}</span>
               </motion.li>
             ))}
@@ -121,27 +122,26 @@ export default function Register() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 mb-8">
-            <Shield className="w-8 h-8 text-accent" />
-            <span className="text-xl font-display font-bold">Kahade</span>
+            <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
           </Link>
           
-          <h1 className="text-3xl font-display font-bold mb-2">Buat Akun</h1>
+          <h1 className="text-3xl font-bold mb-2">Create Account</h1>
           <p className="text-muted-foreground mb-8">
-            Daftar gratis dan mulai bertransaksi dengan aman
+            Sign up free and start transacting securely
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="username">Username *</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                 <Input
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   placeholder="johndoe"
                   required
-                  className="pl-10 bg-white/5 border-white/10"
+                  className="pl-10 bg-white border-border"
                 />
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function Register() {
             <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                 <Input
                   id="email"
                   type="email"
@@ -157,22 +157,22 @@ export default function Register() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@example.com"
                   required
-                  className="pl-10 bg-white/5 border-white/10"
+                  className="pl-10 bg-white border-border"
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Nomor Telepon (Opsional)</Label>
+              <Label htmlFor="phone">Phone Number (Optional)</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+62 812 3456 7890"
-                  className="pl-10 bg-white/5 border-white/10"
+                  placeholder="+1 (555) 123-4567"
+                  className="pl-10 bg-white border-border"
                 />
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function Register() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -190,13 +190,13 @@ export default function Register() {
                     placeholder="••••••••"
                     required
                     minLength={8}
-                    className="pl-10 bg-white/5 border-white/10"
+                    className="pl-10 bg-white border-border"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Konfirmasi *</Label>
+                <Label htmlFor="confirmPassword">Confirm *</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -205,20 +205,20 @@ export default function Register() {
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     placeholder="••••••••"
                     required
-                    className="bg-white/5 border-white/10"
+                    className="bg-white border-border"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
                   </button>
                 </div>
               </div>
             </div>
             
-            <p className="text-xs text-muted-foreground">Password minimal 8 karakter</p>
+            <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
             
             <div className="flex items-start gap-2">
               <Checkbox
@@ -228,13 +228,13 @@ export default function Register() {
                 className="mt-1"
               />
               <Label htmlFor="agreeTerms" className="text-sm cursor-pointer leading-relaxed">
-                Saya menyetujui{' '}
+                I agree to the{' '}
                 <Link href="/terms" className="text-accent hover:underline">
-                  Syarat & Ketentuan
+                  Terms & Conditions
                 </Link>{' '}
-                dan{' '}
+                and{' '}
                 <Link href="/privacy" className="text-accent hover:underline">
-                  Kebijakan Privasi
+                  Privacy Policy
                 </Link>
               </Label>
             </div>
@@ -246,22 +246,22 @@ export default function Register() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                  Memproses...
+                  <Spinner className="mr-2 w-4 h-4 animate-spin" weight="bold" />
+                  Processing...
                 </>
               ) : (
                 <>
-                  Daftar Sekarang
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  Sign Up Now
+                  <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
                 </>
               )}
             </Button>
           </form>
           
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Sudah punya akun?{' '}
+            Already have an account?{' '}
             <Link href="/login" className="text-accent hover:underline font-medium">
-              Masuk di sini
+              Sign in here
             </Link>
           </p>
         </motion.div>

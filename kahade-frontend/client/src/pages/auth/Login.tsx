@@ -2,12 +2,13 @@
  * KAHADE LOGIN PAGE
  * Design: Glassmorphic centered form with brand elements
  * Multi-subdomain: Redirects to appropriate subdomain after login
+ * Icons: Phosphor Icons only
  */
 
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldCheck, Envelope, Lock, Eye, EyeSlash, ArrowRight, Spinner } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,23 +29,23 @@ export default function Login() {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      toast.error('Mohon isi semua field');
+      toast.error('Please fill in all fields');
       return;
     }
 
     try {
       // Login will handle redirect automatically via AuthContext
       await login(formData.email, formData.password);
-      toast.success('Login berhasil!');
+      toast.success('Login successful!');
       // Note: Redirect is handled in AuthContext.login()
     } catch (error: any) {
-      const message = error.message || 'Email atau password salah.';
-      toast.error('Login gagal', { description: message });
+      const message = error.message || 'Invalid email or password.';
+      toast.error('Login failed', { description: message });
     }
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-[#FAFBFC]">
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <motion.div
@@ -54,20 +55,19 @@ export default function Login() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 mb-8">
-            <Shield className="w-8 h-8 text-accent" />
-            <span className="text-xl font-display font-bold">Kahade</span>
+            <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
           </Link>
           
-          <h1 className="text-3xl font-display font-bold mb-2">Selamat Datang</h1>
+          <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
           <p className="text-muted-foreground mb-8">
-            Masuk ke akun Anda untuk melanjutkan
+            Sign in to your account to continue
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                 <Input
                   id="email"
                   type="email"
@@ -75,7 +75,7 @@ export default function Login() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@example.com"
                   required
-                  className="pl-10 bg-white/5 border-white/10"
+                  className="pl-10 bg-white border-border"
                 />
               </div>
             </div>
@@ -84,11 +84,11 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
                 <Link href="/forgot-password" className="text-sm text-accent hover:underline">
-                  Lupa password?
+                  Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -96,14 +96,14 @@ export default function Login() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="••••••••"
                   required
-                  className="pl-10 pr-10 bg-white/5 border-white/10"
+                  className="pl-10 pr-10 bg-white border-border"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
                 </button>
               </div>
             </div>
@@ -115,7 +115,7 @@ export default function Login() {
                 onCheckedChange={(checked) => setFormData({ ...formData, remember: checked as boolean })}
               />
               <Label htmlFor="remember" className="text-sm cursor-pointer">
-                Ingat saya
+                Remember me
               </Label>
             </div>
             
@@ -126,32 +126,32 @@ export default function Login() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                  Memproses...
+                  <Spinner className="mr-2 w-4 h-4 animate-spin" weight="bold" />
+                  Processing...
                 </>
               ) : (
                 <>
-                  Masuk
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  Sign In
+                  <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
                 </>
               )}
             </Button>
           </form>
           
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Belum punya akun?{' '}
+            Don't have an account?{' '}
             <Link href="/register" className="text-accent hover:underline font-medium">
-              Daftar sekarang
+              Sign up now
             </Link>
           </p>
         </motion.div>
       </div>
       
       {/* Right Side - Visual */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-white/[0.02] relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-white relative overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
         
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -159,14 +159,14 @@ export default function Login() {
           transition={{ delay: 0.2 }}
           className="relative z-10 text-center"
         >
-          <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center">
-            <Shield className="w-32 h-32 text-accent" />
+          <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center">
+            <ShieldCheck className="w-32 h-32 text-accent" weight="duotone" />
           </div>
-          <h2 className="text-2xl font-display font-bold mb-4">
-            Transaksi Aman dengan Kahade
+          <h2 className="text-2xl font-bold mb-4">
+            Secure Transactions with Kahade
           </h2>
           <p className="text-muted-foreground max-w-sm mx-auto">
-            Platform rekber/escrow terpercaya untuk keamanan transaksi online Anda.
+            The trusted escrow platform for secure online transactions.
           </p>
         </motion.div>
       </div>

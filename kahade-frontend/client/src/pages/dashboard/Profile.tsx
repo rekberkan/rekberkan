@@ -1,13 +1,14 @@
 /*
  * KAHADE PROFILE PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  User, Mail, Phone, Star, Calendar, CheckCircle2,
-  Upload, Camera, BadgeCheck, AlertCircle, Loader2
-} from 'lucide-react';
+  User, Envelope, Phone, Star, Calendar, CheckCircle,
+  Upload, Camera, SealCheck, Warning, Spinner
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,11 +17,11 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { userApi } from '@/lib/api';
 
-const kycStatusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  NONE: { label: 'Belum Verifikasi', color: 'text-gray-500 bg-gray-500/10', icon: AlertCircle },
-  PENDING: { label: 'Menunggu Review', color: 'text-amber-500 bg-amber-500/10', icon: AlertCircle },
-  VERIFIED: { label: 'Terverifikasi', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
-  REJECTED: { label: 'Ditolak', color: 'text-red-500 bg-red-500/10', icon: AlertCircle },
+const kycStatusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
+  NONE: { label: 'Not Verified', color: 'text-gray-500 bg-gray-500/10', icon: Warning },
+  PENDING: { label: 'Pending Review', color: 'text-amber-500 bg-amber-500/10', icon: Warning },
+  VERIFIED: { label: 'Verified', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle },
+  REJECTED: { label: 'Rejected', color: 'text-red-500 bg-red-500/10', icon: Warning },
 };
 
 export default function Profile() {
@@ -67,19 +68,19 @@ export default function Profile() {
         username: formData.username,
         phone: formData.phone,
       });
-      toast.success('Profil berhasil diperbarui');
+      toast.success('Profile updated successfully');
       setIsEditing(false);
       refreshUser();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memperbarui profil');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleStartKYC = () => {
-    toast.info('Fitur KYC dalam pengembangan', {
-      description: 'Verifikasi identitas akan segera tersedia.'
+    toast.info('KYC feature in development', {
+      description: 'Identity verification will be available soon.'
     });
   };
 
@@ -88,12 +89,12 @@ export default function Profile() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('File harus berupa gambar');
+      toast.error('File must be an image');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Ukuran file maksimal 5MB');
+      toast.error('Maximum file size is 5MB');
       return;
     }
 
@@ -102,15 +103,15 @@ export default function Profile() {
 
     try {
       await userApi.uploadAvatar(formData);
-      toast.success('Avatar berhasil diperbarui');
+      toast.success('Avatar updated successfully');
       refreshUser();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengupload avatar');
+      toast.error(error.response?.data?.message || 'Failed to upload avatar');
     }
   };
 
   return (
-    <DashboardLayout title="Profil" subtitle="Kelola informasi akun Anda">
+    <DashboardLayout title="Profile" subtitle="Manage your account information">
       <div className="max-w-4xl space-y-6">
         {/* Profile Header */}
         <motion.div
@@ -127,12 +128,12 @@ export default function Profile() {
                   className="w-24 h-24 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white text-3xl font-bold">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center text-white text-3xl font-bold">
                   {user?.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
               )}
               <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white hover:bg-accent/80 transition-colors cursor-pointer">
-                <Camera className="w-4 h-4" />
+                <Camera className="w-4 h-4" weight="fill" />
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -142,20 +143,20 @@ export default function Profile() {
               </label>
             </div>
             <div className="text-center sm:text-left flex-1">
-              <h2 className="text-2xl font-display font-bold">{user?.username || 'User'}</h2>
+              <h2 className="text-2xl font-bold">{user?.username || 'User'}</h2>
               <p className="text-muted-foreground">{user?.email}</p>
               <div className="flex items-center gap-4 mt-3 justify-center sm:justify-start">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <Star className="w-4 h-4 text-amber-400" weight="fill" />
                   <span className="font-medium">{user?.reputationScore?.toFixed(1) || '0.0'}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.totalTransactions} transaksi
+                  {stats.totalTransactions} transactions
                 </div>
               </div>
             </div>
             <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${kycStatus.color}`}>
-              <kycStatus.icon className="w-4 h-4" />
+              <kycStatus.icon className="w-4 h-4" weight="fill" />
               <span className="text-sm font-medium">{kycStatus.label}</span>
             </div>
           </div>
@@ -171,30 +172,30 @@ export default function Profile() {
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                <BadgeCheck className="w-6 h-6 text-amber-500" />
+                <SealCheck className="w-6 h-6 text-amber-500" weight="duotone" />
               </div>
               <div className="flex-1">
-                <h3 className="font-display font-semibold mb-1">Verifikasi Identitas (KYC)</h3>
+                <h3 className="font-semibold mb-1">Identity Verification (KYC)</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Verifikasi identitas Anda untuk meningkatkan limit transaksi dan mendapatkan badge terverifikasi.
+                  Verify your identity to increase transaction limits and get a verified badge.
                 </p>
                 <div className="grid sm:grid-cols-3 gap-4 mb-4">
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground">Limit Saat Ini</div>
-                    <div className="font-semibold">Rp 10.000.000</div>
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground">Current Limit</div>
+                    <div className="font-semibold">$10,000</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground">Setelah Verifikasi</div>
-                    <div className="font-semibold text-emerald-500">Rp 100.000.000</div>
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground">After Verification</div>
+                    <div className="font-semibold text-emerald-500">$100,000</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground">Dokumen</div>
-                    <div className="font-semibold">KTP + Selfie</div>
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground">Documents</div>
+                    <div className="font-semibold">ID + Selfie</div>
                   </div>
                 </div>
                 <Button className="btn-accent" onClick={handleStartKYC}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Mulai Verifikasi
+                  <Upload className="w-4 h-4 mr-2" weight="bold" />
+                  Start Verification
                 </Button>
               </div>
             </div>
@@ -209,24 +210,24 @@ export default function Profile() {
           className="glass-card p-6"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-display font-semibold">Informasi Pribadi</h3>
+            <h3 className="text-lg font-semibold">Personal Information</h3>
             {!isEditing ? (
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                Edit Profil
+                Edit Profile
               </Button>
             ) : (
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(false)} disabled={isSaving}>
-                  Batal
+                  Cancel
                 </Button>
                 <Button size="sm" className="btn-accent" onClick={handleSave} disabled={isSaving}>
                   {isSaving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Menyimpan...
+                      <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" />
+                      Saving...
                     </>
                   ) : (
-                    'Simpan'
+                    'Save'
                   )}
                 </Button>
               </div>
@@ -238,13 +239,13 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                   <Input
                     id="username"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     disabled={!isEditing}
-                    className="pl-10 bg-white/5 border-white/10"
+                    className="pl-10 bg-white border-border"
                   />
                 </div>
               </div>
@@ -252,31 +253,31 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     disabled
-                    className="pl-10 bg-white/5 border-white/10"
+                    className="pl-10 bg-white border-border"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
+                <p className="text-xs text-muted-foreground">Email cannot be changed</p>
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Nomor Telepon</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   disabled={!isEditing}
-                  placeholder="+62 812 3456 7890"
-                  className="pl-10 bg-white/5 border-white/10"
+                  placeholder="+1 (555) 123-4567"
+                  className="pl-10 bg-white border-border"
                 />
               </div>
             </div>
@@ -290,34 +291,34 @@ export default function Profile() {
           transition={{ delay: 0.3 }}
           className="glass-card p-6"
         >
-          <h3 className="text-lg font-display font-semibold mb-4">Statistik Akun</h3>
+          <h3 className="text-lg font-semibold mb-4">Account Statistics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-white/5 text-center">
-              <div className="text-2xl font-display font-bold gradient-text">
+            <div className="p-4 rounded-xl bg-secondary/50 text-center">
+              <div className="text-2xl font-bold gradient-text">
                 {stats.totalTransactions}
               </div>
-              <div className="text-sm text-muted-foreground">Total Transaksi</div>
+              <div className="text-sm text-muted-foreground">Total Transactions</div>
             </div>
-            <div className="p-4 rounded-xl bg-white/5 text-center">
-              <div className="text-2xl font-display font-bold text-emerald-500">
+            <div className="p-4 rounded-xl bg-secondary/50 text-center">
+              <div className="text-2xl font-bold text-emerald-500">
                 {stats.completedTransactions}
               </div>
-              <div className="text-sm text-muted-foreground">Selesai</div>
+              <div className="text-sm text-muted-foreground">Completed</div>
             </div>
-            <div className="p-4 rounded-xl bg-white/5 text-center">
-              <div className="text-2xl font-display font-bold text-amber-500">
+            <div className="p-4 rounded-xl bg-secondary/50 text-center">
+              <div className="text-2xl font-bold text-amber-500">
                 {user?.reputationScore?.toFixed(1) || '0.0'}
               </div>
               <div className="text-sm text-muted-foreground">Rating</div>
             </div>
-            <div className="p-4 rounded-xl bg-white/5 text-center">
+            <div className="p-4 rounded-xl bg-secondary/50 text-center">
               <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-4 h-4" weight="regular" />
                 <span className="text-sm">
-                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }) : '-'}
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '-'}
                 </span>
               </div>
-              <div className="text-sm text-muted-foreground">Bergabung</div>
+              <div className="text-sm text-muted-foreground">Joined</div>
             </div>
           </div>
         </motion.div>

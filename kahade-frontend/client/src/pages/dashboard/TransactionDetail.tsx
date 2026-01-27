@@ -1,14 +1,15 @@
 /*
  * KAHADE TRANSACTION DETAIL PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { Link, useParams, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, Clock, CheckCircle2, AlertCircle, Calendar,
-  Copy, Loader2, XCircle, Package, CreditCard
-} from 'lucide-react';
+  ArrowLeft, Clock, CheckCircle, Warning, Calendar,
+  Copy, Spinner, XCircle, Package, CreditCard
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -53,27 +54,27 @@ interface Transaction {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-  WAITING_COUNTERPARTY: { label: 'Menunggu Pihak Lain', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-  PENDING_ACCEPT: { label: 'Menunggu Persetujuan', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-  ACCEPTED: { label: 'Diterima - Menunggu Pembayaran', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-  PAID: { label: 'Dibayar - Menunggu Pengiriman', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-  DELIVERED: { label: 'Dikirim - Menunggu Konfirmasi', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-  COMPLETED: { label: 'Selesai', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-  DISPUTED: { label: 'Dalam Dispute', color: 'text-red-500', bgColor: 'bg-red-500/10' },
-  CANCELLED: { label: 'Dibatalkan', color: 'text-gray-500', bgColor: 'bg-gray-500/10' },
-  REFUNDED: { label: 'Dana Dikembalikan', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+  WAITING_COUNTERPARTY: { label: 'Waiting for Counterparty', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+  PENDING_ACCEPT: { label: 'Pending Acceptance', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+  ACCEPTED: { label: 'Accepted - Awaiting Payment', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+  PAID: { label: 'Paid - Awaiting Delivery', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+  DELIVERED: { label: 'Delivered - Awaiting Confirmation', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+  COMPLETED: { label: 'Completed', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+  DISPUTED: { label: 'In Dispute', color: 'text-red-500', bgColor: 'bg-red-500/10' },
+  CANCELLED: { label: 'Cancelled', color: 'text-gray-500', bgColor: 'bg-gray-500/10' },
+  REFUNDED: { label: 'Refunded', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'IDR',
+    currency: 'USD',
     minimumFractionDigits: 0
   }).format(amount);
 };
 
 const formatDate = (dateString: string) => {
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -107,7 +108,7 @@ export default function TransactionDetail() {
       const response = await transactionApi.get(id);
       setTransaction(response.data.transaction || response.data);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memuat transaksi');
+      toast.error(error.response?.data?.message || 'Failed to load transaction');
       setLocation('/app/transactions');
     } finally {
       setIsLoading(false);
@@ -117,7 +118,7 @@ export default function TransactionDetail() {
   const handleCopyOrderNumber = () => {
     if (transaction) {
       navigator.clipboard.writeText(transaction.orderNumber);
-      toast.success('Nomor order disalin');
+      toast.success('Order number copied');
     }
   };
 
@@ -127,10 +128,10 @@ export default function TransactionDetail() {
     setIsActionLoading(true);
     try {
       await transactionApi.accept(transaction.id);
-      toast.success('Transaksi diterima!');
+      toast.success('Transaction accepted!');
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menerima transaksi');
+      toast.error(error.response?.data?.message || 'Failed to accept transaction');
     } finally {
       setIsActionLoading(false);
     }
@@ -142,11 +143,11 @@ export default function TransactionDetail() {
     setIsActionLoading(true);
     try {
       await transactionApi.reject(transaction.id, cancelReason);
-      toast.success('Transaksi ditolak');
+      toast.success('Transaction rejected');
       setIsCancelOpen(false);
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menolak transaksi');
+      toast.error(error.response?.data?.message || 'Failed to reject transaction');
     } finally {
       setIsActionLoading(false);
     }
@@ -158,12 +159,12 @@ export default function TransactionDetail() {
     setIsActionLoading(true);
     try {
       await transactionApi.pay(transaction.id);
-      toast.success('Pembayaran berhasil!', {
-        description: 'Dana telah ditahan di escrow.'
+      toast.success('Payment successful!', {
+        description: 'Funds are now held in escrow.'
       });
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal melakukan pembayaran');
+      toast.error(error.response?.data?.message || 'Failed to process payment');
     } finally {
       setIsActionLoading(false);
     }
@@ -175,10 +176,10 @@ export default function TransactionDetail() {
     setIsActionLoading(true);
     try {
       await transactionApi.confirmDelivery(transaction.id);
-      toast.success('Pengiriman dikonfirmasi!');
+      toast.success('Delivery confirmed!');
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal konfirmasi pengiriman');
+      toast.error(error.response?.data?.message || 'Failed to confirm delivery');
     } finally {
       setIsActionLoading(false);
     }
@@ -190,12 +191,12 @@ export default function TransactionDetail() {
     setIsActionLoading(true);
     try {
       await transactionApi.confirmReceipt(transaction.id);
-      toast.success('Transaksi selesai!', {
-        description: 'Dana telah dilepaskan ke penjual.'
+      toast.success('Transaction completed!', {
+        description: 'Funds have been released to the seller.'
       });
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal konfirmasi penerimaan');
+      toast.error(error.response?.data?.message || 'Failed to confirm receipt');
     } finally {
       setIsActionLoading(false);
     }
@@ -207,11 +208,11 @@ export default function TransactionDetail() {
     setIsActionLoading(true);
     try {
       await transactionApi.cancel(transaction.id, cancelReason);
-      toast.success('Transaksi dibatalkan');
+      toast.success('Transaction cancelled');
       setIsCancelOpen(false);
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal membatalkan transaksi');
+      toast.error(error.response?.data?.message || 'Failed to cancel transaction');
     } finally {
       setIsActionLoading(false);
     }
@@ -221,7 +222,7 @@ export default function TransactionDetail() {
     if (!transaction) return;
     
     if (!disputeReason.trim() || !disputeDescription.trim()) {
-      toast.error('Mohon isi alasan dan deskripsi dispute');
+      toast.error('Please fill in the reason and description');
       return;
     }
 
@@ -231,15 +232,15 @@ export default function TransactionDetail() {
         reason: disputeReason,
         description: disputeDescription,
       });
-      toast.success('Dispute diajukan', {
-        description: 'Tim kami akan meninjau dalam 1-3 hari kerja.'
+      toast.success('Dispute submitted', {
+        description: 'Our team will review within 1-3 business days.'
       });
       setIsDisputeOpen(false);
       setDisputeReason('');
       setDisputeDescription('');
       fetchTransaction();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengajukan dispute');
+      toast.error(error.response?.data?.message || 'Failed to submit dispute');
     } finally {
       setIsActionLoading(false);
     }
@@ -249,7 +250,7 @@ export default function TransactionDetail() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
       </DashboardLayout>
     );
@@ -259,9 +260,9 @@ export default function TransactionDetail() {
     return (
       <DashboardLayout>
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Transaksi tidak ditemukan</p>
+          <p className="text-muted-foreground">Transaction not found</p>
           <Link href="/app/transactions">
-            <Button className="mt-4">Kembali ke Transaksi</Button>
+            <Button className="mt-4">Back to Transactions</Button>
           </Link>
         </div>
       </DashboardLayout>
@@ -278,24 +279,24 @@ export default function TransactionDetail() {
 
   // Build timeline
   const timeline = [];
-  timeline.push({ status: 'CREATED', timestamp: transaction.createdAt, description: 'Transaksi dibuat' });
+  timeline.push({ status: 'CREATED', timestamp: transaction.createdAt, description: 'Transaction created' });
   if (transaction.acceptedAt) {
-    timeline.push({ status: 'ACCEPTED', timestamp: transaction.acceptedAt, description: 'Transaksi diterima' });
+    timeline.push({ status: 'ACCEPTED', timestamp: transaction.acceptedAt, description: 'Transaction accepted' });
   }
   if (transaction.paidAt) {
-    timeline.push({ status: 'PAID', timestamp: transaction.paidAt, description: 'Pembayaran diterima' });
+    timeline.push({ status: 'PAID', timestamp: transaction.paidAt, description: 'Payment received' });
   }
   if (transaction.deliveredAt) {
-    timeline.push({ status: 'DELIVERED', timestamp: transaction.deliveredAt, description: 'Barang/jasa dikirim' });
+    timeline.push({ status: 'DELIVERED', timestamp: transaction.deliveredAt, description: 'Item/service delivered' });
   }
   if (transaction.completedAt) {
-    timeline.push({ status: 'COMPLETED', timestamp: transaction.completedAt, description: 'Transaksi selesai' });
+    timeline.push({ status: 'COMPLETED', timestamp: transaction.completedAt, description: 'Transaction completed' });
   }
   if (transaction.cancelledAt) {
-    timeline.push({ status: 'CANCELLED', timestamp: transaction.cancelledAt, description: 'Transaksi dibatalkan' });
+    timeline.push({ status: 'CANCELLED', timestamp: transaction.cancelledAt, description: 'Transaction cancelled' });
   }
   if (transaction.disputedAt) {
-    timeline.push({ status: 'DISPUTED', timestamp: transaction.disputedAt, description: 'Dispute diajukan' });
+    timeline.push({ status: 'DISPUTED', timestamp: transaction.disputedAt, description: 'Dispute submitted' });
   }
 
   return (
@@ -304,8 +305,8 @@ export default function TransactionDetail() {
         {/* Back Button */}
         <Link href="/app/transactions">
           <Button variant="ghost" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Kembali ke Transaksi
+            <ArrowLeft className="w-4 h-4" weight="bold" />
+            Back to Transactions
           </Button>
         </Link>
         
@@ -323,21 +324,21 @@ export default function TransactionDetail() {
                   className="font-mono text-sm text-muted-foreground hover:text-accent flex items-center gap-1"
                 >
                   {transaction.orderNumber}
-                  <Copy className="w-3 h-3" />
+                  <Copy className="w-3 h-3" weight="bold" />
                 </button>
                 <span className={`text-xs px-3 py-1 rounded-full ${status.color} ${status.bgColor}`}>
                   {status.label}
                 </span>
               </div>
-              <h1 className="text-2xl font-display font-bold mb-2">{transaction.title}</h1>
+              <h1 className="text-2xl font-bold mb-2">{transaction.title}</h1>
               <p className="text-muted-foreground">{transaction.description}</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-display font-bold gradient-text">
+              <div className="text-3xl font-bold gradient-text">
                 {formatCurrency(transaction.amount)}
               </div>
               <div className="text-sm text-muted-foreground">
-                + Biaya platform {formatCurrency(transaction.platformFee)}
+                + Platform fee {formatCurrency(transaction.platformFee)}
               </div>
             </div>
           </div>
@@ -353,30 +354,30 @@ export default function TransactionDetail() {
               transition={{ delay: 0.1 }}
               className="glass-card p-6"
             >
-              <h2 className="text-lg font-display font-semibold mb-4">Pihak Terkait</h2>
+              <h2 className="text-lg font-semibold mb-4">Parties Involved</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-white/5">
-                  <div className="text-sm text-muted-foreground mb-2">Pembeli {isBuyer && '(Anda)'}</div>
+                <div className="p-4 rounded-xl bg-secondary/50">
+                  <div className="text-sm text-muted-foreground mb-2">Buyer {isBuyer && '(You)'}</div>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white font-semibold">
                       {buyer?.username?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div>
-                      <div className="font-medium">{buyer?.username || 'Menunggu'}</div>
+                      <div className="font-medium">{buyer?.username || 'Waiting'}</div>
                       {buyer?.reputationScore && (
                         <div className="text-sm text-muted-foreground">⭐ {buyer.reputationScore}</div>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-white/5">
-                  <div className="text-sm text-muted-foreground mb-2">Penjual {isSeller && '(Anda)'}</div>
+                <div className="p-4 rounded-xl bg-secondary/50">
+                  <div className="text-sm text-muted-foreground mb-2">Seller {isSeller && '(You)'}</div>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-semibold">
                       {seller?.username?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div>
-                      <div className="font-medium">{seller?.username || 'Menunggu'}</div>
+                      <div className="font-medium">{seller?.username || 'Waiting'}</div>
                       {seller?.reputationScore && (
                         <div className="text-sm text-muted-foreground">⭐ {seller.reputationScore}</div>
                       )}
@@ -393,13 +394,13 @@ export default function TransactionDetail() {
               transition={{ delay: 0.2 }}
               className="glass-card p-6"
             >
-              <h2 className="text-lg font-display font-semibold mb-4">Timeline</h2>
+              <h2 className="text-lg font-semibold mb-4">Timeline</h2>
               <div className="space-y-4">
                 {timeline.map((event, index) => (
                   <div key={index} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-4 h-4 text-accent" />
+                        <CheckCircle className="w-4 h-4 text-accent" weight="fill" />
                       </div>
                       {index < timeline.length - 1 && (
                         <div className="w-0.5 h-full bg-accent/20 mt-2" />
@@ -423,38 +424,38 @@ export default function TransactionDetail() {
               transition={{ delay: 0.3 }}
               className="glass-card p-6"
             >
-              <h2 className="text-lg font-display font-semibold mb-4">Aksi</h2>
+              <h2 className="text-lg font-semibold mb-4">Actions</h2>
               <div className="flex flex-wrap gap-3">
                 {/* Accept/Reject for counterparty on PENDING_ACCEPT */}
                 {transaction.status === 'PENDING_ACCEPT' && !isInitiator && (
                   <>
                     <Button className="btn-accent" onClick={handleAccept} disabled={isActionLoading}>
-                      {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                      Terima Transaksi
+                      {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : <CheckCircle className="w-4 h-4 mr-2" weight="fill" />}
+                      Accept Transaction
                     </Button>
                     <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Tolak
+                          <XCircle className="w-4 h-4 mr-2" weight="fill" />
+                          Reject
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Tolak Transaksi</DialogTitle>
-                          <DialogDescription>Berikan alasan penolakan (opsional)</DialogDescription>
+                          <DialogTitle>Reject Transaction</DialogTitle>
+                          <DialogDescription>Provide a reason for rejection (optional)</DialogDescription>
                         </DialogHeader>
                         <Textarea
-                          placeholder="Alasan penolakan..."
+                          placeholder="Reason for rejection..."
                           value={cancelReason}
                           onChange={(e) => setCancelReason(e.target.value)}
                           rows={3}
                         />
                         <DialogFooter>
-                          <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Batal</Button>
+                          <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Cancel</Button>
                           <Button className="bg-red-500 hover:bg-red-600" onClick={handleReject} disabled={isActionLoading}>
-                            {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                            Tolak Transaksi
+                            {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : null}
+                            Reject Transaction
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -465,24 +466,24 @@ export default function TransactionDetail() {
                 {/* Pay for buyer on ACCEPTED */}
                 {transaction.status === 'ACCEPTED' && isBuyer && (
                   <Button className="btn-accent" onClick={handlePay} disabled={isActionLoading}>
-                    {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                    Bayar Sekarang
+                    {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : <CreditCard className="w-4 h-4 mr-2" weight="fill" />}
+                    Pay Now
                   </Button>
                 )}
 
                 {/* Confirm Delivery for seller on PAID */}
                 {transaction.status === 'PAID' && isSeller && (
                   <Button className="btn-accent" onClick={handleConfirmDelivery} disabled={isActionLoading}>
-                    {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Package className="w-4 h-4 mr-2" />}
-                    Konfirmasi Pengiriman
+                    {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : <Package className="w-4 h-4 mr-2" weight="fill" />}
+                    Confirm Delivery
                   </Button>
                 )}
 
                 {/* Confirm Receipt for buyer on DELIVERED */}
                 {transaction.status === 'DELIVERED' && isBuyer && (
                   <Button className="btn-accent" onClick={handleConfirmReceipt} disabled={isActionLoading}>
-                    {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                    Konfirmasi Diterima
+                    {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : <CheckCircle className="w-4 h-4 mr-2" weight="fill" />}
+                    Confirm Receipt
                   </Button>
                 )}
 
@@ -491,30 +492,30 @@ export default function TransactionDetail() {
                   <Dialog open={isDisputeOpen} onOpenChange={setIsDisputeOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        Ajukan Dispute
+                        <Warning className="w-4 h-4 mr-2" weight="fill" />
+                        Open Dispute
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Ajukan Dispute</DialogTitle>
+                        <DialogTitle>Open Dispute</DialogTitle>
                         <DialogDescription>
-                          Jelaskan alasan Anda mengajukan dispute untuk transaksi ini.
+                          Explain why you are opening a dispute for this transaction.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label>Alasan</Label>
+                          <Label>Reason</Label>
                           <Input
-                            placeholder="Contoh: Barang tidak sesuai deskripsi"
+                            placeholder="Example: Item does not match description"
                             value={disputeReason}
                             onChange={(e) => setDisputeReason(e.target.value)}
                           />
                         </div>
                         <div>
-                          <Label>Deskripsi Detail</Label>
+                          <Label>Detailed Description</Label>
                           <Textarea
-                            placeholder="Jelaskan masalah yang Anda alami secara detail..."
+                            placeholder="Describe the issue you experienced in detail..."
                             value={disputeDescription}
                             onChange={(e) => setDisputeDescription(e.target.value)}
                             rows={4}
@@ -522,10 +523,10 @@ export default function TransactionDetail() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDisputeOpen(false)}>Batal</Button>
+                        <Button variant="outline" onClick={() => setIsDisputeOpen(false)}>Cancel</Button>
                         <Button className="bg-red-500 hover:bg-red-600" onClick={handleSubmitDispute} disabled={isActionLoading}>
-                          {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                          Ajukan Dispute
+                          {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : null}
+                          Submit Dispute
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -537,26 +538,26 @@ export default function TransactionDetail() {
                   <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Batalkan
+                        <XCircle className="w-4 h-4 mr-2" weight="fill" />
+                        Cancel
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Batalkan Transaksi</DialogTitle>
-                        <DialogDescription>Berikan alasan pembatalan (opsional)</DialogDescription>
+                        <DialogTitle>Cancel Transaction</DialogTitle>
+                        <DialogDescription>Provide a reason for cancellation (optional)</DialogDescription>
                       </DialogHeader>
                       <Textarea
-                        placeholder="Alasan pembatalan..."
+                        placeholder="Reason for cancellation..."
                         value={cancelReason}
                         onChange={(e) => setCancelReason(e.target.value)}
                         rows={3}
                       />
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Kembali</Button>
+                        <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Back</Button>
                         <Button className="bg-red-500 hover:bg-red-600" onClick={handleCancel} disabled={isActionLoading}>
-                          {isActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                          Batalkan Transaksi
+                          {isActionLoading ? <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" /> : null}
+                          Cancel Transaction
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -565,7 +566,7 @@ export default function TransactionDetail() {
 
                 {/* No actions available */}
                 {['COMPLETED', 'CANCELLED', 'REFUNDED', 'DISPUTED'].includes(transaction.status) && (
-                  <p className="text-muted-foreground text-sm">Tidak ada aksi yang tersedia untuk transaksi ini.</p>
+                  <p className="text-muted-foreground text-sm">No actions available for this transaction.</p>
                 )}
               </div>
             </motion.div>
@@ -580,34 +581,34 @@ export default function TransactionDetail() {
               transition={{ delay: 0.15 }}
               className="glass-card p-6"
             >
-              <h2 className="text-lg font-display font-semibold mb-4">Info Transaksi</h2>
+              <h2 className="text-lg font-semibold mb-4">Transaction Info</h2>
               <div className="space-y-4">
                 <div>
-                  <div className="text-sm text-muted-foreground">Kategori</div>
+                  <div className="text-sm text-muted-foreground">Category</div>
                   <div className="font-medium">{transaction.category}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Peran Anda</div>
-                  <div className="font-medium">{isBuyer ? 'Pembeli' : 'Penjual'}</div>
+                  <div className="text-sm text-muted-foreground">Your Role</div>
+                  <div className="font-medium">{isBuyer ? 'Buyer' : 'Seller'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Biaya Ditanggung</div>
+                  <div className="text-sm text-muted-foreground">Fee Paid By</div>
                   <div className="font-medium">
-                    {transaction.feePayer === 'BUYER' ? 'Pembeli' : 
-                     transaction.feePayer === 'SELLER' ? 'Penjual' : 'Bagi Rata'}
+                    {transaction.feePayer === 'BUYER' ? 'Buyer' : 
+                     transaction.feePayer === 'SELLER' ? 'Seller' : 'Split'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Dibuat</div>
+                  <div className="text-sm text-muted-foreground">Created</div>
                   <div className="font-medium flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-4 h-4" weight="regular" />
                     {formatDate(transaction.createdAt)}
                   </div>
                 </div>
                 {transaction.terms && (
                   <div>
-                    <div className="text-sm text-muted-foreground">Syarat & Ketentuan</div>
-                    <div className="text-sm mt-1 p-3 rounded-lg bg-white/5">{transaction.terms}</div>
+                    <div className="text-sm text-muted-foreground">Terms & Conditions</div>
+                    <div className="text-sm mt-1 p-3 rounded-lg bg-secondary/50">{transaction.terms}</div>
                   </div>
                 )}
               </div>
@@ -620,17 +621,17 @@ export default function TransactionDetail() {
               transition={{ delay: 0.2 }}
               className="glass-card p-6"
             >
-              <h2 className="text-lg font-display font-semibold mb-4">Rincian Harga</h2>
+              <h2 className="text-lg font-semibold mb-4">Price Breakdown</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Harga</span>
+                  <span className="text-muted-foreground">Price</span>
                   <span>{formatCurrency(transaction.amount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Biaya Platform</span>
+                  <span className="text-muted-foreground">Platform Fee</span>
                   <span>{formatCurrency(transaction.platformFee)}</span>
                 </div>
-                <div className="border-t border-white/10 pt-3 flex justify-between font-semibold">
+                <div className="border-t border-border pt-3 flex justify-between font-semibold">
                   <span>Total</span>
                   <span className="text-accent">{formatCurrency(transaction.amount + transaction.platformFee)}</span>
                 </div>

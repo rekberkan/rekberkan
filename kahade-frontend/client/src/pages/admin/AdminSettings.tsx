@@ -1,14 +1,14 @@
 /*
  * KAHADE ADMIN SETTINGS PAGE
- * Uses real API for settings management
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Settings, Percent, Clock, Shield, Bell, Database,
-  Save, RefreshCw, Loader2
-} from 'lucide-react';
+  Gear, Percent, Clock, Shield, Bell, Database,
+  FloppyDisk, ArrowsClockwise, Spinner
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,8 +40,8 @@ interface PlatformSettings {
 
 const defaultSettings: PlatformSettings = {
   platformFee: '1',
-  minTransaction: '100000',
-  maxTransaction: '100000000',
+  minTransaction: '100',
+  maxTransaction: '100000',
   escrowDuration: '7',
   disputeWindow: '3',
   autoReleaseDays: '14',
@@ -101,9 +101,9 @@ export default function AdminSettings() {
         emailNotifications: settings.emailNotifications,
         slackNotifications: settings.slackNotifications,
       });
-      toast.success('Pengaturan berhasil disimpan');
+      toast.success('Settings saved successfully');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menyimpan pengaturan');
+      toast.error(error.response?.data?.message || 'Failed to save settings');
     } finally {
       setIsSaving(false);
     }
@@ -111,21 +111,21 @@ export default function AdminSettings() {
 
   const handleReset = () => {
     setSettings(defaultSettings);
-    toast.info('Pengaturan direset ke default');
+    toast.info('Settings reset to default');
   };
 
   if (isLoading) {
     return (
-      <AdminLayout title="Pengaturan Platform" subtitle="Konfigurasi sistem Kahade">
+      <AdminLayout title="Platform Settings" subtitle="Kahade system configuration">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout title="Pengaturan Platform" subtitle="Konfigurasi sistem Kahade">
+    <AdminLayout title="Platform Settings" subtitle="Kahade system configuration">
       <div className="max-w-4xl space-y-6">
         {/* Transaction Settings */}
         <motion.div
@@ -135,17 +135,17 @@ export default function AdminSettings() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Percent className="w-5 h-5 text-accent" />
+              <Percent className="w-5 h-5 text-accent" weight="fill" />
             </div>
             <div>
-              <h3 className="font-display font-semibold">Pengaturan Transaksi</h3>
-              <p className="text-sm text-muted-foreground">Konfigurasi biaya dan limit transaksi</p>
+              <h3 className="font-semibold">Transaction Settings</h3>
+              <p className="text-sm text-muted-foreground">Configure fees and transaction limits</p>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="platformFee">Biaya Platform (%)</Label>
+              <Label htmlFor="platformFee">Platform Fee (%)</Label>
               <Input
                 id="platformFee"
                 type="number"
@@ -154,49 +154,49 @@ export default function AdminSettings() {
                 max="100"
                 value={settings.platformFee}
                 onChange={(e) => setSettings({ ...settings, platformFee: e.target.value })}
-                className="bg-white/5 border-white/10"
+                className="bg-white border-border"
               />
-              <p className="text-xs text-muted-foreground">Persentase biaya per transaksi</p>
+              <p className="text-xs text-muted-foreground">Fee percentage per transaction</p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="minTransaction">Minimum Transaksi (IDR)</Label>
+              <Label htmlFor="minTransaction">Minimum Transaction (USD)</Label>
               <Input
                 id="minTransaction"
                 type="number"
                 min="0"
                 value={settings.minTransaction}
                 onChange={(e) => setSettings({ ...settings, minTransaction: e.target.value })}
-                className="bg-white/5 border-white/10"
+                className="bg-white border-border"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="maxTransaction">Maximum Transaksi (IDR)</Label>
+              <Label htmlFor="maxTransaction">Maximum Transaction (USD)</Label>
               <Input
                 id="maxTransaction"
                 type="number"
                 min="0"
                 value={settings.maxTransaction}
                 onChange={(e) => setSettings({ ...settings, maxTransaction: e.target.value })}
-                className="bg-white/5 border-white/10"
+                className="bg-white border-border"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="escrowDuration">Durasi Escrow Default (Hari)</Label>
+              <Label htmlFor="escrowDuration">Default Escrow Duration (Days)</Label>
               <Select 
                 value={settings.escrowDuration} 
                 onValueChange={(value) => setSettings({ ...settings, escrowDuration: value })}
               >
-                <SelectTrigger className="bg-white/5 border-white/10">
+                <SelectTrigger className="bg-white border-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3">3 Hari</SelectItem>
-                  <SelectItem value="7">7 Hari</SelectItem>
-                  <SelectItem value="14">14 Hari</SelectItem>
-                  <SelectItem value="30">30 Hari</SelectItem>
+                  <SelectItem value="3">3 Days</SelectItem>
+                  <SelectItem value="7">7 Days</SelectItem>
+                  <SelectItem value="14">14 Days</SelectItem>
+                  <SelectItem value="30">30 Days</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -212,17 +212,17 @@ export default function AdminSettings() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-amber-500" />
+              <Clock className="w-5 h-5 text-amber-500" weight="fill" />
             </div>
             <div>
-              <h3 className="font-display font-semibold">Pengaturan Dispute</h3>
-              <p className="text-sm text-muted-foreground">Konfigurasi waktu dan proses dispute</p>
+              <h3 className="font-semibold">Dispute Settings</h3>
+              <p className="text-sm text-muted-foreground">Configure dispute timing and process</p>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="disputeWindow">Jendela Dispute (Hari)</Label>
+              <Label htmlFor="disputeWindow">Dispute Window (Days)</Label>
               <Input
                 id="disputeWindow"
                 type="number"
@@ -230,13 +230,13 @@ export default function AdminSettings() {
                 max="30"
                 value={settings.disputeWindow}
                 onChange={(e) => setSettings({ ...settings, disputeWindow: e.target.value })}
-                className="bg-white/5 border-white/10"
+                className="bg-white border-border"
               />
-              <p className="text-xs text-muted-foreground">Waktu untuk mengajukan dispute setelah pengiriman</p>
+              <p className="text-xs text-muted-foreground">Time to file dispute after delivery</p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="autoReleaseDays">Auto-Release (Hari)</Label>
+              <Label htmlFor="autoReleaseDays">Auto-Release (Days)</Label>
               <Input
                 id="autoReleaseDays"
                 type="number"
@@ -244,9 +244,9 @@ export default function AdminSettings() {
                 max="60"
                 value={settings.autoReleaseDays}
                 onChange={(e) => setSettings({ ...settings, autoReleaseDays: e.target.value })}
-                className="bg-white/5 border-white/10"
+                className="bg-white border-border"
               />
-              <p className="text-xs text-muted-foreground">Dana otomatis dilepas jika tidak ada konfirmasi</p>
+              <p className="text-xs text-muted-foreground">Funds auto-released if no confirmation</p>
             </div>
           </div>
         </motion.div>
@@ -260,19 +260,19 @@ export default function AdminSettings() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-emerald-500" />
+              <Shield className="w-5 h-5 text-emerald-500" weight="fill" />
             </div>
             <div>
-              <h3 className="font-display font-semibold">Keamanan & Akses</h3>
-              <p className="text-sm text-muted-foreground">Konfigurasi keamanan platform</p>
+              <h3 className="font-semibold">Security & Access</h3>
+              <p className="text-sm text-muted-foreground">Platform security configuration</p>
             </div>
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">Mode Maintenance</div>
-                <div className="text-sm text-muted-foreground">Nonaktifkan akses publik sementara</div>
+                <div className="font-medium">Maintenance Mode</div>
+                <div className="text-sm text-muted-foreground">Temporarily disable public access</div>
               </div>
               <Switch
                 checked={settings.maintenanceMode}
@@ -280,10 +280,10 @@ export default function AdminSettings() {
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">Registrasi Terbuka</div>
-                <div className="text-sm text-muted-foreground">Izinkan pengguna baru mendaftar</div>
+                <div className="font-medium">Open Registration</div>
+                <div className="text-sm text-muted-foreground">Allow new users to register</div>
               </div>
               <Switch
                 checked={settings.registrationEnabled}
@@ -291,10 +291,10 @@ export default function AdminSettings() {
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
-                <div className="font-medium">KYC Wajib</div>
-                <div className="text-sm text-muted-foreground">Wajibkan verifikasi untuk transaksi</div>
+                <div className="font-medium">KYC Required</div>
+                <div className="text-sm text-muted-foreground">Require verification for transactions</div>
               </div>
               <Switch
                 checked={settings.kycRequired}
@@ -313,19 +313,19 @@ export default function AdminSettings() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-blue-500" />
+              <Bell className="w-5 h-5 text-blue-500" weight="fill" />
             </div>
             <div>
-              <h3 className="font-display font-semibold">Notifikasi Admin</h3>
-              <p className="text-sm text-muted-foreground">Konfigurasi notifikasi untuk admin</p>
+              <h3 className="font-semibold">Admin Notifications</h3>
+              <p className="text-sm text-muted-foreground">Configure admin notifications</p>
             </div>
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
                 <div className="font-medium">Email Notifications</div>
-                <div className="text-sm text-muted-foreground">Terima notifikasi via email</div>
+                <div className="text-sm text-muted-foreground">Receive notifications via email</div>
               </div>
               <Switch
                 checked={settings.emailNotifications}
@@ -333,10 +333,10 @@ export default function AdminSettings() {
               />
             </div>
             
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
               <div>
                 <div className="font-medium">Slack Notifications</div>
-                <div className="text-sm text-muted-foreground">Kirim notifikasi ke Slack channel</div>
+                <div className="text-sm text-muted-foreground">Send notifications to Slack channel</div>
               </div>
               <Switch
                 checked={settings.slackNotifications}
@@ -349,19 +349,19 @@ export default function AdminSettings() {
         {/* Action Buttons */}
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={handleReset} disabled={isSaving}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Reset ke Default
+            <ArrowsClockwise className="w-4 h-4 mr-2" weight="bold" />
+            Reset to Default
           </Button>
           <Button className="btn-accent" onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Menyimpan...
+                <Spinner className="w-4 h-4 mr-2 animate-spin" weight="bold" />
+                Saving...
               </>
             ) : (
               <>
-                <Save className="w-4 h-4 mr-2" />
-                Simpan Perubahan
+                <FloppyDisk className="w-4 h-4 mr-2" weight="fill" />
+                Save Changes
               </>
             )}
           </Button>

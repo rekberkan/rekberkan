@@ -1,13 +1,14 @@
 /*
  * KAHADE ADMIN DISPUTES PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, MoreVertical, Eye, AlertTriangle, CheckCircle2,
-  XCircle, Clock, MessageSquare, Scale, Loader2
-} from 'lucide-react';
+  MagnifyingGlass, DotsThreeVertical, Eye, Warning, CheckCircle,
+  XCircle, Clock, ChatText, Scales, Spinner
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,12 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -57,22 +52,22 @@ interface Dispute {
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  OPEN: { label: 'Open', color: 'text-red-500 bg-red-500/10', icon: AlertTriangle },
+  OPEN: { label: 'Open', color: 'text-red-500 bg-red-500/10', icon: Warning },
   UNDER_ARBITRATION: { label: 'In Review', color: 'text-amber-500 bg-amber-500/10', icon: Clock },
-  RESOLVED: { label: 'Resolved', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
+  RESOLVED: { label: 'Resolved', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle },
   CLOSED: { label: 'Closed', color: 'text-gray-500 bg-gray-500/10', icon: XCircle },
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'IDR',
+    currency: 'USD',
     minimumFractionDigits: 0
   }).format(amount);
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('id-ID', {
+  return new Date(dateString).toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -107,7 +102,7 @@ export default function AdminDisputes() {
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error('Failed to fetch disputes:', error);
-      toast.error('Gagal memuat data dispute');
+      toast.error('Failed to load disputes');
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +117,7 @@ export default function AdminDisputes() {
 
   const handleResolve = async () => {
     if (!selectedDispute || !decision || !resolution.trim()) {
-      toast.error('Mohon lengkapi semua field');
+      toast.error('Please fill in all fields');
       return;
     }
     
@@ -132,14 +127,14 @@ export default function AdminDisputes() {
         decision: decision as any,
         resolutionNotes: resolution,
       });
-      toast.success('Dispute berhasil diselesaikan');
+      toast.success('Dispute resolved successfully');
       setIsResolveOpen(false);
       setSelectedDispute(null);
       setResolution('');
       setDecision('');
       fetchDisputes();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menyelesaikan dispute');
+      toast.error(error.response?.data?.message || 'Failed to resolve dispute');
     } finally {
       setIsSubmitting(false);
     }
@@ -148,48 +143,48 @@ export default function AdminDisputes() {
   const handleStartReview = async (disputeId: string) => {
     try {
       await adminApi.startReview(disputeId);
-      toast.success('Dispute sedang direview');
+      toast.success('Dispute is now under review');
       fetchDisputes();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memulai review');
+      toast.error(error.response?.data?.message || 'Failed to start review');
     }
   };
 
   if (isLoading && disputes.length === 0) {
     return (
-      <AdminLayout title="Manajemen Dispute" subtitle="Resolusi konflik transaksi">
+      <AdminLayout title="Dispute Management" subtitle="Transaction conflict resolution">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout title="Manajemen Dispute" subtitle="Resolusi konflik transaksi">
+    <AdminLayout title="Dispute Management" subtitle="Transaction conflict resolution">
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold text-red-500">
+            <div className="text-2xl font-bold text-red-500">
               {disputes.filter(d => d.status === 'OPEN').length}
             </div>
             <div className="text-sm text-muted-foreground">Open</div>
           </div>
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold text-amber-500">
+            <div className="text-2xl font-bold text-amber-500">
               {disputes.filter(d => d.status === 'UNDER_ARBITRATION').length}
             </div>
             <div className="text-sm text-muted-foreground">In Review</div>
           </div>
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold text-emerald-500">
+            <div className="text-2xl font-bold text-emerald-500">
               {disputes.filter(d => d.status === 'RESOLVED').length}
             </div>
             <div className="text-sm text-muted-foreground">Resolved</div>
           </div>
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold">
+            <div className="text-2xl font-bold">
               {disputes.length}
             </div>
             <div className="text-sm text-muted-foreground">Total</div>
@@ -199,20 +194,20 @@ export default function AdminDisputes() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
             <Input
-              placeholder="Cari dispute..."
+              placeholder="Search disputes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white/5 border-white/10"
+              className="pl-10 bg-white border-border"
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-40 bg-white/5 border-white/10">
+            <SelectTrigger className="w-40 bg-white border-border">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="OPEN">Open</SelectItem>
               <SelectItem value="UNDER_ARBITRATION">In Review</SelectItem>
               <SelectItem value="RESOLVED">Resolved</SelectItem>
@@ -225,8 +220,8 @@ export default function AdminDisputes() {
         <div className="space-y-4">
           {filteredDisputes.length === 0 ? (
             <div className="glass-card p-8 text-center">
-              <AlertTriangle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Tidak ada dispute ditemukan</p>
+              <Warning className="w-12 h-12 mx-auto text-muted-foreground mb-4" weight="regular" />
+              <p className="text-muted-foreground">No disputes found</p>
             </div>
           ) : (
             filteredDisputes.map((dispute, index) => {
@@ -254,7 +249,7 @@ export default function AdminDisputes() {
                       <h3 className="font-semibold mb-1">{dispute.order?.title || 'Untitled'}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{dispute.reason}</p>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Dibuka oleh: {dispute.openedBy?.username || '-'}</span>
+                        <span>Opened by: {dispute.openedBy?.username || '-'}</span>
                         <span>•</span>
                         <span>{formatCurrency(amount)}</span>
                         <span>•</span>
@@ -268,8 +263,8 @@ export default function AdminDisputes() {
                         size="sm"
                         onClick={() => setSelectedDispute(dispute)}
                       >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Detail
+                        <Eye className="w-4 h-4 mr-2" weight="regular" />
+                        Details
                       </Button>
                       {dispute.status === 'OPEN' && (
                         <Button 
@@ -277,7 +272,7 @@ export default function AdminDisputes() {
                           className="btn-accent"
                           onClick={() => handleStartReview(dispute.id)}
                         >
-                          <Scale className="w-4 h-4 mr-2" />
+                          <Scales className="w-4 h-4 mr-2" weight="fill" />
                           Review
                         </Button>
                       )}
@@ -290,7 +285,7 @@ export default function AdminDisputes() {
                             setIsResolveOpen(true);
                           }}
                         >
-                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          <CheckCircle className="w-4 h-4 mr-2" weight="fill" />
                           Resolve
                         </Button>
                       )}
@@ -306,7 +301,7 @@ export default function AdminDisputes() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Halaman {page} dari {totalPages}
+              Page {page} of {totalPages}
             </div>
             <div className="flex gap-2">
               <Button
@@ -315,7 +310,7 @@ export default function AdminDisputes() {
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
-                Sebelumnya
+                Previous
               </Button>
               <Button
                 variant="outline"
@@ -323,7 +318,7 @@ export default function AdminDisputes() {
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
               >
-                Selanjutnya
+                Next
               </Button>
             </div>
           </div>
@@ -333,11 +328,11 @@ export default function AdminDisputes() {
         <Dialog open={!!selectedDispute && !isResolveOpen} onOpenChange={() => setSelectedDispute(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Detail Dispute</DialogTitle>
+              <DialogTitle>Dispute Details</DialogTitle>
             </DialogHeader>
             {selectedDispute && (
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-white/5">
+                <div className="p-4 rounded-lg bg-secondary/50">
                   <div className="font-mono text-sm text-muted-foreground mb-1">
                     {selectedDispute.order?.orderNumber}
                   </div>
@@ -345,18 +340,18 @@ export default function AdminDisputes() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground mb-1">Pembeli</div>
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground mb-1">Buyer</div>
                     <div className="font-medium">{selectedDispute.order?.initiator?.username || '-'}</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground mb-1">Penjual</div>
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground mb-1">Seller</div>
                     <div className="font-medium">{selectedDispute.order?.counterparty?.username || '-'}</div>
                   </div>
                 </div>
                 
                 <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-                  <div className="font-medium text-red-500 mb-2">Alasan Dispute</div>
+                  <div className="font-medium text-red-500 mb-2">Dispute Reason</div>
                   <p>{selectedDispute.reason}</p>
                   {selectedDispute.description && (
                     <p className="text-sm text-muted-foreground mt-2">{selectedDispute.description}</p>
@@ -365,16 +360,16 @@ export default function AdminDisputes() {
                 
                 <div className="p-4 rounded-lg bg-accent/10">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Nilai Transaksi</span>
-                    <span className="text-2xl font-display font-bold gradient-text">
+                    <span className="text-muted-foreground">Transaction Value</span>
+                    <span className="text-2xl font-bold gradient-text">
                       {formatCurrency(selectedDispute.order?.amountMinor ? Number(selectedDispute.order.amountMinor) / 100 : 0)}
                     </span>
                   </div>
                 </div>
                 
                 {selectedDispute.evidences && selectedDispute.evidences.length > 0 && (
-                  <div className="p-4 rounded-lg bg-white/5">
-                    <div className="font-medium mb-2">Bukti ({selectedDispute.evidences.length})</div>
+                  <div className="p-4 rounded-lg bg-secondary/50">
+                    <div className="font-medium mb-2">Evidence ({selectedDispute.evidences.length})</div>
                     <div className="space-y-2">
                       {selectedDispute.evidences.map((e: any, i: number) => (
                         <div key={i} className="text-sm text-muted-foreground">
@@ -385,7 +380,7 @@ export default function AdminDisputes() {
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                   <span className="text-muted-foreground">Status</span>
                   <span className={`text-sm px-3 py-1 rounded-full ${(statusConfig[selectedDispute.status] || statusConfig.OPEN).color}`}>
                     {(statusConfig[selectedDispute.status] || statusConfig.OPEN).label}
@@ -400,63 +395,63 @@ export default function AdminDisputes() {
         <Dialog open={isResolveOpen} onOpenChange={setIsResolveOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Resolusi Dispute</DialogTitle>
+              <DialogTitle>Resolve Dispute</DialogTitle>
               <DialogDescription>
-                Tentukan keputusan untuk dispute ini
+                Make a decision for this dispute
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-3">
-                <Label>Keputusan</Label>
+                <Label>Decision</Label>
                 <RadioGroup value={decision} onValueChange={setDecision}>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-white/5">
+                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-secondary/50">
                     <RadioGroupItem value="REFUND_ALL_TO_BUYER" id="buyer" />
                     <Label htmlFor="buyer" className="flex-1 cursor-pointer">
-                      Refund ke Pembeli
-                      <p className="text-xs text-muted-foreground">Dana dikembalikan sepenuhnya ke pembeli</p>
+                      Refund to Buyer
+                      <p className="text-xs text-muted-foreground">Full refund to the buyer</p>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-white/5">
+                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-secondary/50">
                     <RadioGroupItem value="RELEASE_ALL_TO_SELLER" id="seller" />
                     <Label htmlFor="seller" className="flex-1 cursor-pointer">
-                      Release ke Penjual
-                      <p className="text-xs text-muted-foreground">Dana diteruskan ke penjual</p>
+                      Release to Seller
+                      <p className="text-xs text-muted-foreground">Funds released to the seller</p>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-white/5">
+                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-secondary/50">
                     <RadioGroupItem value="SPLIT_SETTLEMENT" id="split" />
                     <Label htmlFor="split" className="flex-1 cursor-pointer">
-                      Bagi Rata
-                      <p className="text-xs text-muted-foreground">Dana dibagi antara kedua pihak</p>
+                      Split Settlement
+                      <p className="text-xs text-muted-foreground">Funds split between both parties</p>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-white/5">
+                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-secondary/50">
                     <RadioGroupItem value="CANCEL_VOID" id="cancel" />
                     <Label htmlFor="cancel" className="flex-1 cursor-pointer">
-                      Batalkan Transaksi
-                      <p className="text-xs text-muted-foreground">Transaksi dibatalkan tanpa penalti</p>
+                      Cancel Transaction
+                      <p className="text-xs text-muted-foreground">Transaction cancelled without penalty</p>
                     </Label>
                   </div>
                 </RadioGroup>
               </div>
               
               <div className="space-y-2">
-                <Label>Catatan Resolusi</Label>
+                <Label>Resolution Notes</Label>
                 <Textarea
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value)}
-                  placeholder="Jelaskan alasan keputusan..."
+                  placeholder="Explain the decision..."
                   rows={3}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsResolveOpen(false)} disabled={isSubmitting}>
-                Batal
+                Cancel
               </Button>
               <Button className="btn-accent" onClick={handleResolve} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Selesaikan
+                {isSubmitting ? <Spinner className="w-4 h-4 animate-spin mr-2" weight="bold" /> : null}
+                Resolve
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -1,14 +1,15 @@
 /*
  * KAHADE TRANSACTIONS LIST PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import {
-  Plus, Search, ArrowUpRight, ArrowDownRight, Clock,
-  CheckCircle2, AlertCircle, ChevronRight, Calendar, Loader2
-} from 'lucide-react';
+  Plus, MagnifyingGlass, ArrowUpRight, ArrowDownRight, Clock,
+  CheckCircle, Warning, CaretRight, Calendar, Spinner
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,29 +35,29 @@ interface Transaction {
   createdAt: string;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  WAITING_COUNTERPARTY: { label: 'Menunggu Pihak Lain', color: 'text-amber-500 bg-amber-500/10', icon: Clock },
-  PENDING_ACCEPT: { label: 'Menunggu', color: 'text-amber-500 bg-amber-500/10', icon: Clock },
-  ACCEPTED: { label: 'Diterima', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle2 },
-  PAID: { label: 'Dibayar', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
-  DELIVERED: { label: 'Dikirim', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle2 },
-  COMPLETED: { label: 'Selesai', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
-  DISPUTED: { label: 'Dispute', color: 'text-red-500 bg-red-500/10', icon: AlertCircle },
-  CANCELLED: { label: 'Dibatalkan', color: 'text-gray-500 bg-gray-500/10', icon: AlertCircle },
-  REFUNDED: { label: 'Refund', color: 'text-orange-500 bg-orange-500/10', icon: ArrowDownRight },
+const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
+  WAITING_COUNTERPARTY: { label: 'Waiting', color: 'text-amber-500 bg-amber-500/10', icon: Clock },
+  PENDING_ACCEPT: { label: 'Pending', color: 'text-amber-500 bg-amber-500/10', icon: Clock },
+  ACCEPTED: { label: 'Accepted', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle },
+  PAID: { label: 'Paid', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle },
+  DELIVERED: { label: 'Delivered', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle },
+  COMPLETED: { label: 'Completed', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle },
+  DISPUTED: { label: 'Disputed', color: 'text-red-500 bg-red-500/10', icon: Warning },
+  CANCELLED: { label: 'Cancelled', color: 'text-gray-500 bg-gray-500/10', icon: Warning },
+  REFUNDED: { label: 'Refunded', color: 'text-orange-500 bg-orange-500/10', icon: ArrowDownRight },
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'IDR',
+    currency: 'USD',
     minimumFractionDigits: 0
   }).format(amount);
 };
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -106,59 +107,59 @@ export default function Transactions() {
 
   if (isLoading) {
     return (
-      <DashboardLayout title="Transaksi" subtitle="Memuat...">
+      <DashboardLayout title="Transactions" subtitle="Loading...">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Transaksi" subtitle="Kelola semua transaksi Anda">
+    <DashboardLayout title="Transactions" subtitle="Manage all your transactions">
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
               <Input
-                placeholder="Cari transaksi..."
+                placeholder="Search transactions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/5 border-white/10"
+                className="pl-10 bg-white border-border"
               />
             </div>
             <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-40 bg-white/5 border-white/10">
+              <SelectTrigger className="w-40 bg-white border-border">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="WAITING_COUNTERPARTY">Menunggu</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="WAITING_COUNTERPARTY">Waiting</SelectItem>
                 <SelectItem value="PENDING_ACCEPT">Pending</SelectItem>
-                <SelectItem value="ACCEPTED">Diterima</SelectItem>
-                <SelectItem value="PAID">Dibayar</SelectItem>
-                <SelectItem value="COMPLETED">Selesai</SelectItem>
-                <SelectItem value="DISPUTED">Dispute</SelectItem>
-                <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
+                <SelectItem value="ACCEPTED">Accepted</SelectItem>
+                <SelectItem value="PAID">Paid</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="DISPUTED">Disputed</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
               </SelectContent>
             </Select>
             <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-36 bg-white/5 border-white/10">
-                <SelectValue placeholder="Peran" />
+              <SelectTrigger className="w-36 bg-white border-border">
+                <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
-                <SelectItem value="buyer">Pembeli</SelectItem>
-                <SelectItem value="seller">Penjual</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="buyer">Buyer</SelectItem>
+                <SelectItem value="seller">Seller</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Link href="/app/transactions/new">
             <Button className="btn-accent">
-              <Plus className="w-4 h-4 mr-2" />
-              Transaksi Baru
+              <Plus className="w-4 h-4 mr-2" weight="bold" />
+              New Transaction
             </Button>
           </Link>
         </div>
@@ -166,7 +167,7 @@ export default function Transactions() {
         {/* Transactions List */}
         <div className="glass-card overflow-hidden">
           {filteredTransactions.length > 0 ? (
-            <div className="divide-y divide-white/10">
+            <div className="divide-y divide-border">
               {filteredTransactions.map((tx, index) => {
                 const status = statusConfig[tx.status] || statusConfig.PENDING_ACCEPT;
                 const isBuyer = tx.initiatorRole === 'BUYER';
@@ -178,9 +179,9 @@ export default function Transactions() {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Link href={`/app/transactions/${tx.id}`}>
-                      <div className="flex items-center gap-4 p-4 hover:bg-white/5 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-4 p-4 hover:bg-secondary/50 transition-colors cursor-pointer">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isBuyer ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                          {isBuyer ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />}
+                          {isBuyer ? <ArrowUpRight className="w-6 h-6" weight="bold" /> : <ArrowDownRight className="w-6 h-6" weight="bold" />}
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -192,21 +193,21 @@ export default function Transactions() {
                           </div>
                           <div className="font-medium truncate">{tx.title}</div>
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
-                            <span>{isBuyer ? 'Pembeli' : 'Penjual'}</span>
+                            <span>{isBuyer ? 'Buyer' : 'Seller'}</span>
                             <span>•</span>
-                            <span>{tx.counterparty?.username || 'Menunggu pihak lain'}</span>
+                            <span>{tx.counterparty?.username || 'Waiting for counterparty'}</span>
                           </div>
                         </div>
                         
                         <div className="text-right hidden sm:block">
                           <div className="font-semibold">{formatCurrency(tx.amount)}</div>
                           <div className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
-                            <Calendar className="w-3 h-3" />
+                            <Calendar className="w-3 h-3" weight="regular" />
                             {formatDate(tx.createdAt)}
                           </div>
                         </div>
                         
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        <CaretRight className="w-5 h-5 text-muted-foreground" weight="bold" />
                       </div>
                     </Link>
                   </motion.div>
@@ -215,19 +216,19 @@ export default function Transactions() {
             </div>
           ) : (
             <div className="p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-muted-foreground" />
+              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                <MagnifyingGlass className="w-8 h-8 text-muted-foreground" weight="regular" />
               </div>
-              <h3 className="font-display font-semibold mb-2">Tidak ada transaksi</h3>
+              <h3 className="font-semibold mb-2">No transactions</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 {searchQuery || statusFilter !== 'all' || roleFilter !== 'all'
-                  ? 'Tidak ada transaksi yang sesuai dengan filter.'
-                  : 'Anda belum memiliki transaksi.'}
+                  ? 'No transactions match your filters.'
+                  : 'You don\'t have any transactions yet.'}
               </p>
               <Link href="/app/transactions/new">
                 <Button className="btn-accent">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Buat Transaksi Pertama
+                  <Plus className="w-4 h-4 mr-2" weight="bold" />
+                  Create First Transaction
                 </Button>
               </Link>
             </div>
@@ -243,10 +244,10 @@ export default function Transactions() {
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              Sebelumnya
+              Previous
             </Button>
             <span className="flex items-center px-4 text-sm text-muted-foreground">
-              Halaman {page} dari {totalPages}
+              Page {page} of {totalPages}
             </span>
             <Button
               variant="outline"
@@ -254,7 +255,7 @@ export default function Transactions() {
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
-              Selanjutnya
+              Next
             </Button>
           </div>
         )}

@@ -1,13 +1,14 @@
 /*
  * KAHADE ADMIN USERS PAGE
+ * Icons: Phosphor Icons only
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, Filter, MoreVertical, User, Mail, Phone,
-  CheckCircle2, AlertCircle, Ban, Eye, Loader2, XCircle
-} from 'lucide-react';
+  MagnifyingGlass, DotsThreeVertical, User, Envelope, Phone,
+  CheckCircle, Warning, Prohibit, Eye, Spinner, XCircle
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,7 +37,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { adminApi } from '@/lib/api';
 
-interface User {
+interface UserData {
   id: string;
   username: string;
   email: string;
@@ -51,26 +52,26 @@ interface User {
 }
 
 const kycStatusConfig: Record<string, { label: string; color: string }> = {
-  NONE: { label: 'Belum', color: 'text-gray-500 bg-gray-500/10' },
+  NONE: { label: 'None', color: 'text-gray-500 bg-gray-500/10' },
   PENDING: { label: 'Pending', color: 'text-amber-500 bg-amber-500/10' },
   VERIFIED: { label: 'Verified', color: 'text-emerald-500 bg-emerald-500/10' },
-  REJECTED: { label: 'Ditolak', color: 'text-red-500 bg-red-500/10' },
+  REJECTED: { label: 'Rejected', color: 'text-red-500 bg-red-500/10' },
 };
 
-const getStatusConfig = (user: User) => {
+const getStatusConfig = (user: UserData) => {
   if (user.suspendedAt) {
     return { label: 'Suspended', color: 'text-red-500 bg-red-500/10' };
   }
-  return { label: 'Aktif', color: 'text-emerald-500 bg-emerald-500/10' };
+  return { label: 'Active', color: 'text-emerald-500 bg-emerald-500/10' };
 };
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [kycFilter, setKycFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -103,7 +104,7 @@ export default function AdminUsers() {
       setTotal(response.data.total || 0);
     } catch (error) {
       console.error('Failed to fetch users:', error);
-      toast.error('Gagal memuat data pengguna');
+      toast.error('Failed to load users');
     } finally {
       setIsLoading(false);
     }
@@ -117,20 +118,20 @@ export default function AdminUsers() {
 
   const handleSuspend = async () => {
     if (!suspendUserId || !suspendReason.trim()) {
-      toast.error('Alasan suspend diperlukan');
+      toast.error('Suspend reason is required');
       return;
     }
     
     setIsSubmitting(true);
     try {
       await adminApi.suspendUser(suspendUserId, suspendReason);
-      toast.success('User berhasil di-suspend');
+      toast.success('User suspended successfully');
       setSuspendDialogOpen(false);
       setSuspendUserId(null);
       setSuspendReason('');
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal suspend user');
+      toast.error(error.response?.data?.message || 'Failed to suspend user');
     } finally {
       setIsSubmitting(false);
     }
@@ -139,39 +140,39 @@ export default function AdminUsers() {
   const handleActivate = async (userId: string) => {
     try {
       await adminApi.activateUser(userId);
-      toast.success('User berhasil diaktifkan');
+      toast.success('User activated successfully');
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengaktifkan user');
+      toast.error(error.response?.data?.message || 'Failed to activate user');
     }
   };
 
   const handleApproveKYC = async (userId: string) => {
     try {
       await adminApi.approveKYC(userId);
-      toast.success('KYC berhasil disetujui');
+      toast.success('KYC approved successfully');
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menyetujui KYC');
+      toast.error(error.response?.data?.message || 'Failed to approve KYC');
     }
   };
 
   const handleRejectKYC = async () => {
     if (!rejectUserId || !rejectReason.trim()) {
-      toast.error('Alasan penolakan diperlukan');
+      toast.error('Rejection reason is required');
       return;
     }
     
     setIsSubmitting(true);
     try {
       await adminApi.rejectKYC(rejectUserId, rejectReason);
-      toast.success('KYC berhasil ditolak');
+      toast.success('KYC rejected successfully');
       setRejectDialogOpen(false);
       setRejectUserId(null);
       setRejectReason('');
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menolak KYC');
+      toast.error(error.response?.data?.message || 'Failed to reject KYC');
     } finally {
       setIsSubmitting(false);
     }
@@ -179,7 +180,7 @@ export default function AdminUsers() {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -188,37 +189,37 @@ export default function AdminUsers() {
 
   if (isLoading && users.length === 0) {
     return (
-      <AdminLayout title="Manajemen Pengguna" subtitle="Kelola semua pengguna platform">
+      <AdminLayout title="User Management" subtitle="Manage all platform users">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout title="Manajemen Pengguna" subtitle="Kelola semua pengguna platform">
+    <AdminLayout title="User Management" subtitle="Manage all platform users">
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold">{total}</div>
-            <div className="text-sm text-muted-foreground">Total Pengguna</div>
+            <div className="text-2xl font-bold">{total}</div>
+            <div className="text-sm text-muted-foreground">Total Users</div>
           </div>
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold text-emerald-500">
+            <div className="text-2xl font-bold text-emerald-500">
               {users.filter(u => u.kycStatus === 'VERIFIED').length}
             </div>
             <div className="text-sm text-muted-foreground">KYC Verified</div>
           </div>
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold text-amber-500">
+            <div className="text-2xl font-bold text-amber-500">
               {users.filter(u => u.kycStatus === 'PENDING').length}
             </div>
             <div className="text-sm text-muted-foreground">KYC Pending</div>
           </div>
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold text-red-500">
+            <div className="text-2xl font-bold text-red-500">
               {users.filter(u => u.suspendedAt).length}
             </div>
             <div className="text-sm text-muted-foreground">Suspended</div>
@@ -228,33 +229,33 @@ export default function AdminUsers() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
             <Input
-              placeholder="Cari username atau email..."
+              placeholder="Search username or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white/5 border-white/10"
+              className="pl-10 bg-white border-border"
             />
           </div>
           <Select value={kycFilter} onValueChange={(v) => { setKycFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-40 bg-white/5 border-white/10">
+            <SelectTrigger className="w-40 bg-white border-border">
               <SelectValue placeholder="KYC Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua KYC</SelectItem>
+              <SelectItem value="all">All KYC</SelectItem>
               <SelectItem value="VERIFIED">Verified</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="NONE">Belum</SelectItem>
-              <SelectItem value="REJECTED">Ditolak</SelectItem>
+              <SelectItem value="NONE">None</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-36 bg-white/5 border-white/10">
+            <SelectTrigger className="w-36 bg-white border-border">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
-              <SelectItem value="active">Aktif</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
             </SelectContent>
           </Select>
@@ -269,14 +270,14 @@ export default function AdminUsers() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/10">
+                <tr className="border-b border-border">
                   <th className="text-left p-4 font-medium text-muted-foreground">User</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Kontak</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Contact</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">KYC</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Bergabung</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Login Terakhir</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Aksi</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Joined</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Last Login</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -285,7 +286,7 @@ export default function AdminUsers() {
                   const status = getStatusConfig(user);
                   
                   return (
-                    <tr key={user.id} className="border-b border-white/5 hover:bg-white/5">
+                    <tr key={user.id} className="border-b border-border/50 hover:bg-secondary/30">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white font-semibold">
@@ -319,25 +320,25 @@ export default function AdminUsers() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
-                              <MoreVertical className="w-4 h-4" />
+                              <DotsThreeVertical className="w-4 h-4" weight="bold" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setSelectedUser(user)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Lihat Detail
+                              <Eye className="w-4 h-4 mr-2" weight="regular" />
+                              View Details
                             </DropdownMenuItem>
                             {user.kycStatus === 'PENDING' && (
                               <>
                                 <DropdownMenuItem onClick={() => handleApproveKYC(user.id)}>
-                                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                                  <CheckCircle className="w-4 h-4 mr-2" weight="fill" />
                                   Approve KYC
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   onClick={() => { setRejectUserId(user.id); setRejectDialogOpen(true); }}
                                   className="text-red-500"
                                 >
-                                  <XCircle className="w-4 h-4 mr-2" />
+                                  <XCircle className="w-4 h-4 mr-2" weight="fill" />
                                   Reject KYC
                                 </DropdownMenuItem>
                               </>
@@ -347,13 +348,13 @@ export default function AdminUsers() {
                                 onClick={() => { setSuspendUserId(user.id); setSuspendDialogOpen(true); }}
                                 className="text-red-500"
                               >
-                                <Ban className="w-4 h-4 mr-2" />
+                                <Prohibit className="w-4 h-4 mr-2" weight="fill" />
                                 Suspend
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem onClick={() => handleActivate(user.id)}>
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Aktifkan
+                                <CheckCircle className="w-4 h-4 mr-2" weight="fill" />
+                                Activate
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -368,9 +369,9 @@ export default function AdminUsers() {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 border-t border-white/10">
+            <div className="flex items-center justify-between p-4 border-t border-border">
               <div className="text-sm text-muted-foreground">
-                Halaman {page} dari {totalPages}
+                Page {page} of {totalPages}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -379,7 +380,7 @@ export default function AdminUsers() {
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Sebelumnya
+                  Previous
                 </Button>
                 <Button
                   variant="outline"
@@ -387,7 +388,7 @@ export default function AdminUsers() {
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                 >
-                  Selanjutnya
+                  Next
                 </Button>
               </div>
             </div>
@@ -398,7 +399,7 @@ export default function AdminUsers() {
         <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Detail Pengguna</DialogTitle>
+              <DialogTitle>User Details</DialogTitle>
             </DialogHeader>
             {selectedUser && (
               <div className="space-y-4">
@@ -413,24 +414,24 @@ export default function AdminUsers() {
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                    <Mail className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Envelope className="w-5 h-5 text-muted-foreground" weight="regular" />
                     <span>{selectedUser.email}</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                    <Phone className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Phone className="w-5 h-5 text-muted-foreground" weight="regular" />
                     <span>{selectedUser.phone || '-'}</span>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-lg bg-white/5">
+                  <div className="p-3 rounded-lg bg-secondary/50">
                     <div className="text-sm text-muted-foreground">KYC Status</div>
                     <span className={`text-sm px-2 py-0.5 rounded-full ${(kycStatusConfig[selectedUser.kycStatus] || kycStatusConfig.NONE).color}`}>
                       {(kycStatusConfig[selectedUser.kycStatus] || kycStatusConfig.NONE).label}
                     </span>
                   </div>
-                  <div className="p-3 rounded-lg bg-white/5">
+                  <div className="p-3 rounded-lg bg-secondary/50">
                     <div className="text-sm text-muted-foreground">Status</div>
                     <span className={`text-sm px-2 py-0.5 rounded-full ${getStatusConfig(selectedUser).color}`}>
                       {getStatusConfig(selectedUser).label}
@@ -440,7 +441,7 @@ export default function AdminUsers() {
                 
                 {selectedUser.suspendedAt && (
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <div className="text-sm text-red-500 font-medium">Alasan Suspend:</div>
+                    <div className="text-sm text-red-500 font-medium">Suspend Reason:</div>
                     <div className="text-sm">{selectedUser.suspendReason || '-'}</div>
                   </div>
                 )}
@@ -457,21 +458,21 @@ export default function AdminUsers() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Alasan Suspend</Label>
+                <Label>Suspend Reason</Label>
                 <Textarea
                   value={suspendReason}
                   onChange={(e) => setSuspendReason(e.target.value)}
-                  placeholder="Masukkan alasan suspend..."
+                  placeholder="Enter suspend reason..."
                   rows={3}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSuspendDialogOpen(false)} disabled={isSubmitting}>
-                Batal
+                Cancel
               </Button>
               <Button variant="destructive" onClick={handleSuspend} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {isSubmitting ? <Spinner className="w-4 h-4 animate-spin mr-2" weight="bold" /> : null}
                 Suspend
               </Button>
             </DialogFooter>
@@ -482,26 +483,26 @@ export default function AdminUsers() {
         <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Tolak KYC</DialogTitle>
+              <DialogTitle>Reject KYC</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Alasan Penolakan</Label>
+                <Label>Rejection Reason</Label>
                 <Textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Masukkan alasan penolakan KYC..."
+                  placeholder="Enter rejection reason..."
                   rows={3}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setRejectDialogOpen(false)} disabled={isSubmitting}>
-                Batal
+                Cancel
               </Button>
               <Button variant="destructive" onClick={handleRejectKYC} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Tolak KYC
+                {isSubmitting ? <Spinner className="w-4 h-4 animate-spin mr-2" weight="bold" /> : null}
+                Reject KYC
               </Button>
             </DialogFooter>
           </DialogContent>
