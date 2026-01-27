@@ -365,6 +365,24 @@ export const disputeApi = {
     api.post(`/disputes/${id}/messages`, { message }),
 };
 
+// Voucher API
+export const voucherApi = {
+  // Get available vouchers for current user
+  getAvailable: () => api.get('/vouchers'),
+  
+  // Get user's voucher usage history
+  getHistory: (params?: { page?: number; limit?: number }) =>
+    api.get('/vouchers/history', { params }),
+  
+  // Validate voucher code before applying
+  validate: (data: { code: string; amountMinor: number; category?: string }) =>
+    api.post('/vouchers/validate', data),
+  
+  // Apply voucher to order
+  apply: (data: { code: string; amountMinor: number; orderId?: string; idempotencyKey?: string }) =>
+    api.post('/vouchers/apply', data),
+};
+
 // Admin API
 export const adminApi = {
   // Dashboard
@@ -445,6 +463,60 @@ export const adminApi = {
   
   getUserReport: (params?: { startDate?: string; endDate?: string }) =>
     api.get('/admin/reports/users', { params }),
+  
+  // Promos
+  getPromos: (params?: { isActive?: boolean; page?: number; limit?: number }) =>
+    api.get('/admin/promos', { params }),
+  
+  getPromo: (id: string) => api.get(`/admin/promos/${id}`),
+  
+  createPromo: (data: {
+    code: string;
+    name: string;
+    description?: string;
+    targetType: string;
+    discountType: string;
+    discountValue?: number;
+    discountPercent?: number;
+    maxDiscountMinor?: number;
+    maxTotalUsages?: number;
+    maxUsagePerUser?: number;
+    minPurchaseMinor?: number;
+    applicableCategories?: string[];
+    validFrom: string;
+    validUntil: string;
+  }) => api.post('/admin/promos', data),
+  
+  updatePromo: (id: string, data: Record<string, any>) =>
+    api.patch(`/admin/promos/${id}`, data),
+  
+  deactivatePromo: (id: string) => api.delete(`/admin/promos/${id}`),
+  
+  assignPromoToUser: (promoId: string, userId: string) =>
+    api.post(`/admin/promos/${promoId}/assign`, { userId }),
+  
+  // Vouchers
+  getVouchers: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get('/admin/vouchers', { params }),
+  
+  getVoucher: (id: string) => api.get(`/admin/vouchers/${id}`),
+  
+  createVoucher: (data: {
+    promoId?: string;
+    code: string;
+    voucherType: string;
+    discountMinor?: number;
+    discountPercent?: number;
+    maxDiscountMinor?: number;
+    maxUsages?: number;
+    minPurchaseMinor?: number;
+    applicableCategories?: string[];
+    validFrom: string;
+    validUntil: string;
+    assignedToUserId?: string;
+  }) => api.post('/admin/vouchers', data),
+  
+  deactivateVoucher: (id: string) => api.delete(`/admin/vouchers/${id}`),
 };
 
 export default api;
