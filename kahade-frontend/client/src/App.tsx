@@ -14,6 +14,26 @@ import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
 import Contact from "./pages/Contact";
 
+// Product Pages
+import MobileApp from "./pages/MobileApp";
+import Blog from "./pages/Blog";
+
+// Support Pages
+import Help from "./pages/Help";
+import FAQ from "./pages/FAQ";
+import Feedback from "./pages/Feedback";
+
+// Company Pages
+import Careers from "./pages/Careers";
+import Whitepaper from "./pages/Whitepaper";
+import Press from "./pages/Press";
+
+// Legal Pages
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Cookies from "./pages/Cookies";
+import Licenses from "./pages/Licenses";
+
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -88,13 +108,38 @@ function AdminProtectedRoute({ children }: { children: ReactNode }) {
 function LandingRouter() {
   return (
     <Switch>
+      {/* Main Pages */}
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/how-it-works" component={HowItWorks} />
       <Route path="/contact" component={Contact} />
+      
+      {/* Product Pages */}
+      <Route path="/mobile-app" component={MobileApp} />
+      <Route path="/blog" component={Blog} />
+      
+      {/* Support Pages */}
+      <Route path="/help" component={Help} />
+      <Route path="/faq" component={FAQ} />
+      <Route path="/feedback" component={Feedback} />
+      
+      {/* Company Pages */}
+      <Route path="/careers" component={Careers} />
+      <Route path="/whitepaper" component={Whitepaper} />
+      <Route path="/press" component={Press} />
+      
+      {/* Legal Pages */}
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/cookies" component={Cookies} />
+      <Route path="/licenses" component={Licenses} />
+      
+      {/* Auth Pages */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      
+      {/* 404 */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
