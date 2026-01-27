@@ -59,7 +59,11 @@ export default function Settings() {
     setIsLoadingSessions(true);
     try {
       const response = await authApi.getSessions();
-      setSessions(response.data.sessions || []);
+      // Handle both array response and object with sessions property
+      const sessionsData = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data.sessions || response.data.data || []);
+      setSessions(sessionsData);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
       // Set default current session

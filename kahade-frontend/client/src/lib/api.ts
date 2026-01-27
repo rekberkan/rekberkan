@@ -347,8 +347,19 @@ export const disputeApi = {
   respond: (id: string, response: string) =>
     api.post(`/disputes/${id}/respond`, { response }),
   
-  addEvidence: (id: string, data: { fileUrls: string[]; description: string }) =>
+  // Fixed: Backend expects { type, fileUrl } not { fileUrls[], description }
+  addEvidence: (id: string, data: { type: string; fileUrl: string; description?: string }) =>
     api.post(`/disputes/${id}/evidence`, data),
+  
+  // Batch add evidence (multiple files)
+  addEvidenceBatch: async (id: string, files: { type: string; fileUrl: string; description?: string }[]) => {
+    const results = [];
+    for (const file of files) {
+      const result = await api.post(`/disputes/${id}/evidence`, file);
+      results.push(result);
+    }
+    return results;
+  },
   
   addMessage: (id: string, message: string) =>
     api.post(`/disputes/${id}/messages`, { message }),

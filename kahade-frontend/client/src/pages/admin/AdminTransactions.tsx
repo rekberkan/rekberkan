@@ -2,14 +2,16 @@
  * KAHADE ADMIN TRANSACTIONS PAGE
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Search, Filter, MoreVertical, Eye, Clock, CheckCircle2,
-  AlertCircle, XCircle, ArrowUpRight, ArrowDownRight
+  AlertCircle, XCircle, ArrowUpRight, ArrowDownRight, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -28,27 +30,35 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layout/AdminLayout';
+import { adminApi } from '@/lib/api';
 
-// Mock data
-const transactions = [
-  { id: '1', orderNumber: 'KHD-2025-0001', title: 'iPhone 15 Pro', amount: 18500000, status: 'PAID', buyer: 'johndoe', seller: 'TechStore', category: 'ELECTRONICS', createdAt: '2025-01-24' },
-  { id: '2', orderNumber: 'KHD-2025-0002', title: 'Jasa Desain Logo', amount: 2500000, status: 'PENDING_ACCEPT', buyer: 'StartupXYZ', seller: 'janedoe', category: 'SERVICES', createdAt: '2025-01-24' },
-  { id: '3', orderNumber: 'KHD-2025-0003', title: 'Laptop Gaming', amount: 15000000, status: 'COMPLETED', buyer: 'bobsmith', seller: 'GamingGear', category: 'ELECTRONICS', createdAt: '2025-01-23' },
-  { id: '4', orderNumber: 'KHD-2025-0004', title: 'Konsultasi IT', amount: 5000000, status: 'COMPLETED', buyer: 'PT ABC', seller: 'alicew', category: 'SERVICES', createdAt: '2025-01-22' },
-  { id: '5', orderNumber: 'KHD-2025-0005', title: 'Kamera DSLR', amount: 12000000, status: 'DISPUTED', buyer: 'charlie', seller: 'CameraWorld', category: 'ELECTRONICS', createdAt: '2025-01-21' },
-  { id: '6', orderNumber: 'KHD-2025-0006', title: 'Website Development', amount: 25000000, status: 'CANCELLED', buyer: 'startup123', seller: 'devagency', category: 'SERVICES', createdAt: '2025-01-20' },
-];
+interface Transaction {
+  id: string;
+  orderNumber: string;
+  title: string;
+  description?: string;
+  amount: number;
+  status: string;
+  initiator: { id: string; username: string; email: string };
+  counterparty?: { id: string; username: string; email: string };
+  createdAt: string;
+  paidAt?: string;
+  completedAt?: string;
+}
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   PENDING_ACCEPT: { label: 'Menunggu', color: 'text-amber-500 bg-amber-500/10', icon: Clock },
   ACCEPTED: { label: 'Diterima', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle2 },
   PAID: { label: 'Dibayar', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
+  DELIVERED: { label: 'Dikirim', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle2 },
   COMPLETED: { label: 'Selesai', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
   DISPUTED: { label: 'Dispute', color: 'text-red-500 bg-red-500/10', icon: AlertCircle },
   CANCELLED: { label: 'Dibatalkan', color: 'text-gray-500 bg-gray-500/10', icon: XCircle },
+  REJECTED: { label: 'Ditolak', color: 'text-gray-500 bg-gray-500/10', icon: XCircle },
 };
 
 const formatCurrency = (amount: number) => {
@@ -59,29 +69,112 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
 export default function AdminTransactions() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedTx, setSelectedTx] = useState<typeof transactions[0] | null>(null);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  
+  // Force action dialogs
+  const [forceCompleteOpen, setForceCompleteOpen] = useState(false);
+  const [forceCancelOpen, setForceCancelOpen] = useState(false);
+  const [actionTxId, setActionTxId] = useState<string | null>(null);
+  const [actionReason, setActionReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [page, statusFilter]);
+
+  const fetchTransactions = async () => {
+    setIsLoading(true);
+    try {
+      const params: any = { page, limit: 20 };
+      if (statusFilter !== 'all') params.status = statusFilter;
+      
+      const response = await adminApi.getTransactions(params);
+      setTransactions(response.data.data || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotal(response.data.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      toast.error('Gagal memuat data transaksi');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch = tx.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tx.buyer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tx.seller.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || tx.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || tx.category === categoryFilter;
-    return matchesSearch && matchesStatus && matchesCategory;
+      tx.initiator?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tx.counterparty?.username?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
-  const handleForceComplete = (txId: string) => {
-    toast.success('Transaksi berhasil diselesaikan');
+  const handleForceComplete = async () => {
+    if (!actionTxId || !actionReason.trim()) {
+      toast.error('Alasan diperlukan');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await adminApi.forceCompleteTransaction(actionTxId, actionReason);
+      toast.success('Transaksi berhasil diselesaikan');
+      setForceCompleteOpen(false);
+      setActionTxId(null);
+      setActionReason('');
+      fetchTransactions();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menyelesaikan transaksi');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleForceCancel = (txId: string) => {
-    toast.success('Transaksi berhasil dibatalkan');
+  const handleForceCancel = async () => {
+    if (!actionTxId || !actionReason.trim()) {
+      toast.error('Alasan diperlukan');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await adminApi.forceCancelTransaction(actionTxId, actionReason);
+      toast.success('Transaksi berhasil dibatalkan');
+      setForceCancelOpen(false);
+      setActionTxId(null);
+      setActionReason('');
+      fetchTransactions();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal membatalkan transaksi');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading && transactions.length === 0) {
+    return (
+      <AdminLayout title="Manajemen Transaksi" subtitle="Kelola semua transaksi platform">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Manajemen Transaksi" subtitle="Kelola semua transaksi platform">
@@ -89,7 +182,7 @@ export default function AdminTransactions() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass-card p-4">
-            <div className="text-2xl font-display font-bold">{transactions.length}</div>
+            <div className="text-2xl font-display font-bold">{total}</div>
             <div className="text-sm text-muted-foreground">Total Transaksi</div>
           </div>
           <div className="glass-card p-4">
@@ -100,7 +193,7 @@ export default function AdminTransactions() {
           </div>
           <div className="glass-card p-4">
             <div className="text-2xl font-display font-bold text-amber-500">
-              {transactions.filter(t => ['PENDING_ACCEPT', 'ACCEPTED', 'PAID'].includes(t.status)).length}
+              {transactions.filter(t => ['PENDING_ACCEPT', 'ACCEPTED', 'PAID', 'DELIVERED'].includes(t.status)).length}
             </div>
             <div className="text-sm text-muted-foreground">Aktif</div>
           </div>
@@ -123,7 +216,7 @@ export default function AdminTransactions() {
               className="pl-10 bg-white/5 border-white/10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
             <SelectTrigger className="w-40 bg-white/5 border-white/10">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -134,18 +227,6 @@ export default function AdminTransactions() {
               <SelectItem value="COMPLETED">Selesai</SelectItem>
               <SelectItem value="DISPUTED">Dispute</SelectItem>
               <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-40 bg-white/5 border-white/10">
-              <SelectValue placeholder="Kategori" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kategori</SelectItem>
-              <SelectItem value="ELECTRONICS">Elektronik</SelectItem>
-              <SelectItem value="SERVICES">Jasa</SelectItem>
-              <SelectItem value="FASHION">Fashion</SelectItem>
-              <SelectItem value="DIGITAL">Digital</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -171,13 +252,12 @@ export default function AdminTransactions() {
               </thead>
               <tbody>
                 {filteredTransactions.map((tx) => {
-                  const status = statusConfig[tx.status];
+                  const status = statusConfig[tx.status] || statusConfig.PENDING_ACCEPT;
                   
                   return (
                     <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5">
                       <td className="p-4">
                         <div className="font-mono text-sm">{tx.orderNumber}</div>
-                        <div className="text-xs text-muted-foreground">{tx.category}</div>
                       </td>
                       <td className="p-4">
                         <div className="font-medium max-w-[200px] truncate">{tx.title}</div>
@@ -185,11 +265,11 @@ export default function AdminTransactions() {
                       <td className="p-4">
                         <div className="flex items-center gap-1 text-sm">
                           <ArrowUpRight className="w-3 h-3 text-red-500" />
-                          <span>{tx.buyer}</span>
+                          <span>{tx.initiator?.username || '-'}</span>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <ArrowDownRight className="w-3 h-3 text-emerald-500" />
-                          <span>{tx.seller}</span>
+                          <span>{tx.counterparty?.username || '-'}</span>
                         </div>
                       </td>
                       <td className="p-4 font-semibold">{formatCurrency(tx.amount)}</td>
@@ -198,7 +278,7 @@ export default function AdminTransactions() {
                           {status.label}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground">{tx.createdAt}</td>
+                      <td className="p-4 text-sm text-muted-foreground">{formatDate(tx.createdAt)}</td>
                       <td className="p-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -211,14 +291,14 @@ export default function AdminTransactions() {
                               <Eye className="w-4 h-4 mr-2" />
                               Lihat Detail
                             </DropdownMenuItem>
-                            {!['COMPLETED', 'CANCELLED'].includes(tx.status) && (
+                            {!['COMPLETED', 'CANCELLED', 'REJECTED'].includes(tx.status) && (
                               <>
-                                <DropdownMenuItem onClick={() => handleForceComplete(tx.id)}>
+                                <DropdownMenuItem onClick={() => { setActionTxId(tx.id); setForceCompleteOpen(true); }}>
                                   <CheckCircle2 className="w-4 h-4 mr-2" />
                                   Force Complete
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
-                                  onClick={() => handleForceCancel(tx.id)}
+                                  onClick={() => { setActionTxId(tx.id); setForceCancelOpen(true); }}
                                   className="text-red-500"
                                 >
                                   <XCircle className="w-4 h-4 mr-2" />
@@ -235,6 +315,33 @@ export default function AdminTransactions() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 border-t border-white/10">
+              <div className="text-sm text-muted-foreground">
+                Halaman {page} dari {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Sebelumnya
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Selanjutnya
+                </Button>
+              </div>
+            </div>
+          )}
         </motion.div>
         
         {/* Transaction Detail Dialog */}
@@ -248,16 +355,21 @@ export default function AdminTransactions() {
                 <div className="p-4 rounded-lg bg-white/5">
                   <div className="font-mono text-sm text-muted-foreground mb-1">{selectedTx.orderNumber}</div>
                   <div className="text-xl font-semibold">{selectedTx.title}</div>
+                  {selectedTx.description && (
+                    <div className="text-sm text-muted-foreground mt-2">{selectedTx.description}</div>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground mb-1">Pembeli</div>
-                    <div className="font-medium">{selectedTx.buyer}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Pembuat</div>
+                    <div className="font-medium">{selectedTx.initiator?.username}</div>
+                    <div className="text-xs text-muted-foreground">{selectedTx.initiator?.email}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-white/5">
-                    <div className="text-sm text-muted-foreground mb-1">Penjual</div>
-                    <div className="font-medium">{selectedTx.seller}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Pihak Lain</div>
+                    <div className="font-medium">{selectedTx.counterparty?.username || '-'}</div>
+                    <div className="text-xs text-muted-foreground">{selectedTx.counterparty?.email || '-'}</div>
                   </div>
                 </div>
                 
@@ -272,12 +384,89 @@ export default function AdminTransactions() {
                 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                   <span className="text-muted-foreground">Status</span>
-                  <span className={`text-sm px-3 py-1 rounded-full ${statusConfig[selectedTx.status].color}`}>
-                    {statusConfig[selectedTx.status].label}
+                  <span className={`text-sm px-3 py-1 rounded-full ${(statusConfig[selectedTx.status] || statusConfig.PENDING_ACCEPT).color}`}>
+                    {(statusConfig[selectedTx.status] || statusConfig.PENDING_ACCEPT).label}
                   </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Dibuat:</span>
+                    <span className="ml-2">{formatDate(selectedTx.createdAt)}</span>
+                  </div>
+                  {selectedTx.paidAt && (
+                    <div>
+                      <span className="text-muted-foreground">Dibayar:</span>
+                      <span className="ml-2">{formatDate(selectedTx.paidAt)}</span>
+                    </div>
+                  )}
+                  {selectedTx.completedAt && (
+                    <div>
+                      <span className="text-muted-foreground">Selesai:</span>
+                      <span className="ml-2">{formatDate(selectedTx.completedAt)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Force Complete Dialog */}
+        <Dialog open={forceCompleteOpen} onOpenChange={setForceCompleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Force Complete Transaksi</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Alasan</Label>
+                <Textarea
+                  value={actionReason}
+                  onChange={(e) => setActionReason(e.target.value)}
+                  placeholder="Masukkan alasan force complete..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setForceCompleteOpen(false)} disabled={isSubmitting}>
+                Batal
+              </Button>
+              <Button className="btn-accent" onClick={handleForceComplete} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Force Complete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Force Cancel Dialog */}
+        <Dialog open={forceCancelOpen} onOpenChange={setForceCancelOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Force Cancel Transaksi</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Alasan</Label>
+                <Textarea
+                  value={actionReason}
+                  onChange={(e) => setActionReason(e.target.value)}
+                  placeholder="Masukkan alasan force cancel..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setForceCancelOpen(false)} disabled={isSubmitting}>
+                Batal
+              </Button>
+              <Button variant="destructive" onClick={handleForceCancel} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Force Cancel
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

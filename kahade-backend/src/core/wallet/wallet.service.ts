@@ -9,7 +9,7 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
 import { Wallet } from '@common/shims/prisma-types.shim';
 import { ConfigService } from '@nestjs/config';
-import { TopUpDto } from './dto/topup.dto';
+import { TopUpDto, mapPaymentMethod } from './dto/topup.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 
 // ============================================================================
@@ -235,7 +235,10 @@ export class WalletService {
     vaNumber?: string;
     expiresAt: Date;
   }> {
-    const { amount, method } = topUpDto;
+    const { amount, method: rawMethod } = topUpDto;
+    
+    // Map generic methods to specific ones
+    const method = mapPaymentMethod(rawMethod);
 
     // Validate minimum amount
     if (amount < 10000) {
@@ -309,6 +312,7 @@ export class WalletService {
 
   /**
    * Withdraw from wallet
+   * Supports both saved bank account (bankAccountId) and direct bank details
    */
   async withdraw(userId: string, withdrawDto: WithdrawDto): Promise<{
     id: string;
@@ -318,7 +322,7 @@ export class WalletService {
     status: string;
     estimatedArrival: Date;
   }> {
-    const { amount, bankAccountId } = withdrawDto;
+    const { amount, bankAccountId, bankCode, accountNumber, accountName } = withdrawDto;
 
     // Validate minimum amount
     if (amount < 50000) {
@@ -343,17 +347,63 @@ export class WalletService {
       throw new InsufficientBalanceError(availableBalance, totalMinor);
     }
 
-    const bankAccount = await this.prisma.bankAccount.findFirst({
-      where: {
-        id: bankAccountId,
-        userId,
-        isActive: true,
-        deletedAt: null,
-      },
-    });
+    let finalBankAccountId: string;
+    let bankAccount: any;
 
-    if (!bankAccount) {
-      throw new BadRequestException('Invalid or inactive bank account');
+    if (bankAccountId) {
+      // Use existing bank account
+      bankAccount = await this.prisma.bankAccount.findFirst({
+        where: {
+          id: bankAccountId,
+          userId,
+          isActive: true,
+          deletedAt: null,
+        },
+      });
+
+      if (!bankAccount) {
+        throw new BadRequestException('Invalid or inactive bank account');
+      }
+      finalBankAccountId = bankAccountId;
+    } else if (bankCode && accountNumber && accountName) {
+      // Create or find bank account with provided details
+      const bankInfo = this.SUPPORTED_BANKS.find(b => b.code === bankCode);
+      const bankName = bankInfo?.name || bankCode;
+      const accountNumberLast4 = accountNumber.slice(-4);
+      
+      const existingAccount = await this.prisma.bankAccount.findFirst({
+        where: {
+          userId,
+          bankName,
+          accountNumberLast4,
+          deletedAt: null,
+        },
+      });
+
+      if (existingAccount) {
+        bankAccount = existingAccount;
+        finalBankAccountId = existingAccount.id;
+      } else {
+        // Create new bank account with encrypted data
+        // Simple encryption for demo - in production use proper KMS
+        const encryptSimple = (text: string) => Buffer.from(text).toString('base64');
+        
+        bankAccount = await this.prisma.bankAccount.create({
+          data: {
+            userId,
+            bankName,
+            accountNumberEnc: encryptSimple(accountNumber),
+            accountNumberLast4,
+            accountNameEnc: encryptSimple(accountName),
+            isDefault: false,
+            isActive: true,
+            isVerified: false,
+          },
+        });
+        finalBankAccountId = bankAccount.id;
+      }
+    } else {
+      throw new BadRequestException('Either bankAccountId or bank details (bankCode, accountNumber, accountName) are required');
     }
 
     // Create withdrawal record and lock balance in transaction
@@ -372,7 +422,7 @@ export class WalletService {
         data: {
           walletId: wallet.id,
           userId,
-          bankAccountId,
+          bankAccountId: finalBankAccountId,
           amountMinor,
           currency: 'IDR',
           status: 'PENDING',
@@ -386,7 +436,7 @@ export class WalletService {
       id: withdrawal.id,
       amount,
       netAmount: amount,
-      bankAccountId,
+      bankAccountId: finalBankAccountId,
       status: 'PENDING',
       estimatedArrival: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours
     };

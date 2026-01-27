@@ -175,14 +175,27 @@ export class AuthController {
     return this.authService.verifyEmail(dto.token);
   }
 
-  @Public()
   @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per hour
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiOperation({ summary: 'Resend verification email (authenticated)' })
+  @ApiResponse({ status: 200, description: 'Verification email sent' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async resendVerification(@CurrentUser() user: any) {
+    // Use authenticated user's email
+    return this.authService.resendVerificationEmail(user.email);
+  }
+
+  @Public()
+  @Post('resend-verification-public')
+  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per hour
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend verification email (public)' })
   @ApiResponse({ status: 200, description: 'Verification email sent (if account exists)' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
-  async resendVerification(@Body() dto: { email: string }) {
+  async resendVerificationPublic(@Body() dto: { email: string }) {
     return this.authService.resendVerificationEmail(dto.email);
   }
 

@@ -1,8 +1,9 @@
-import { IsNumber, IsString, Min, Max, IsNotEmpty } from 'class-validator';
+import { IsNumber, IsString, Min, Max, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 // ============================================================================
 // WITHDRAW DTO
+// Supports both bankAccountId (for saved accounts) and direct bank details
 // ============================================================================
 
 export class WithdrawDto {
@@ -18,10 +19,41 @@ export class WithdrawDto {
   amount: number;
 
   @ApiProperty({
-    description: 'Bank account ID linked to the user',
+    description: 'Bank account ID linked to the user (optional if providing bank details)',
     example: 'b7f1c6a5-4b9c-4d1a-9e2b-3b7a0b0c1234',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Bank account ID is required' })
-  bankAccountId: string;
+  bankAccountId?: string;
+
+  @ApiProperty({
+    description: 'Bank code (required if bankAccountId not provided)',
+    example: 'BCA',
+    required: false,
+  })
+  @ValidateIf(o => !o.bankAccountId)
+  @IsString()
+  @IsNotEmpty({ message: 'Bank code is required when not using saved bank account' })
+  bankCode?: string;
+
+  @ApiProperty({
+    description: 'Bank account number (required if bankAccountId not provided)',
+    example: '1234567890',
+    required: false,
+  })
+  @ValidateIf(o => !o.bankAccountId)
+  @IsString()
+  @IsNotEmpty({ message: 'Account number is required when not using saved bank account' })
+  accountNumber?: string;
+
+  @ApiProperty({
+    description: 'Account holder name (required if bankAccountId not provided)',
+    example: 'John Doe',
+    required: false,
+  })
+  @ValidateIf(o => !o.bankAccountId)
+  @IsString()
+  @IsNotEmpty({ message: 'Account name is required when not using saved bank account' })
+  accountName?: string;
 }

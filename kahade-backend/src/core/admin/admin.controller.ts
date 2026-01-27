@@ -906,6 +906,210 @@ export class AdminController {
   }
 
   // ============================================================================
+  // REPORTS
+  // ============================================================================
+
+  @Get('reports/revenue')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get revenue report' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async getRevenueReport(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const completedOrders = await (this.prisma as any).order.findMany({
+      where: {
+        status: 'COMPLETED',
+        completedAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      select: {
+        amountMinor: true,
+        platformFeeMinor: true,
+        completedAt: true,
+      },
+    });
+
+    const totalRevenue = completedOrders.reduce((sum: bigint, o: any) => sum + (o.platformFeeMinor || 0n), 0n);
+    const totalVolume = completedOrders.reduce((sum: bigint, o: any) => sum + (o.amountMinor || 0n), 0n);
+
+    // Group by date for chart data
+    const dailyRevenue: Record<string, { revenue: number; volume: number; count: number }> = {};
+    completedOrders.forEach((order: any) => {
+      const date = order.completedAt.toISOString().split('T')[0];
+      if (!dailyRevenue[date]) {
+        dailyRevenue[date] = { revenue: 0, volume: 0, count: 0 };
+      }
+      dailyRevenue[date].revenue += Number(order.platformFeeMinor || 0n) / 100;
+      dailyRevenue[date].volume += Number(order.amountMinor || 0n) / 100;
+      dailyRevenue[date].count += 1;
+    });
+
+    return {
+      summary: {
+        totalRevenue: Number(totalRevenue) / 100,
+        totalVolume: Number(totalVolume) / 100,
+        totalTransactions: completedOrders.length,
+        period: { start, end },
+      },
+      dailyData: Object.entries(dailyRevenue).map(([date, data]) => ({
+        date,
+        ...data,
+      })).sort((a, b) => a.date.localeCompare(b.date)),
+    };
+  }
+
+  @Get('reports/transactions')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get transactions report' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async getTransactionReport(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const [statusCounts, categoryCounts, dailyCounts] = await Promise.all([
+      (this.prisma as any).order.groupBy({
+        by: ['status'],
+        where: {
+          createdAt: { gte: start, lte: end },
+        },
+        _count: { id: true },
+        _sum: { amountMinor: true },
+      }),
+      (this.prisma as any).order.groupBy({
+        by: ['category'],
+        where: {
+          createdAt: { gte: start, lte: end },
+        },
+        _count: { id: true },
+        _sum: { amountMinor: true },
+      }),
+      (this.prisma as any).order.findMany({
+        where: {
+          createdAt: { gte: start, lte: end },
+        },
+        select: {
+          createdAt: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    // Group daily counts
+    const dailyData: Record<string, Record<string, number>> = {};
+    dailyCounts.forEach((order: any) => {
+      const date = order.createdAt.toISOString().split('T')[0];
+      if (!dailyData[date]) {
+        dailyData[date] = { total: 0 };
+      }
+      dailyData[date].total += 1;
+      dailyData[date][order.status] = (dailyData[date][order.status] || 0) + 1;
+    });
+
+    return {
+      byStatus: statusCounts.map((s: any) => ({
+        status: s.status,
+        count: s._count.id,
+        volume: Number(s._sum.amountMinor || 0n) / 100,
+      })),
+      byCategory: categoryCounts.map((c: any) => ({
+        category: c.category,
+        count: c._count.id,
+        volume: Number(c._sum.amountMinor || 0n) / 100,
+      })),
+      dailyData: Object.entries(dailyData).map(([date, data]) => ({
+        date,
+        ...data,
+      })).sort((a, b) => a.date.localeCompare(b.date)),
+      period: { start, end },
+    };
+  }
+
+  @Get('reports/users')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get users report' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async getUserReport(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const [totalUsers, newUsers, verifiedUsers, kycStats, activeUsers] = await Promise.all([
+      this.prisma.user.count({ where: { deletedAt: null } }),
+      this.prisma.user.count({
+        where: {
+          createdAt: { gte: start, lte: end },
+          deletedAt: null,
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          emailVerifiedAt: { not: null },
+          deletedAt: null,
+        },
+      }),
+      this.prisma.user.groupBy({
+        by: ['kycStatus'],
+        where: { deletedAt: null },
+        _count: { id: true },
+      }),
+      this.prisma.user.count({
+        where: {
+          lastLoginAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          deletedAt: null,
+        },
+      }),
+    ]);
+
+    // Get daily registrations
+    const dailyRegistrations = await this.prisma.user.findMany({
+      where: {
+        createdAt: { gte: start, lte: end },
+        deletedAt: null,
+      },
+      select: { createdAt: true },
+    });
+
+    const dailyData: Record<string, number> = {};
+    dailyRegistrations.forEach((user: any) => {
+      const date = user.createdAt.toISOString().split('T')[0];
+      dailyData[date] = (dailyData[date] || 0) + 1;
+    });
+
+    return {
+      summary: {
+        totalUsers,
+        newUsers,
+        verifiedUsers,
+        activeUsers,
+        verificationRate: totalUsers > 0 ? ((verifiedUsers / totalUsers) * 100).toFixed(2) : 0,
+      },
+      kycBreakdown: kycStats.map((k: any) => ({
+        status: k.kycStatus,
+        count: k._count.id,
+      })),
+      dailyRegistrations: Object.entries(dailyData).map(([date, count]) => ({
+        date,
+        count,
+      })).sort((a, b) => a.date.localeCompare(b.date)),
+      period: { start, end },
+    };
+  }
+
+  // ============================================================================
   // HELPER METHODS
   // ============================================================================
 
