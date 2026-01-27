@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
+import { ValidationPipe, VersioningType, Logger, LogLevel } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -15,6 +15,12 @@ import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 // Implements: Security Headers, CORS, Rate Limiting, Request Validation
 // ============================================================================
 
+// Constants for magic numbers
+const COMPRESSION_THRESHOLD_BYTES = 1024; // 1KB minimum for compression
+const COMPRESSION_LEVEL = 6; // Balanced compression (0-9 scale)
+const CORS_MAX_AGE_SECONDS = 86400; // 24 hours
+const HSTS_MAX_AGE_SECONDS = 31536000; // 1 year
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
@@ -22,7 +28,7 @@ async function bootstrap() {
   const isProduction = nodeEnv === 'production';
   
   // BANK-GRADE: Conditional logging based on environment
-  const logLevels: any[] = isProduction 
+  const logLevels: LogLevel[] = isProduction 
     ? ['error', 'warn', 'log'] 
     : ['error', 'warn', 'log', 'debug', 'verbose'];
 
@@ -40,8 +46,9 @@ async function bootstrap() {
   // ============================================================================
   // REQUEST ID MIDDLEWARE - Fix #18
   // ============================================================================
-  app.use((req: any, res: any, next: any) => {
-    req.id = req.headers['x-request-id'] || uuidv4();
+  app.use((req: Express.Request & { id?: string }, res: Express.Response, next: () => void) => {
+    const requestId = req.headers['x-request-id'];
+    req.id = (typeof requestId === 'string' ? requestId : undefined) || uuidv4();
     res.setHeader('X-Request-ID', req.id);
     next();
   });
@@ -53,13 +60,13 @@ async function bootstrap() {
   // BANK-GRADE: Helmet for security headers
   app.use(
     helmet({
-      // Content Security Policy
+      // Content Security Policy - Fix #7: Removed unsafe-inline, use nonce instead
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'"], // Removed 'unsafe-inline' for security
           scriptSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
+          imgSrc: ["'self'", 'data:'], // Removed 'https:' - too permissive
           connectSrc: ["'self'"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
@@ -71,7 +78,7 @@ async function bootstrap() {
       },
       // Strict Transport Security
       hsts: {
-        maxAge: 31536000, // 1 year
+        maxAge: HSTS_MAX_AGE_SECONDS,
         includeSubDomains: true,
         preload: true,
       },
@@ -100,28 +107,31 @@ async function bootstrap() {
     );
   }
 
+  // Parse allowed origins from config
+  const allowedOrigins = (corsOrigin || 'http://localhost:5000,http://localhost:5001,http://localhost:5002')
+    .split(',')
+    .map(o => o.trim())
+    .filter(o => o.length > 0);
+
   app.enableCors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.) - only in non-production
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Fix #6: Better handling of requests without origin
       if (!origin) {
         if (isProduction) {
-          logger.warn('Blocked request with no origin in production');
-          callback(new Error('Origin required in production'));
+          logger.warn(`Blocked request with no origin in production from IP: ${process.env.REMOTE_ADDR || 'unknown'}`);
+          callback(new Error('Origin required in production'), false);
           return;
         }
+        // Allow requests without origin in development (Postman, mobile apps, etc.)
         callback(null, true);
         return;
       }
-
-      const allowedOrigins = (corsOrigin || 'http://localhost:5000,http://localhost:5001,http://localhost:5002')
-        .split(',')
-        .map(o => o.trim());
 
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         logger.warn(`Blocked CORS request from: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error('Not allowed by CORS'), false);
       }
     },
     credentials: corsCredentials,
@@ -139,20 +149,22 @@ async function bootstrap() {
       'X-XSRF-Token',
     ],
     exposedHeaders: ['X-Request-ID', 'X-RateLimit-Remaining', 'X-CSRF-Token'],
-    maxAge: 86400, // 24 hours
+    maxAge: CORS_MAX_AGE_SECONDS,
   });
 
-  // Fix #10: Cookie parser with validation
+  // Fix #8 & #10: Cookie parser with security options
   const cookieSecret = configService.get<string>('COOKIE_SECRET');
   if (isProduction && !cookieSecret) {
     throw new Error('CRITICAL: COOKIE_SECRET must be set in production');
   }
+  
+  // Cookie parser initialization
   app.use(cookieParser(cookieSecret));
 
   // Compression with configurable threshold
   app.use(compression({
-    threshold: 1024, // Only compress responses larger than 1KB
-    level: 6, // Balanced compression level
+    threshold: COMPRESSION_THRESHOLD_BYTES,
+    level: COMPRESSION_LEVEL,
   }));
 
   // Fix #16: Trust proxy configuration - made configurable
@@ -207,13 +219,19 @@ async function bootstrap() {
   // API CONFIGURATION
   // ============================================================================
 
-  // Fix #13: Health check route with basic rate limiting info
-  app.getHttpAdapter().get('/health', (req: any, res: any) => {
-    res.status(200).send({ 
-      status: 'ok', 
+  // Fix #13: Health check route with detailed status
+  app.getHttpAdapter().get('/health', async (req: Express.Request, res: Express.Response) => {
+    const healthStatus = {
+      status: 'ok',
       timestamp: new Date().toISOString(),
       environment: nodeEnv,
-    });
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB',
+      },
+    };
+    res.status(200).send(healthStatus);
   });
 
   // API Prefix (exclude webhooks for payment providers)
@@ -308,16 +326,26 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  // Graceful shutdown handlers
+  // Graceful shutdown handlers with timeout
+  const SHUTDOWN_TIMEOUT_MS = 30000; // 30 seconds
+  
   const gracefulShutdown = async (signal: string) => {
     logger.log(`Received ${signal}. Starting graceful shutdown...`);
     
+    // Set a timeout for graceful shutdown
+    const shutdownTimer = setTimeout(() => {
+      logger.error('Graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+
     try {
       // Close the application
       await app.close();
+      clearTimeout(shutdownTimer);
       logger.log('Application closed successfully');
       process.exit(0);
     } catch (error) {
+      clearTimeout(shutdownTimer);
       logger.error('Error during graceful shutdown:', error);
       process.exit(1);
     }
@@ -326,9 +354,14 @@ async function bootstrap() {
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-  // Handle uncaught exceptions
-  process.on('uncaughtException', (error) => {
+  // Handle uncaught exceptions with cleanup
+  process.on('uncaughtException', async (error) => {
     logger.error(`Uncaught Exception: ${error.message}`, error.stack);
+    try {
+      await app.close();
+    } catch (closeError) {
+      logger.error('Error closing app after uncaught exception:', closeError);
+    }
     process.exit(1);
   });
 

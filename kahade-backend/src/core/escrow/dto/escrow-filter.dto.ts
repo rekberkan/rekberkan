@@ -1,18 +1,19 @@
-import { IsOptional, IsEnum, IsInt, Min, Max, IsDateString } from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsInt, Min, Max, IsDateString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
-export enum WithdrawalStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
+export enum EscrowStatus {
+  ACTIVE = 'ACTIVE',
+  RELEASED = 'RELEASED',
+  REFUNDED = 'REFUNDED',
+  DISPUTED = 'DISPUTED',
+  EXPIRED = 'EXPIRED',
 }
 
-export enum WithdrawalSortField {
+export enum EscrowSortField {
   CREATED_AT = 'createdAt',
   AMOUNT = 'amountMinor',
+  TIMEOUT_AT = 'timeoutAt',
   STATUS = 'status',
 }
 
@@ -21,17 +22,27 @@ export enum SortOrder {
   DESC = 'desc',
 }
 
-export class WithdrawalFilterDto {
+export class EscrowFilterDto {
   @ApiPropertyOptional({
-    description: 'Filter by withdrawal status',
-    enum: WithdrawalStatus,
+    description: 'Filter by escrow status',
+    enum: EscrowStatus,
+    example: EscrowStatus.ACTIVE,
   })
   @IsOptional()
-  @IsEnum(WithdrawalStatus)
-  status?: WithdrawalStatus;
+  @IsEnum(EscrowStatus)
+  status?: EscrowStatus;
 
   @ApiPropertyOptional({
-    description: 'Filter withdrawals created after this date',
+    description: 'Filter by role (as_buyer or as_seller)',
+    enum: ['as_buyer', 'as_seller'],
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value?.toLowerCase())
+  role?: 'as_buyer' | 'as_seller';
+
+  @ApiPropertyOptional({
+    description: 'Filter escrows created after this date',
     example: '2024-01-01',
   })
   @IsOptional()
@@ -39,7 +50,7 @@ export class WithdrawalFilterDto {
   dateFrom?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter withdrawals created before this date',
+    description: 'Filter escrows created before this date',
     example: '2024-12-31',
   })
   @IsOptional()
@@ -48,6 +59,7 @@ export class WithdrawalFilterDto {
 
   @ApiPropertyOptional({
     description: 'Page number',
+    example: 1,
     default: 1,
   })
   @IsOptional()
@@ -58,6 +70,7 @@ export class WithdrawalFilterDto {
 
   @ApiPropertyOptional({
     description: 'Items per page',
+    example: 10,
     default: 10,
     maximum: 100,
   })
@@ -70,12 +83,12 @@ export class WithdrawalFilterDto {
 
   @ApiPropertyOptional({
     description: 'Sort field',
-    enum: WithdrawalSortField,
-    default: WithdrawalSortField.CREATED_AT,
+    enum: EscrowSortField,
+    default: EscrowSortField.CREATED_AT,
   })
   @IsOptional()
-  @IsEnum(WithdrawalSortField)
-  sortBy?: WithdrawalSortField = WithdrawalSortField.CREATED_AT;
+  @IsEnum(EscrowSortField)
+  sortBy?: EscrowSortField = EscrowSortField.CREATED_AT;
 
   @ApiPropertyOptional({
     description: 'Sort order',

@@ -1,27 +1,34 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString, Min, Max, IsNotEmpty } from 'class-validator';
-
-// ============================================================================
-// CREATE WITHDRAWAL DTO
-// ============================================================================
+import { IsNumber, IsUUID, Min, Max, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateWithdrawalDto {
-  @ApiProperty({ 
-    description: 'Amount to withdraw in IDR',
+  @ApiProperty({
+    description: 'Amount to withdraw in minor units (Rupiah)',
+    example: 500000,
     minimum: 50000,
     maximum: 50000000,
-    example: 100000,
   })
-  @IsNumber({}, { message: 'Amount must be a number' })
+  @IsNumber()
+  @Type(() => Number)
   @Min(50000, { message: 'Minimum withdrawal is Rp 50,000' })
-  @Max(50000000, { message: 'Maximum withdrawal is Rp 50,000,000' })
-  amount: number;
+  @Max(50000000, { message: 'Maximum withdrawal is Rp 50,000,000 per transaction' })
+  amountMinor: number;
 
   @ApiProperty({
-    description: 'Bank account ID linked to the user',
-    example: 'b7f1c6a5-4b9c-4d1a-9e2b-3b7a0b0c1234',
+    description: 'Bank account ID to withdraw to',
+    example: 'bank-account-uuid-123',
   })
-  @IsString()
-  @IsNotEmpty({ message: 'Bank account ID is required' })
+  @IsUUID('4', { message: 'Invalid bank account ID' })
   bankAccountId: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional note for the withdrawal',
+    example: 'Monthly salary withdrawal',
+    maxLength: 200,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  note?: string;
 }

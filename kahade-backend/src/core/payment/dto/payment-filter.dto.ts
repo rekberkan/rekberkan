@@ -2,15 +2,25 @@ import { IsOptional, IsEnum, IsInt, Min, Max, IsDateString } from 'class-validat
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export enum WithdrawalStatus {
+export enum PaymentStatus {
   PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+  REFUNDED = 'REFUNDED',
 }
 
-export enum WithdrawalSortField {
+export enum PaymentMethod {
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  VIRTUAL_ACCOUNT = 'VIRTUAL_ACCOUNT',
+  E_WALLET = 'E_WALLET',
+  QRIS = 'QRIS',
+  CREDIT_CARD = 'CREDIT_CARD',
+  RETAIL_OUTLET = 'RETAIL_OUTLET',
+}
+
+export enum PaymentSortField {
   CREATED_AT = 'createdAt',
   AMOUNT = 'amountMinor',
   STATUS = 'status',
@@ -21,17 +31,25 @@ export enum SortOrder {
   DESC = 'desc',
 }
 
-export class WithdrawalFilterDto {
+export class PaymentFilterDto {
   @ApiPropertyOptional({
-    description: 'Filter by withdrawal status',
-    enum: WithdrawalStatus,
+    description: 'Filter by payment status',
+    enum: PaymentStatus,
   })
   @IsOptional()
-  @IsEnum(WithdrawalStatus)
-  status?: WithdrawalStatus;
+  @IsEnum(PaymentStatus)
+  status?: PaymentStatus;
 
   @ApiPropertyOptional({
-    description: 'Filter withdrawals created after this date',
+    description: 'Filter by payment method',
+    enum: PaymentMethod,
+  })
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  method?: PaymentMethod;
+
+  @ApiPropertyOptional({
+    description: 'Filter payments created after this date',
     example: '2024-01-01',
   })
   @IsOptional()
@@ -39,7 +57,7 @@ export class WithdrawalFilterDto {
   dateFrom?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter withdrawals created before this date',
+    description: 'Filter payments created before this date',
     example: '2024-12-31',
   })
   @IsOptional()
@@ -70,12 +88,12 @@ export class WithdrawalFilterDto {
 
   @ApiPropertyOptional({
     description: 'Sort field',
-    enum: WithdrawalSortField,
-    default: WithdrawalSortField.CREATED_AT,
+    enum: PaymentSortField,
+    default: PaymentSortField.CREATED_AT,
   })
   @IsOptional()
-  @IsEnum(WithdrawalSortField)
-  sortBy?: WithdrawalSortField = WithdrawalSortField.CREATED_AT;
+  @IsEnum(PaymentSortField)
+  sortBy?: PaymentSortField = PaymentSortField.CREATED_AT;
 
   @ApiPropertyOptional({
     description: 'Sort order',
