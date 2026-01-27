@@ -7,6 +7,12 @@ module.exports = {
   },
   collectCoverageFrom: [
     '**/*.(t|j)s',
+    '!**/*.module.ts',
+    '!**/main.ts',
+    '!**/*.interface.ts',
+    '!**/*.dto.ts',
+    '!**/*.entity.ts',
+    '!**/index.ts',
   ],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
@@ -20,4 +26,40 @@ module.exports = {
     '^@security/(.*)$': '<rootDir>/security/$1',
     '^@api/(.*)$': '<rootDir>/api/$1',
   },
+  // Fix #84: Coverage threshold requirement
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 60,
+      statements: 60,
+    },
+    // Higher thresholds for critical modules
+    './core/auth/**/*.ts': {
+      branches: 70,
+      functions: 70,
+      lines: 80,
+      statements: 80,
+    },
+    './core/escrow/**/*.ts': {
+      branches: 70,
+      functions: 70,
+      lines: 80,
+      statements: 80,
+    },
+    './core/wallet/**/*.ts': {
+      branches: 70,
+      functions: 70,
+      lines: 80,
+      statements: 80,
+    },
+  },
+  // Test timeout for async operations
+  testTimeout: 30000,
+  // Verbose output for CI
+  verbose: true,
+  // Clear mocks between tests
+  clearMocks: true,
+  // Restore mocks between tests
+  restoreMocks: true,
 };

@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -47,8 +47,7 @@ import { EmailModule } from './integrations/email/email.module';
 // Jobs
 import { JobsModule } from './jobs/jobs.module';
 
-// Common
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+// Common - Fix #22: Removed unused HttpExceptionFilter import (using AllExceptionsFilter in main.ts)
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -73,14 +72,14 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
       ],
     }),
 
-    // Rate Limiting
+    // Rate Limiting - Fix #23: Increased default from 10 to 100
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         throttlers: [{
           ttl: config.get<number>('app.rateLimit.ttl') || 60,
-          limit: config.get<number>('app.rateLimit.limit') || 10,
+          limit: config.get<number>('app.rateLimit.limit') || 100, // Fixed: Increased from 10 to 100
         }],
       }),
     }),
@@ -120,10 +119,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
-    },
+    // Fix #22: Removed APP_FILTER with HttpExceptionFilter (using AllExceptionsFilter in main.ts)
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
@@ -135,4 +131,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Middleware configuration can be added here if needed
+  }
+}

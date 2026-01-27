@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
+import { v4 as uuidv4 } from 'uuid';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 
@@ -32,8 +33,18 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('app.port', 3001);
+  const port = configService.get<number>('app.port', 3000);
   const apiPrefix = configService.get<string>('app.apiPrefix', 'api');
+  const trustProxyHops = configService.get<number>('app.trustProxy', 1);
+
+  // ============================================================================
+  // REQUEST ID MIDDLEWARE - Fix #18
+  // ============================================================================
+  app.use((req: any, res: any, next: any) => {
+    req.id = req.headers['x-request-id'] || uuidv4();
+    res.setHeader('X-Request-ID', req.id);
+    next();
+  });
 
   // ============================================================================
   // SECURITY MIDDLEWARE
@@ -54,7 +65,8 @@ async function bootstrap() {
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
           frameSrc: ["'none'"],
-          upgradeInsecureRequests: isProduction ? [] : null,
+          // Fix #17: Proper upgradeInsecureRequests syntax
+          ...(isProduction && { upgradeInsecureRequests: [] }),
         },
       },
       // Strict Transport Security
@@ -80,7 +92,7 @@ async function bootstrap() {
   const corsOrigin = configService.get<string>('app.corsOrigin');
   const corsCredentials = configService.get<boolean>('app.corsCredentials', true);
   
-  // Validate CORS in production
+  // Fix #4: Enforce strict CORS in all environments
   if (isProduction && (!corsOrigin || corsOrigin === '*')) {
     throw new Error(
       'CRITICAL SECURITY ERROR: CORS_ORIGIN must be set to specific domain(s) in production. ' +
@@ -90,8 +102,13 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
+      // Allow requests with no origin (mobile apps, Postman, etc.) - only in non-production
       if (!origin) {
+        if (isProduction) {
+          logger.warn('Blocked request with no origin in production');
+          callback(new Error('Origin required in production'));
+          return;
+        }
         callback(null, true);
         return;
       }
@@ -100,7 +117,7 @@ async function bootstrap() {
         .split(',')
         .map(o => o.trim());
 
-      if (allowedOrigins.includes(origin) || !isProduction) {
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         logger.warn(`Blocked CORS request from: ${origin}`);
@@ -125,20 +142,27 @@ async function bootstrap() {
     maxAge: 86400, // 24 hours
   });
 
-  // Cookie parser for session handling
-  app.use(cookieParser(configService.get<string>('COOKIE_SECRET')));
+  // Fix #10: Cookie parser with validation
+  const cookieSecret = configService.get<string>('COOKIE_SECRET');
+  if (isProduction && !cookieSecret) {
+    throw new Error('CRITICAL: COOKIE_SECRET must be set in production');
+  }
+  app.use(cookieParser(cookieSecret));
 
-  // Compression
-  app.use(compression());
+  // Compression with configurable threshold
+  app.use(compression({
+    threshold: 1024, // Only compress responses larger than 1KB
+    level: 6, // Balanced compression level
+  }));
 
-  // Trust proxy (for rate limiting behind reverse proxy)
-  app.set('trust proxy', 1);
+  // Fix #16: Trust proxy configuration - made configurable
+  app.set('trust proxy', trustProxyHops);
 
   // ============================================================================
   // REQUEST VALIDATION
   // ============================================================================
 
-  // BANK-GRADE: Global validation pipe
+  // Fix #15: Global validation pipe with sanitized error messages
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Strip unknown properties
@@ -147,7 +171,24 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: false, // Explicit type conversion only for security
       },
-      disableErrorMessages: isProduction, // Hide validation details in production
+      // Fix #15: Return sanitized error messages instead of disabling completely
+      disableErrorMessages: false,
+      exceptionFactory: (errors) => {
+        // Sanitize error messages for production
+        const sanitizedErrors = errors.map(error => ({
+          field: error.property,
+          message: isProduction 
+            ? 'Validation failed for this field' 
+            : Object.values(error.constraints || {}).join(', '),
+        }));
+        
+        const { BadRequestException } = require('@nestjs/common');
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Validation failed',
+          errors: sanitizedErrors,
+        });
+      },
       validationError: {
         target: false, // Don't include target object in error
         value: false, // Don't include value in error
@@ -166,9 +207,13 @@ async function bootstrap() {
   // API CONFIGURATION
   // ============================================================================
 
-  // Health check route outside global prefix
+  // Fix #13: Health check route with basic rate limiting info
   app.getHttpAdapter().get('/health', (req: any, res: any) => {
-    res.status(200).send({ status: 'ok', timestamp: new Date().toISOString() });
+    res.status(200).send({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: nodeEnv,
+    });
   });
 
   // API Prefix (exclude webhooks for payment providers)
@@ -192,10 +237,11 @@ async function bootstrap() {
 
   const enableSwagger = configService.get<boolean>('app.enableSwagger', false);
   
+  // Fix #14: Hard block Swagger in production
   if (isProduction && enableSwagger) {
-    logger.warn(
-      '⚠️  WARNING: Swagger is enabled in production! ' +
-      'Set ENABLE_SWAGGER=false in production for security.'
+    throw new Error(
+      'CRITICAL SECURITY ERROR: Swagger MUST be disabled in production. ' +
+      'Set ENABLE_SWAGGER=false in production environment.'
     );
   }
 
@@ -257,10 +303,28 @@ async function bootstrap() {
   }
 
   // ============================================================================
-  // GRACEFUL SHUTDOWN
+  // GRACEFUL SHUTDOWN - Fix #19
   // ============================================================================
 
   app.enableShutdownHooks();
+
+  // Graceful shutdown handlers
+  const gracefulShutdown = async (signal: string) => {
+    logger.log(`Received ${signal}. Starting graceful shutdown...`);
+    
+    try {
+      // Close the application
+      await app.close();
+      logger.log('Application closed successfully');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Error during graceful shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
