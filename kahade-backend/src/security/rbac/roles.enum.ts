@@ -16,6 +16,9 @@ export enum Role {
   // Support Team - Customer support
   SUPPORT_MANAGER = 'SUPPORT_MANAGER',
   SUPPORT_AGENT = 'SUPPORT_AGENT',
+
+  // Moderation Team
+  MODERATOR = 'MODERATOR',
   
   // Compliance - KYC & AML
   COMPLIANCE_OFFICER = 'COMPLIANCE_OFFICER',
@@ -34,6 +37,7 @@ export const RoleHierarchy: Record<Role, number> = {
   [Role.COMPLIANCE_OFFICER]: 700,
   [Role.SUPPORT_MANAGER]: 600,
   [Role.FINANCE_OFFICER]: 500,
+  [Role.MODERATOR]: 450,
   [Role.SUPPORT_AGENT]: 400,
   [Role.PREMIUM_USER]: 300,
   [Role.VERIFIED_USER]: 200,

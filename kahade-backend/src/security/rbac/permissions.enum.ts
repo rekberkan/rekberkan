@@ -136,6 +136,14 @@ export const RolePermissions: Record<string, Permission[]> = {
     Permission.ORDER_READ_ALL,
     Permission.DISPUTE_READ_ALL,
   ],
+
+  MODERATOR: [
+    Permission.USER_READ,
+    Permission.USER_UPDATE,
+    Permission.ORDER_READ_ALL,
+    Permission.DISPUTE_READ_ALL,
+    Permission.SYSTEM_AUDIT_LOG_READ,
+  ],
   
   VERIFIED_USER: [
     Permission.WALLET_READ,
