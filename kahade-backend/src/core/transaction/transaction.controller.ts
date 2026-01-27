@@ -148,19 +148,24 @@ export class TransactionController {
   @Throttle({ default: { limit: 30, ttl: 3600000 } })
   @ApiOperation({ summary: 'Confirm delivery (seller)' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
-  @ApiBody({ schema: { properties: { proofUrl: { type: 'string', format: 'uri' } } } })
+  @ApiBody({ schema: { properties: { proofUrl: { type: 'string', format: 'uri' }, notes: { type: 'string', maxLength: 500 } } } })
   @ApiResponse({ status: 200, description: 'Delivery confirmed' })
   @ApiResponse({ status: 403, description: 'Only seller can confirm delivery' })
   async confirmDelivery(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @Body('proofUrl') proofUrl?: string,
+    @Body('notes') notes?: string,
   ) {
     // Validate proof URL if provided
     if (proofUrl && proofUrl.length > 500) {
       throw new BadRequestException('Proof URL is too long');
     }
-    return this.transactionService.confirmDelivery(id, userId, proofUrl);
+    // Validate notes if provided
+    if (notes && notes.length > 500) {
+      throw new BadRequestException('Notes must not exceed 500 characters');
+    }
+    return this.transactionService.confirmDelivery(id, userId, proofUrl, notes);
   }
 
   @Post(':id/complete')

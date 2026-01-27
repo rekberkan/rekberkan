@@ -331,7 +331,7 @@ export class TransactionService {
     return this.transformToResponse(updated);
   }
 
-  async confirmDelivery(id: string, userId: string, proofUrl?: string): Promise<ITransactionResponse> {
+  async confirmDelivery(id: string, userId: string, proofUrl?: string, notes?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
     
     if (!transaction) {
@@ -355,7 +355,7 @@ export class TransactionService {
         data: {
           orderId: transaction.id,
           fileUrls: [proofUrl],
-          notes: 'Delivery proof submitted',
+          notes: notes?.trim() || 'Delivery proof submitted',
         },
       });
     }

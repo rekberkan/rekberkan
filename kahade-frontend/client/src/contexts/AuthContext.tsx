@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '@/lib/api';
 import { APP_URLS, getAppMode, navigateToApp, navigateToAdmin, canAccessAdmin } from '@/config/app.config';
+import { SecureStorage } from '@/lib/secure-storage';
 
 interface User {
   id: string;
@@ -193,9 +194,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
+      // Clear all stored tokens and data
       localStorage.removeItem('kahade_token');
       localStorage.removeItem('kahade_user');
       localStorage.removeItem('kahade_refresh_token');
+      
+      // Clear CSRF token from session storage
+      SecureStorage.clearAll();
+      
       setUser(null);
       
       // Redirect to landing page after logout

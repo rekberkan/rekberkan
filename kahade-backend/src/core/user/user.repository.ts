@@ -23,6 +23,9 @@ export interface IUpdateUser {
   lockedUntil?: Date;
   avatarUrl?: string | null;
   notificationSettings?: Record<string, boolean> | null;
+  // Email verification
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
   // Password management
   passwordHash?: string;
   passwordUpdatedAt?: Date;
@@ -74,6 +77,17 @@ export class UserRepository {
       where: {
         passwordResetToken: tokenHash,
         passwordResetExpires: {
+          gt: new Date(),
+        },
+      },
+    });
+  }
+
+  async findByEmailVerificationToken(tokenHash: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        emailVerificationToken: tokenHash,
+        emailVerificationExpires: {
           gt: new Date(),
         },
       },

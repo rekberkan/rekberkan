@@ -401,21 +401,53 @@ export class AuthService {
   // ============================================================================
 
   async verifyEmail(token: string): Promise<{ message: string }> {
-    // In production, verify email token from database
-    // For now, return success
-    this.logger.log(`Email verification attempted with token: ${token}`);
+    // Hash the provided token
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid verification token
+    const user = await this.userService.findByEmailVerificationToken(tokenHash);
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    // Check if already verified
+    if (user.emailVerifiedAt) {
+      return { message: 'Email already verified' };
+    }
+
+    // Mark email as verified
+    await this.userService.markEmailVerified(user.id);
+
+    this.logger.log(`Email verified for user ${user.id}`);
+
     return { message: 'Email verified successfully' };
   }
 
   async resendVerificationEmail(email: string): Promise<{ message: string }> {
     const user = await this.userService.findByEmail(email.toLowerCase());
     
+    // Always return success to prevent email enumeration
     if (!user) {
-      // Don't reveal if email exists
       return { message: 'If an account exists with this email, a verification link has been sent.' };
     }
 
-    // In production, send verification email
+    // Check if already verified
+    if (user.emailVerifiedAt) {
+      return { message: 'If an account exists with this email, a verification link has been sent.' };
+    }
+
+    // Generate secure verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
+    // Store verification token (expires in 24 hours)
+    await this.userService.setEmailVerificationToken(
+      user.id,
+      verificationTokenHash,
+      new Date(Date.now() + 24 * 60 * 60 * 1000),
+    );
+
+    // In production, send verification email with the token
     // await this.emailService.sendVerification(user.email, verificationToken);
 
     this.logger.log(`Verification email resent to ${email}`);
@@ -486,7 +518,7 @@ export class AuthService {
       data: {
         mfaEnabled: false,
         totpSecretEnc: null,
-        backupCodesHash: null,
+        backupCodesHash: { set: null } as any,
       },
     });
 

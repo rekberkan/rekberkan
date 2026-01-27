@@ -159,6 +159,38 @@ export class UserService {
   }
 
   // ============================================================================
+  // EMAIL VERIFICATION
+  // ============================================================================
+
+  async setEmailVerificationToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    await this.userRepository.update(userId, {
+      emailVerificationToken: tokenHash,
+      emailVerificationExpires: expiresAt,
+    });
+  }
+
+  async findByEmailVerificationToken(tokenHash: string): Promise<User | null> {
+    return this.userRepository.findByEmailVerificationToken(tokenHash);
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      emailVerifiedAt: new Date(),
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+    });
+  }
+
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const user = await this.findById(userId);
+    return !!user.emailVerifiedAt;
+  }
+
+  // ============================================================================
   // KYC MANAGEMENT
   // ============================================================================
 

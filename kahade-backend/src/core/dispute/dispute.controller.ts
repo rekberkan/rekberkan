@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { DisputeService, CreateDisputeDto as ServiceCreateDisputeDto, ResolveDisputeDto as ServiceResolveDisputeDto } from './dispute.service';
 import { CreateDisputeDto } from './dto/create-dispute.dto';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
+import { SubmitEvidenceDto, EvidenceType } from './dto/submit-evidence.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -63,24 +64,23 @@ export class DisputeController {
   @Post(':id/evidence')
   @ApiOperation({ summary: 'Submit dispute evidence' })
   @ApiResponse({ status: 200, description: 'Evidence submitted' })
+  @ApiResponse({ status: 400, description: 'Invalid evidence data' })
   async submitEvidence(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body()
-    body: {
-      fileUrls: string[];
-      description: string;
-    },
+    @Body() submitEvidenceDto: SubmitEvidenceDto,
   ) {
-    if (!body.fileUrls || body.fileUrls.length === 0) {
-      throw new BadRequestException('Evidence file URLs are required');
-    }
-    if (!body.description || body.description.trim().length < 10) {
-      throw new BadRequestException('Evidence description must be at least 10 characters');
-    }
+    // Validation is handled by class-validator decorators in SubmitEvidenceDto
+    const fileUrls = submitEvidenceDto.fileUrl ? [submitEvidenceDto.fileUrl] : [];
+    
+    // Include evidence type in description for audit trail
+    const enhancedDescription = `[${submitEvidenceDto.type}] ${submitEvidenceDto.description}`;
 
-    await this.disputeService.submitEvidence(id, userId, body.fileUrls, body.description.trim());
-    return { message: 'Evidence submitted successfully' };
+    await this.disputeService.submitEvidence(id, userId, fileUrls, enhancedDescription);
+    return { 
+      message: 'Evidence submitted successfully',
+      type: submitEvidenceDto.type,
+    };
   }
 
   @Get(':id/messages')

@@ -22,12 +22,12 @@ interface AdminLayoutProps {
 }
 
 const navItems = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/users', icon: Users, label: 'Pengguna' },
-  { href: '/admin/transactions', icon: ArrowLeftRight, label: 'Transaksi' },
-  { href: '/admin/disputes', icon: AlertTriangle, label: 'Dispute' },
-  { href: '/admin/audit-logs', icon: FileText, label: 'Audit Logs' },
-  { href: '/admin/settings', icon: Settings, label: 'Pengaturan' },
+  { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/users', icon: Users, label: 'Pengguna' },
+  { href: '/transactions', icon: ArrowLeftRight, label: 'Transaksi' },
+  { href: '/disputes', icon: AlertTriangle, label: 'Dispute' },
+  { href: '/audit-logs', icon: FileText, label: 'Audit Logs' },
+  { href: '/settings', icon: Settings, label: 'Pengaturan' },
 ];
 
 export default function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
@@ -46,7 +46,7 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-sidebar/80 backdrop-blur-xl">
         {/* Logo */}
         <div className="p-6 border-b border-border">
-          <Link href="/admin" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Shield className="w-8 h-8 text-accent" />
             <div>
               <span className="text-xl font-display font-bold">Kahade</span>
@@ -59,7 +59,7 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
             const isActive = location === item.href || 
-              (item.href !== '/admin' && location.startsWith(item.href));
+              (item.href !== '/' && location.startsWith(item.href));
             
             return (
               <Link
@@ -129,7 +129,7 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
               className="fixed left-0 top-0 bottom-0 w-72 bg-sidebar border-r border-border z-50 lg:hidden"
             >
               <div className="p-4 flex items-center justify-between border-b border-border">
-                <Link href="/admin" className="flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2">
                   <Shield className="w-8 h-8 text-accent" />
                   <span className="text-xl font-display font-bold">Admin</span>
                 </Link>

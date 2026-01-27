@@ -28,8 +28,10 @@ model User {
   totpSecretEnc     String?   @map("totp_secret_enc") @db.Text
   backupCodesHash   Json?     @map("backup_codes_hash")
 
-  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
-  kycStatus         KYCStatus @default(NONE) @map("kyc_status")
+  emailVerifiedAt        DateTime? @map("email_verified_at") @db.Timestamptz
+  emailVerificationToken String?   @map("email_verification_token")
+  emailVerificationExpires DateTime? @map("email_verification_expires") @db.Timestamptz
+  kycStatus              KYCStatus @default(NONE) @map("kyc_status")
   
   // CRITICAL FIX: Increased precision for reputation score (0.00 to 5.00)
   reputationScore   Decimal   @default(0) @db.Decimal(5, 2)
