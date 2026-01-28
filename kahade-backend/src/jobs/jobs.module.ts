@@ -16,12 +16,9 @@ const useRedis = process.env.REDIS_ENABLED === 'true';
     // Schedule module for cron jobs
     ScheduleModule.forRoot(),
     // Bull queues (only if Redis is enabled)
-    ...(useRedis ? [
-      BullModule.registerQueue(
-        { name: QUEUE_NAMES.EMAIL },
-        { name: QUEUE_NAMES.NOTIFICATION },
-      ),
-    ] : []),
+    ...(useRedis
+      ? [BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL }, { name: QUEUE_NAMES.NOTIFICATION })]
+      : []),
     EmailModule,
     NotificationModule,
     EscrowModule,
@@ -32,10 +29,7 @@ const useRedis = process.env.REDIS_ENABLED === 'true';
     // Queue processors (only if Redis is enabled)
     ...(useRedis ? [EmailProcessor, NotificationProcessor] : []),
   ],
-  exports: [
-    AutoReleaseEscrowCron,
-    ...(useRedis ? [BullModule] : []),
-  ],
+  exports: [AutoReleaseEscrowCron, ...(useRedis ? [BullModule] : [])],
 })
 export class JobsModule {
   constructor() {

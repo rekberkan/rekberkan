@@ -31,7 +31,7 @@ export class AutoReleaseEscrowCron {
 
     try {
       const processedCount = await this.escrowService.processExpiredEscrows();
-      
+
       if (processedCount > 0) {
         this.logger.log(`Auto-released ${processedCount} expired escrow(s)`);
       } else {
