@@ -22,6 +22,7 @@ import {
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { Express } from 'express';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -29,13 +30,14 @@ import * as path from 'path';
 import { memoryStorage } from 'multer';
 
 // ============================================================================
-// KYC CONTROLLER - Production Ready
-// Implements: Document Upload, Status Tracking, Secure File Handling
+// KYC CONTROLLER - BANK-GRADE SECURITY
+// Implements: Document Upload, Status Tracking, Encrypted PII Storage
 // ============================================================================
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const UPLOAD_DIR = process.env.UPLOAD_DEST || './uploads';
+const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 
 @ApiTags('kyc')
 @Controller('kyc')
@@ -43,10 +45,26 @@ const UPLOAD_DIR = process.env.UPLOAD_DEST || './uploads';
 @ApiBearerAuth('JWT-auth')
 export class KycController {
   private readonly logger = new Logger(KycController.name);
+  private readonly encryptionKey: Buffer;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
     // Ensure upload directory exists
     this.ensureUploadDir();
+
+    // Initialize encryption key from environment
+    const keyHex = this.configService.get<string>('KYC_ENCRYPTION_KEY');
+    if (keyHex && keyHex.length === 64) {
+      this.encryptionKey = Buffer.from(keyHex, 'hex');
+    } else {
+      // Generate a key for development (MUST be set in production)
+      this.encryptionKey = crypto.randomBytes(32);
+      this.logger.warn(
+        'KYC_ENCRYPTION_KEY not set or invalid. Using random key (NOT FOR PRODUCTION)',
+      );
+    }
   }
 
   private ensureUploadDir(): void {
@@ -58,6 +76,51 @@ export class KycController {
 
   private generateFileHash(buffer: Buffer): string {
     return crypto.createHash('sha256').update(buffer).digest('hex');
+  }
+
+  /**
+   * BANK-GRADE: Encrypt sensitive PII data using AES-256-GCM
+   */
+  private encryptPII(plaintext: string): string {
+    if (!plaintext) return '';
+
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, this.encryptionKey, iv);
+
+    let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    const authTag = cipher.getAuthTag();
+
+    // Format: iv:authTag:ciphertext
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  }
+
+  /**
+   * BANK-GRADE: Decrypt sensitive PII data
+   */
+  private decryptPII(encryptedData: string): string {
+    if (!encryptedData || !encryptedData.includes(':')) return encryptedData;
+
+    try {
+      const parts = encryptedData.split(':');
+      if (parts.length !== 3) return '[Decryption Error]';
+
+      const iv = Buffer.from(parts[0], 'hex');
+      const authTag = Buffer.from(parts[1], 'hex');
+      const ciphertext = parts[2];
+
+      const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, this.encryptionKey, iv);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(ciphertext, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error) {
+      this.logger.error(`PII decryption failed: ${error.message}`);
+      return '[Decryption Error]';
+    }
   }
 
   private async saveFile(
@@ -207,9 +270,15 @@ export class KycController {
     // Save file and generate hash
     const { path: filePath, hash: fileHash } = await this.saveFile(file, userId);
 
+    // BANK-GRADE: Encrypt all PII data before storage
+    const encryptedFullName = this.encryptPII(body.fullName.trim());
+    const encryptedIdNumber = this.encryptPII(sanitizedIdNumber);
+    const encryptedDateOfBirth = this.encryptPII(body.dateOfBirth || '');
+    const encryptedAddress = this.encryptPII(body.address?.trim() || '');
+
     // Create KYC submission
     const submission = await this.prisma.$transaction(async (tx) => {
-      // Create submission record
+      // Create submission record with encrypted PII
       const kycSubmission = await tx.kYCSubmission.create({
         data: {
           userId,
@@ -217,10 +286,10 @@ export class KycController {
           selfieObjectKey: filePath, // Same file for now, can be separate in future
           idCardHash: fileHash,
           selfieHash: fileHash,
-          fullNameEnc: body.fullName.trim(),
-          idNumberEnc: sanitizedIdNumber,
-          dateOfBirthEnc: body.dateOfBirth || '',
-          addressEnc: body.address?.trim() || '',
+          fullNameEnc: encryptedFullName,
+          idNumberEnc: encryptedIdNumber,
+          dateOfBirthEnc: encryptedDateOfBirth,
+          addressEnc: encryptedAddress,
           status: 'PENDING',
         },
       });
@@ -287,15 +356,16 @@ export class KycController {
       throw new BadRequestException('Submission not found');
     }
 
+    // Decrypt PII for display
     return {
       id: submission.id,
       status: submission.status,
       rejectionReason: submission.rejectionReason,
       submittedAt: submission.submittedAt,
       verifiedAt: submission.verifiedAt,
-      fullName: submission.fullNameEnc,
-      dateOfBirth: submission.dateOfBirthEnc,
-      address: submission.addressEnc,
+      fullName: this.decryptPII(submission.fullNameEnc),
+      dateOfBirth: this.decryptPII(submission.dateOfBirthEnc),
+      address: this.decryptPII(submission.addressEnc),
     };
   }
 }

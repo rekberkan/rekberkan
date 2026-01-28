@@ -1,4 +1,3 @@
-// @ts-nocheck - Legacy code with complex type issues that need refactoring
 import {
   Injectable,
   Logger,
@@ -101,7 +100,6 @@ export class OrderService {
         order.orderNumber,
         inviteToken,
         dto.title,
-        amountMinor,
       );
     }
 
@@ -133,7 +131,7 @@ export class OrderService {
       page: filterDto.page || 1,
       limit: filterDto.limit || 10,
       sortBy: filterDto.sortBy || 'createdAt',
-      sortOrder: filterDto.sortOrder || 'desc',
+      sortOrder: (filterDto.sortOrder || 'desc') as 'asc' | 'desc',
     };
 
     return this.orderRepository.findMany(options);
@@ -178,7 +176,7 @@ export class OrderService {
    * Get order by invite token (public preview)
    */
   async getOrderByInviteToken(inviteToken: string) {
-    const order = await this.orderRepository.findByInviteToken(inviteToken);
+    const order = (await this.orderRepository.findByInviteToken(inviteToken)) as any;
 
     if (!order) {
       throw new NotFoundException('Invalid invite token');
@@ -275,9 +273,14 @@ export class OrderService {
       throw new BadRequestException('You cannot accept your own order');
     }
 
-    const updated = await this.orderRepository.updateStatus(order.id, 'PENDING_ACCEPT' as any, {
-      counterpartyId: userId,
-    });
+    const updated = (await this.orderRepository.updateStatus(
+      order.id,
+      'PENDING_ACCEPT' as any,
+      {
+        counterpartyId: userId,
+      },
+      undefined,
+    )) as any;
 
     // Notify initiator
     await this.notificationService.sendOrderAccepted(
@@ -330,7 +333,7 @@ export class OrderService {
 
     // Check buyer balance
     const balance = await this.walletService.getBalance(buyerId);
-    if (BigInt(balance.availableBalance) < totalAmount) {
+    if (BigInt(balance.available) < totalAmount) {
       throw new BadRequestException('Insufficient balance');
     }
 
@@ -348,15 +351,21 @@ export class OrderService {
 
     // Update order status
     const autoReleaseAt = new Date(Date.now() + order.holdingPeriodDays * 24 * 60 * 60 * 1000);
-    const updated = await this.orderRepository.updateStatus(orderId, 'PAID' as any, {
-      autoReleaseAt,
-    });
+    const updated = await this.orderRepository.updateStatus(
+      orderId,
+      'PAID' as any,
+      {
+        autoReleaseAt,
+      },
+      undefined,
+    );
 
     // Notify seller
     if (sellerId) {
       await this.notificationService.sendPaymentReceived(
         sellerId,
-        order.orderNumber,
+        order.id,
+        order.title,
         order.amountMinor,
       );
     }
@@ -378,7 +387,7 @@ export class OrderService {
       throw new BadRequestException('Idempotency key is required');
     }
 
-    const order = await this.orderRepository.findById(orderId);
+    const order = (await this.orderRepository.findById(orderId)) as any;
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -408,15 +417,21 @@ export class OrderService {
     });
 
     // Update order status
-    const updated = await this.orderRepository.updateStatus(orderId, 'COMPLETED' as any);
+    const updated = await this.orderRepository.updateStatus(
+      orderId,
+      'COMPLETED' as any,
+      {},
+      undefined,
+    );
 
     // Notify seller
     const sellerId = order.initiatorRole === 'SELLER' ? order.initiatorId : order.counterpartyId;
     if (sellerId) {
       await this.notificationService.sendEscrowReleased(
         sellerId,
-        order.orderNumber,
-        order.amountMinor - order.platformFeeMinor,
+        order.id,
+        order.title,
+        BigInt(order.amountMinor) - BigInt(order.platformFeeMinor),
       );
     }
 
@@ -541,7 +556,6 @@ export class OrderService {
       order.orderNumber,
       newInviteToken,
       order.title,
-      order.amountMinor,
     );
 
     return {
@@ -554,7 +568,7 @@ export class OrderService {
    * Get order comments
    */
   async getComments(userId: string, orderId: string) {
-    const order = await this.orderRepository.findById(orderId);
+    const order = (await this.orderRepository.findById(orderId)) as any;
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -586,7 +600,6 @@ export class OrderService {
         orderId,
         userId,
         message: dto.content,
-        parentId: dto.parentId,
       },
       include: {
         user: {
@@ -627,7 +640,6 @@ export class OrderService {
       where: { id: commentId },
       data: {
         message: dto.content,
-        updatedAt: new Date(),
       },
     });
 

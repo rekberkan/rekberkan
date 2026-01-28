@@ -126,35 +126,42 @@ export class NotificationService {
     );
   }
 
-  // Send order invite notification
+  // Send order invite notification (via email or in-app)
   async sendOrderInvite(
-    userId: string,
-    orderId: string,
+    recipientEmailOrUserId: string,
+    orderNumber: string,
+    inviteToken: string,
     orderTitle: string,
-    inviterName: string,
-  ): Promise<Notification> {
+  ): Promise<Notification | null> {
+    // If it's an email, we would send an email here
+    // For now, we'll create an in-app notification if it's a userId
+    if (recipientEmailOrUserId.includes('@')) {
+      // This is an email - in production, send email via email service
+      this.logger.log(`Order invite email would be sent to: ${recipientEmailOrUserId}`);
+      return null;
+    }
+
     return this.createForUser(
-      userId,
+      recipientEmailOrUserId,
       'ORDER' as any,
       'New Order Invitation',
-      `${inviterName} has invited you to join order "${orderTitle}".`,
-      { orderId, inviterName },
+      `You have been invited to join order "${orderTitle}".`,
+      { orderNumber, inviteToken },
     );
   }
 
   // Send order accepted notification
   async sendOrderAccepted(
     userId: string,
-    orderId: string,
-    orderTitle: string,
+    orderNumber: string,
     accepterName: string,
   ): Promise<Notification> {
     return this.createForUser(
       userId,
       'ORDER' as any,
       'Order Accepted',
-      `${accepterName} has accepted your order "${orderTitle}".`,
-      { orderId, accepterName },
+      `${accepterName} has accepted your order.`,
+      { orderNumber, accepterName },
     );
   }
 
