@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
 import { Withdrawal, WithdrawalStatus, KYCStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../wallet/wallet.service';
@@ -141,7 +140,7 @@ export class WithdrawalService {
       amountMinor,
       idempotencyKey,
       ipAddress,
-      userAgent,
+      userAgent: _userAgent,
       deviceFingerprint,
     } = dto;
 
@@ -438,9 +437,9 @@ export class WithdrawalService {
    */
   private async calculateVelocityScore(
     userId: string,
-    amountMinor: bigint,
-    ipAddress?: string,
-    deviceFingerprint?: string,
+    _amountMinor: bigint,
+    _ipAddress?: string,
+    _deviceFingerprint?: string,
   ): Promise<{
     score: number;
     flagReason: string | null;

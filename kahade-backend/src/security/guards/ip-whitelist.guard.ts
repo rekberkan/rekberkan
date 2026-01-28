@@ -22,7 +22,7 @@ export const IP_WHITELIST_KEY = 'ipWhitelist';
  * @param ips Array of allowed IP addresses or CIDR ranges
  */
 export const IpWhitelist = (ips?: string[]) => {
-  return (target: any, propertyKey?: string | symbol, descriptor?: PropertyDescriptor) => {
+  return (target: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor) => {
     Reflect.defineMetadata(IP_WHITELIST_KEY, ips || [], target, propertyKey ?? '');
   };
 };

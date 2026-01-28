@@ -4,10 +4,8 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
 import {
   EscrowHold,
   EscrowHoldStatus,

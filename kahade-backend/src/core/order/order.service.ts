@@ -13,11 +13,11 @@ import { OrderRepository, CreateOrderData } from './order.repository';
 import { EscrowService } from '../escrow/escrow.service';
 import { WalletService } from '../wallet/wallet.service';
 import { NotificationService } from '../notification/notification.service';
-import { CreateOrderDto, InitiatorRole, FeePayer } from './dto/create-order.dto';
+import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { AcceptOrderDto } from './dto/accept-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
-import { OrderFilterDto, OrderStatus } from './dto/order-filter.dto';
+import { OrderFilterDto } from './dto/order-filter.dto';
 import { CreateOrderCommentDto, UpdateOrderCommentDto } from './dto/order-comment.dto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -477,7 +477,7 @@ export class OrderService {
   async openDispute(
     userId: string,
     orderId: string,
-    disputeData: { reason: string; description: string },
+    _disputeData: { reason: string; description: string },
   ) {
     const order = await this.orderRepository.findById(orderId);
 

@@ -238,10 +238,9 @@ describe('WalletService', () => {
       await service.creditBalance({
         userId: 'user-1',
         amount: 50000n,
-        description: 'Top up',
+        reason: 'Top up',
         referenceType: 'DEPOSIT',
         referenceId: 'deposit-1',
-        idempotencyKey: 'idem-1',
       });
 
       expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
@@ -274,10 +273,9 @@ describe('WalletService', () => {
       await service.deductBalance({
         userId: 'user-1',
         amount: 50000n,
-        description: 'Withdrawal',
+        reason: 'Withdrawal',
         referenceType: 'WITHDRAWAL',
         referenceId: 'withdrawal-1',
-        idempotencyKey: 'idem-1',
       });
 
       expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
@@ -300,10 +298,9 @@ describe('WalletService', () => {
         service.deductBalance({
           userId: 'user-1',
           amount: 50000n,
-          description: 'Withdrawal',
+          reason: 'Withdrawal',
           referenceType: 'WITHDRAWAL',
           referenceId: 'withdrawal-1',
-          idempotencyKey: 'idem-1',
         }),
       ).rejects.toThrow(InsufficientBalanceError);
     });

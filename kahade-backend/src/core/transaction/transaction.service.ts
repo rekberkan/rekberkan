@@ -13,7 +13,7 @@ import { UserService } from '@core/user/user.service';
 import { WalletService } from '@core/wallet/wallet.service';
 import { NotificationService } from '@core/notification/notification.service';
 import { ITransactionResponse } from '../../common/interfaces/transaction.interface';
-import { Transaction, OrderStatus } from '../../common/shims/prisma-types.shim';
+import { Transaction } from '../../common/shims/prisma-types.shim';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 
 @Injectable()
@@ -236,7 +236,7 @@ export class TransactionService {
     return this.transformToResponse(updated);
   }
 
-  async reject(id: string, userId: string, reason?: string): Promise<ITransactionResponse> {
+  async reject(id: string, userId: string, _reason?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
 
     if (!transaction) {
@@ -535,7 +535,7 @@ export class TransactionService {
     return this.transformToResponse(updated);
   }
 
-  async cancel(id: string, userId: string, reason?: string): Promise<ITransactionResponse> {
+  async cancel(id: string, userId: string, _reason?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
 
     if (!transaction) {
