@@ -38,10 +38,7 @@ describe('PromoService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PromoService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [PromoService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<PromoService>(PromoService);
@@ -73,11 +70,7 @@ describe('PromoService', () => {
       mockPrismaService.voucher.findUnique.mockResolvedValue(mockVoucher);
       mockPrismaService.voucherUsage.count.mockResolvedValue(0);
 
-      const result = await service.validateVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('DISCOUNT10', 'user-1', 200000n);
 
       expect(result.valid).toBe(true);
       expect(result.voucher).toBeDefined();
@@ -86,11 +79,7 @@ describe('PromoService', () => {
     it('should reject non-existent voucher', async () => {
       mockPrismaService.voucher.findUnique.mockResolvedValue(null);
 
-      const result = await service.validateVoucher(
-        'INVALID',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('INVALID', 'user-1', 200000n);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Voucher not found');
@@ -102,11 +91,7 @@ describe('PromoService', () => {
         status: VoucherStatus.INACTIVE,
       });
 
-      const result = await service.validateVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('DISCOUNT10', 'user-1', 200000n);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Voucher is not active');
@@ -118,11 +103,7 @@ describe('PromoService', () => {
         validUntil: new Date('2020-01-01'),
       });
 
-      const result = await service.validateVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('DISCOUNT10', 'user-1', 200000n);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Voucher has expired');
@@ -135,11 +116,7 @@ describe('PromoService', () => {
         maxUsages: 100,
       });
 
-      const result = await service.validateVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('DISCOUNT10', 'user-1', 200000n);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Voucher usage limit reached');
@@ -151,11 +128,7 @@ describe('PromoService', () => {
         assignedToUserId: 'user-2',
       });
 
-      const result = await service.validateVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('DISCOUNT10', 'user-1', 200000n);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Voucher is not available for this user');
@@ -178,11 +151,7 @@ describe('PromoService', () => {
       mockPrismaService.voucher.findUnique.mockResolvedValue(mockVoucher);
       mockPrismaService.voucherUsage.count.mockResolvedValue(1);
 
-      const result = await service.validateVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-      );
+      const result = await service.validateVoucher('DISCOUNT10', 'user-1', 200000n);
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('You have already used this voucher');
@@ -243,7 +212,7 @@ describe('PromoService', () => {
     it('should apply fixed amount voucher correctly', async () => {
       mockPrismaService.voucher.findUnique.mockResolvedValue({
         ...mockVoucher,
-        voucherType: VoucherType.FIXED_AMOUNT,
+        voucherType: VoucherType.FIXED,
         discountMinor: 25000n,
         discountPercent: null,
       });
@@ -283,13 +252,7 @@ describe('PromoService', () => {
     });
 
     it('should increment voucher usage count', async () => {
-      await service.applyVoucher(
-        'DISCOUNT10',
-        'user-1',
-        200000n,
-        'order-1',
-        'idem-1',
-      );
+      await service.applyVoucher('DISCOUNT10', 'user-1', 200000n, 'order-1', 'idem-1');
 
       expect(mockPrismaService.voucher.update).toHaveBeenCalledWith({
         where: { id: 'voucher-1' },
@@ -304,14 +267,14 @@ describe('PromoService', () => {
       mockPrismaService.voucher.create.mockResolvedValue({
         id: 'voucher-1',
         code: 'NEWVOUCHER',
-        voucherType: VoucherType.FIXED_AMOUNT,
+        voucherType: VoucherType.FIXED,
         discountMinor: 50000n,
         status: VoucherStatus.ACTIVE,
       });
 
       const result = await service.createVoucher({
         code: 'NEWVOUCHER',
-        voucherType: VoucherType.FIXED_AMOUNT,
+        voucherType: VoucherType.FIXED,
         discountMinor: 50000,
         validFrom: new Date('2024-01-01'),
         validUntil: new Date('2025-12-31'),
@@ -330,11 +293,11 @@ describe('PromoService', () => {
       await expect(
         service.createVoucher({
           code: 'DUPLICATE',
-          voucherType: VoucherType.FIXED_AMOUNT,
+          voucherType: VoucherType.FIXED,
           discountMinor: 50000,
           validFrom: new Date('2024-01-01'),
           validUntil: new Date('2025-12-31'),
-        })
+        }),
       ).rejects.toThrow(ConflictException);
     });
 
@@ -347,7 +310,7 @@ describe('PromoService', () => {
 
       await service.createVoucher({
         code: 'lowercase',
-        voucherType: VoucherType.FIXED_AMOUNT,
+        voucherType: VoucherType.FIXED,
         discountMinor: 50000,
         validFrom: new Date('2024-01-01'),
         validUntil: new Date('2025-12-31'),
@@ -358,7 +321,7 @@ describe('PromoService', () => {
           data: expect.objectContaining({
             code: 'LOWERCASE',
           }),
-        })
+        }),
       );
     });
   });

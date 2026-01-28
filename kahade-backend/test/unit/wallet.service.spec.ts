@@ -116,8 +116,8 @@ describe('WalletService', () => {
 
       expect(result).toEqual({
         available: 750, // (100000 - 25000) / 100
-        locked: 250,    // 25000 / 100
-        total: 1000,    // 100000 / 100
+        locked: 250, // 25000 / 100
+        total: 1000, // 100000 / 100
         currency: 'IDR',
       });
     });
@@ -171,7 +171,7 @@ describe('WalletService', () => {
           userId: 'user-1',
           amount: 50000n,
           reason: 'Escrow hold',
-        })
+        }),
       ).rejects.toThrow(InsufficientBalanceError);
     });
   });
@@ -209,9 +209,9 @@ describe('WalletService', () => {
 
       mockPrismaService.wallet.findUnique.mockResolvedValue(mockWallet);
 
-      await expect(
-        service.unlockBalance('user-1', 50000n, 'Escrow refund')
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.unlockBalance('user-1', 50000n, 'Escrow refund')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -304,7 +304,7 @@ describe('WalletService', () => {
           referenceType: 'WITHDRAWAL',
           referenceId: 'withdrawal-1',
           idempotencyKey: 'idem-1',
-        })
+        }),
       ).rejects.toThrow(InsufficientBalanceError);
     });
   });
@@ -329,25 +329,20 @@ describe('WalletService', () => {
         .mockResolvedValueOnce(mockFromWallet)
         .mockResolvedValueOnce(mockToWallet);
 
-      await service.transferLockedBalance(
-        'user-1',
-        'user-2',
-        50000n,
-        'Escrow release'
-      );
+      await service.transferLockedBalance('user-1', 'user-2', 50000n, 'Escrow release');
 
       // Verify from wallet update (deduct locked and balance)
       expect(mockPrismaService.wallet.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId: 'user-1' },
-        })
+        }),
       );
 
       // Verify to wallet update (credit balance)
       expect(mockPrismaService.wallet.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId: 'user-2' },
-        })
+        }),
       );
     });
   });
