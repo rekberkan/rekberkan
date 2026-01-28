@@ -18,10 +18,4 @@ import loggerConfig from './logger.config';
 import securityConfig from './security.config';
 import uploadConfig from './upload.config';
 
-export const configs = [
-  appConfig,
-  databaseConfig,
-  loggerConfig,
-  securityConfig,
-  uploadConfig,
-];
+export const configs = [appConfig, databaseConfig, loggerConfig, securityConfig, uploadConfig];

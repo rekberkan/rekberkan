@@ -115,7 +115,11 @@ export class DisputeRepository {
     return { disputes, total };
   }
 
-  async findByStatus(status: DisputeStatus, skip: number, take: number): Promise<{ disputes: Dispute[]; total: number }> {
+  async findByStatus(
+    status: DisputeStatus,
+    skip: number,
+    take: number,
+  ): Promise<{ disputes: Dispute[]; total: number }> {
     const [disputes, total] = await Promise.all([
       this.prisma.dispute.findMany({
         where: { status },
@@ -133,7 +137,11 @@ export class DisputeRepository {
     return { disputes, total };
   }
 
-  async findByUser(userId: string, skip: number, take: number): Promise<{ disputes: Dispute[]; total: number }> {
+  async findByUser(
+    userId: string,
+    skip: number,
+    take: number,
+  ): Promise<{ disputes: Dispute[]; total: number }> {
     const [disputes, total] = await Promise.all([
       this.prisma.dispute.findMany({
         where: { openedBy: userId },

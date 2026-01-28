@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 
 /**
  * Ledger Lock Service
- * 
+ *
  * Implements pessimistic locking for concurrent ledger operations.
  * Prevents double-spending and ensures data consistency.
  */
@@ -17,7 +17,7 @@ export class LedgerLockService {
 
   /**
    * Execute ledger operation with wallet lock
-   * 
+   *
    * Acquires pessimistic lock on wallet row before performing operation.
    * Prevents concurrent modifications to the same wallet.
    */
@@ -49,7 +49,7 @@ export class LedgerLockService {
 
   /**
    * Execute ledger operation with multiple wallet locks
-   * 
+   *
    * Acquires locks in deterministic order (by wallet ID) to prevent deadlocks.
    */
   async withMultipleWalletLocks<T>(
@@ -116,7 +116,10 @@ export class LedgerLockService {
         type: journalData.type,
         description: journalData.description,
         metadata: journalData.metadata,
-        totalAmountMinor: entries.reduce((acc, e) => acc + (e.type === 'DEBIT' ? e.amountMinor : 0n), 0n),
+        totalAmountMinor: entries.reduce(
+          (acc, e) => acc + (e.type === 'DEBIT' ? e.amountMinor : 0n),
+          0n,
+        ),
       },
     });
 

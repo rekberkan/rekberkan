@@ -33,7 +33,9 @@ router.post('/:id/pay', async (req: Request, res: Response) => {
 
 // Confirm delivery
 router.post('/:id/confirm-delivery', async (req: Request, res: Response) => {
-  res.status(501).json({ message: 'Use NestJS endpoint: POST /api/v1/orders/:id/confirm-delivery' });
+  res
+    .status(501)
+    .json({ message: 'Use NestJS endpoint: POST /api/v1/orders/:id/confirm-delivery' });
 });
 
 export default router;

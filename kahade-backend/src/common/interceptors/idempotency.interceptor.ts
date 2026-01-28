@@ -38,15 +38,12 @@ export class IdempotencyInterceptor implements NestInterceptor {
     private readonly cacheService: CacheService,
   ) {}
 
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     // Check if idempotency is required for this endpoint
-    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(
-      IDEMPOTENCY_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(IDEMPOTENCY_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiresIdempotency) {
       return next.handle();
@@ -163,9 +160,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
         const processingTime = Date.now() - record.createdAt;
         if (processingTime > this.PROCESSING_TIMEOUT_MS) {
           // Allow retry after timeout
-          this.logger.warn(
-            `Processing timeout for idempotency key: ${idempotencyKey}`,
-          );
+          this.logger.warn(`Processing timeout for idempotency key: ${idempotencyKey}`);
           throw new BadRequestException({
             code: 'REQUEST_TIMEOUT',
             message: 'Previous request timed out. Please retry.',
@@ -192,8 +187,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
    */
   private isValidIdempotencyKey(key: string): boolean {
     // Accept UUID v4 format
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(key)) {
       return true;
     }
@@ -236,9 +230,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
   /**
    * Get idempotency record from cache
    */
-  private async getIdempotencyRecord(
-    cacheKey: string,
-  ): Promise<IdempotencyRecord | null> {
+  private async getIdempotencyRecord(cacheKey: string): Promise<IdempotencyRecord | null> {
     const record = await this.cacheService.get<IdempotencyRecord>(cacheKey);
     return record ?? null;
   }
@@ -246,10 +238,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
   /**
    * Set idempotency record in cache
    */
-  private async setIdempotencyRecord(
-    cacheKey: string,
-    record: IdempotencyRecord,
-  ): Promise<void> {
+  private async setIdempotencyRecord(cacheKey: string, record: IdempotencyRecord): Promise<void> {
     await this.cacheService.set(cacheKey, record, this.DEFAULT_TTL_SECONDS);
   }
 }

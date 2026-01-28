@@ -89,7 +89,7 @@ export function setupGracefulShutdown(
 
         // Stop accepting new connections
         logger.debug('Stopping HTTP server...');
-        
+
         // Run registered cleanup handlers
         for (const { name, handler } of cleanupHandlers) {
           try {
@@ -164,9 +164,9 @@ export function setupGracefulShutdown(
 /**
  * Create cleanup handler for database connections
  */
-export function createDatabaseCleanupHandler(
-  prisma: { $disconnect: () => Promise<void> },
-): () => Promise<void> {
+export function createDatabaseCleanupHandler(prisma: {
+  $disconnect: () => Promise<void>;
+}): () => Promise<void> {
   return async () => {
     logger.debug('Disconnecting from database...');
     await prisma.$disconnect();
@@ -177,9 +177,9 @@ export function createDatabaseCleanupHandler(
 /**
  * Create cleanup handler for Redis connections
  */
-export function createRedisCleanupHandler(
-  redis: { quit: () => Promise<any> },
-): () => Promise<void> {
+export function createRedisCleanupHandler(redis: {
+  quit: () => Promise<any>;
+}): () => Promise<void> {
   return async () => {
     logger.debug('Closing Redis connection...');
     await redis.quit();

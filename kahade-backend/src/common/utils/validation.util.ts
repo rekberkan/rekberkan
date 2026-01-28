@@ -6,7 +6,8 @@
 export class ValidationUtil {
   static isEmail(email: string): boolean {
     if (!email || typeof email !== 'string') return false;
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     return emailRegex.test(email) && email.length <= 255;
   }
 
@@ -20,7 +21,8 @@ export class ValidationUtil {
   static isStrongPassword(password: string): boolean {
     if (!password || typeof password !== 'string') return false;
     // At least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special char
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-{}\[\]:;"'<>,.?/|\\~`])[A-Za-z\d@$!%*?&#^()_+=\-{}\[\]:;"'<>,.?/|\\~`]{8,128}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-{}\[\]:;"'<>,.?/|\\~`])[A-Za-z\d@$!%*?&#^()_+=\-{}\[\]:;"'<>,.?/|\\~`]{8,128}$/;
     return passwordRegex.test(password);
   }
 
@@ -39,10 +41,14 @@ export class ValidationUtil {
     }
 
     if (password && password.length >= 12) score += 1;
-    if (/[a-z]/.test(password)) score += 1; else errors.push('Must contain lowercase letter');
-    if (/[A-Z]/.test(password)) score += 1; else errors.push('Must contain uppercase letter');
-    if (/[0-9]/.test(password)) score += 1; else errors.push('Must contain number');
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1; else errors.push('Must contain special character');
+    if (/[a-z]/.test(password)) score += 1;
+    else errors.push('Must contain lowercase letter');
+    if (/[A-Z]/.test(password)) score += 1;
+    else errors.push('Must contain uppercase letter');
+    if (/[0-9]/.test(password)) score += 1;
+    else errors.push('Must contain number');
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
+    else errors.push('Must contain special character');
 
     // Check for common patterns
     const commonPatterns = [/^123456/, /password/i, /qwerty/i, /abc123/i, /admin/i];
@@ -108,13 +114,18 @@ export class ValidationUtil {
     return /^[0-9]{8,20}$/.test(cleaned);
   }
 
-  static validateAmount(amount: number, min: number, max: number): { isValid: boolean; error?: string } {
+  static validateAmount(
+    amount: number,
+    min: number,
+    max: number,
+  ): { isValid: boolean; error?: string } {
     if (typeof amount !== 'number' || isNaN(amount)) {
       return { isValid: false, error: 'Amount must be a valid number' };
     }
     if (amount < min) return { isValid: false, error: `Amount must be at least ${min}` };
     if (amount > max) return { isValid: false, error: `Amount must not exceed ${max}` };
-    if (!Number.isInteger(amount)) return { isValid: false, error: 'Amount must be a whole number' };
+    if (!Number.isInteger(amount))
+      return { isValid: false, error: 'Amount must be a whole number' };
     return { isValid: true };
   }
 
@@ -126,7 +137,7 @@ export class ValidationUtil {
       /(\bOR\b|\bAND\b).*?=/i,
       /\b(EXEC|EXECUTE|xp_)\b/i,
     ];
-    return sqlPatterns.some(pattern => pattern.test(input));
+    return sqlPatterns.some((pattern) => pattern.test(input));
   }
 
   static containsXss(input: string): boolean {
@@ -139,6 +150,6 @@ export class ValidationUtil {
       /<object/gi,
       /<embed/gi,
     ];
-    return xssPatterns.some(pattern => pattern.test(input));
+    return xssPatterns.some((pattern) => pattern.test(input));
   }
 }

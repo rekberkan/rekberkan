@@ -1,4 +1,9 @@
-import { SetMetadata, applyDecorators, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import {
+  SetMetadata,
+  applyDecorators,
+  createParamDecorator,
+  ExecutionContext,
+} from '@nestjs/common';
 
 // ============================================================================
 // BANK-GRADE IDEMPOTENCY DECORATOR
@@ -13,7 +18,7 @@ export const AUDIT_REQUIRED_KEY = 'audit_required';
 /**
  * BANK-GRADE: Mark endpoint as idempotent
  * Requires X-Idempotency-Key header
- * 
+ *
  * Usage:
  * @Idempotent()
  * @Post('withdrawal')
@@ -23,14 +28,14 @@ export const Idempotent = () => SetMetadata(IDEMPOTENCY_KEY, true);
 
 /**
  * BANK-GRADE: Decorator to require idempotency key for endpoint with custom TTL
- * 
+ *
  * Usage:
  * @RequireIdempotency(3600) // 1 hour TTL
  * @Post('withdrawal')
  * async createWithdrawal(@Body() dto: CreateWithdrawalDto) { ... }
- * 
+ *
  * Client must provide X-Idempotency-Key header with a unique UUID
- * 
+ *
  * @param ttlSeconds - How long to cache the response (default: 24 hours)
  */
 export function RequireIdempotency(ttlSeconds: number = 86400) {
@@ -43,7 +48,7 @@ export function RequireIdempotency(ttlSeconds: number = 86400) {
 /**
  * BANK-GRADE: Decorator for financial operations
  * Combines idempotency with additional metadata for audit
- * 
+ *
  * Usage:
  * @FinancialOperation('withdrawal')
  * @Post('withdrawal')
@@ -60,7 +65,7 @@ export function FinancialOperation(operationType: string) {
 
 /**
  * Parameter decorator to extract idempotency key from request
- * 
+ *
  * Usage:
  * @Post('withdrawal')
  * async createWithdrawal(

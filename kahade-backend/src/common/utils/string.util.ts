@@ -2,7 +2,8 @@ import * as crypto from 'crypto';
 
 export class StringUtil {
   static generateRandomString(length: number): string {
-    return crypto.randomBytes(Math.ceil(length / 2))
+    return crypto
+      .randomBytes(Math.ceil(length / 2))
       .toString('hex')
       .slice(0, length);
   }
@@ -45,7 +46,7 @@ export class StringUtil {
     return text
       .toLowerCase()
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 

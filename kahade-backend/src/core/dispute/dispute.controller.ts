@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { DisputeService, CreateDisputeDto as ServiceCreateDisputeDto, ResolveDisputeDto as ServiceResolveDisputeDto } from './dispute.service';
+import {
+  DisputeService,
+  CreateDisputeDto as ServiceCreateDisputeDto,
+  ResolveDisputeDto as ServiceResolveDisputeDto,
+} from './dispute.service';
 import { CreateDisputeDto } from './dto/create-dispute.dto';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
 import { SubmitEvidenceDto, EvidenceType } from './dto/submit-evidence.dto';
@@ -72,12 +86,12 @@ export class DisputeController {
   ) {
     // Validation is handled by class-validator decorators in SubmitEvidenceDto
     const fileUrls = submitEvidenceDto.fileUrl ? [submitEvidenceDto.fileUrl] : [];
-    
+
     // Include evidence type in description for audit trail
     const enhancedDescription = `[${submitEvidenceDto.type}] ${submitEvidenceDto.description}`;
 
     await this.disputeService.submitEvidence(id, userId, fileUrls, enhancedDescription);
-    return { 
+    return {
       message: 'Evidence submitted successfully',
       type: submitEvidenceDto.type,
     };

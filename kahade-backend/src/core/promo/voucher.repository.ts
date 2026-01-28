@@ -55,10 +55,7 @@ export class VoucherRepository {
         status: VoucherStatus.ACTIVE,
         validFrom: { lte: now },
         validUntil: { gte: now },
-        OR: [
-          { assignedToUserId: userId },
-          { assignedToUserId: null },
-        ],
+        OR: [{ assignedToUserId: userId }, { assignedToUserId: null }],
       },
       orderBy: { validUntil: 'asc' },
     });

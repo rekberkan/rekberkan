@@ -29,10 +29,13 @@ export class TransactionService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async create(userId: string, createTransactionDto: CreateTransactionDto): Promise<ITransactionResponse> {
+  async create(
+    userId: string,
+    createTransactionDto: CreateTransactionDto,
+  ): Promise<ITransactionResponse> {
     // Validate counterparty exists if provided
     let counterpartyId: string | null = null;
-    
+
     if (createTransactionDto.counterpartyId) {
       const counterparty = await this.userService.findById(createTransactionDto.counterpartyId);
       if (!counterparty) {
@@ -43,7 +46,9 @@ export class TransactionService {
       }
       counterpartyId = counterparty.id;
     } else if (createTransactionDto.counterpartyEmail) {
-      const counterparty = await this.userService.findByEmail(createTransactionDto.counterpartyEmail);
+      const counterparty = await this.userService.findByEmail(
+        createTransactionDto.counterpartyEmail,
+      );
       if (counterparty) {
         if (counterparty.id === userId) {
           throw new BadRequestException('Cannot create transaction with yourself');
@@ -54,10 +59,12 @@ export class TransactionService {
 
     // Generate unique order number
     const orderNumber = `KHD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    
+
     // Calculate platform fee
     const amountMinor = BigInt(Math.round(createTransactionDto.amount * 100));
-    const platformFeeMinor = BigInt(Math.round(createTransactionDto.amount * this.PLATFORM_FEE_PERCENT));
+    const platformFeeMinor = BigInt(
+      Math.round(createTransactionDto.amount * this.PLATFORM_FEE_PERCENT),
+    );
 
     // Generate invite token
     const inviteToken = this.generateInviteToken();
@@ -98,7 +105,7 @@ export class TransactionService {
 
   async findOne(id: string, userId?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -113,7 +120,7 @@ export class TransactionService {
 
   async findByOrderNumber(orderNumber: string, userId?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findByOrderNumber(orderNumber);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -127,7 +134,7 @@ export class TransactionService {
 
   async findByInviteToken(inviteToken: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findByInviteToken(inviteToken);
-    
+
     if (!transaction) {
       throw new NotFoundException('Invalid or expired invite link');
     }
@@ -135,11 +142,19 @@ export class TransactionService {
     return this.transformToResponse(transaction);
   }
 
-  async findAllByUser(userId: string, params: PaginationParams & { status?: string; role?: string }) {
+  async findAllByUser(
+    userId: string,
+    params: PaginationParams & { status?: string; role?: string },
+  ) {
     const { page = 1, limit = 10, status, role } = params;
     const skip = PaginationUtil.getSkip(page, limit);
 
-    const { transactions, total } = await this.transactionRepository.findByUser(userId, skip, limit, { status, role });
+    const { transactions, total } = await this.transactionRepository.findByUser(
+      userId,
+      skip,
+      limit,
+      { status, role },
+    );
 
     const transformedTransactions = transactions.map((t) => this.transformToResponse(t));
 
@@ -148,7 +163,7 @@ export class TransactionService {
 
   async accept(id: string, userId: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -182,7 +197,7 @@ export class TransactionService {
 
   async acceptByInvite(inviteToken: string, userId: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findByInviteToken(inviteToken);
-    
+
     if (!transaction) {
       throw new NotFoundException('Invalid or expired invite link');
     }
@@ -223,7 +238,7 @@ export class TransactionService {
 
   async reject(id: string, userId: string, reason?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -248,14 +263,15 @@ export class TransactionService {
 
   async pay(id: string, userId: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
 
     // Determine buyer based on initiator role
-    const buyerId = transaction.initiatorRole === 'BUYER' ? transaction.initiatorId : transaction.counterpartyId;
-    
+    const buyerId =
+      transaction.initiatorRole === 'BUYER' ? transaction.initiatorId : transaction.counterpartyId;
+
     if (buyerId !== userId) {
       throw new ForbiddenException('Only buyer can make payment');
     }
@@ -267,12 +283,12 @@ export class TransactionService {
     // Calculate total amount buyer needs to pay
     const amountMinor = transaction.amountMinor || BigInt(0);
     const platformFeeMinor = transaction.platformFeeMinor || BigInt(0);
-    
+
     let totalToPay = amountMinor;
     if (transaction.feePayer === 'BUYER') {
       totalToPay = amountMinor + platformFeeMinor;
     } else if (transaction.feePayer === 'SPLIT') {
-      totalToPay = amountMinor + (platformFeeMinor / BigInt(2));
+      totalToPay = amountMinor + platformFeeMinor / BigInt(2);
     }
 
     // Lock buyer's wallet balance
@@ -295,7 +311,8 @@ export class TransactionService {
       throw new BadRequestException('Buyer wallet not found');
     }
 
-    const sellerId = transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
+    const sellerId =
+      transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
     const sellerWallet = sellerId
       ? await this.prisma.wallet.findUnique({ where: { userId: sellerId } })
       : null;
@@ -331,16 +348,22 @@ export class TransactionService {
     return this.transformToResponse(updated);
   }
 
-  async confirmDelivery(id: string, userId: string, proofUrl?: string, notes?: string): Promise<ITransactionResponse> {
+  async confirmDelivery(
+    id: string,
+    userId: string,
+    proofUrl?: string,
+    notes?: string,
+  ): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
 
     // Determine seller based on initiator role
-    const sellerId = transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
-    
+    const sellerId =
+      transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
+
     if (sellerId !== userId) {
       throw new ForbiddenException('Only seller can confirm delivery');
     }
@@ -370,7 +393,8 @@ export class TransactionService {
     this.logger.log(`Transaction ${id} delivery confirmed by seller ${userId}`);
 
     // Notify buyer
-    const buyerId = transaction.initiatorRole === 'BUYER' ? transaction.initiatorId : transaction.counterpartyId;
+    const buyerId =
+      transaction.initiatorRole === 'BUYER' ? transaction.initiatorId : transaction.counterpartyId;
     if (buyerId) {
       await this.notificationService.createForUser(
         buyerId,
@@ -386,14 +410,15 @@ export class TransactionService {
 
   async confirmReceipt(id: string, userId: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
 
     // Determine buyer based on initiator role
-    const buyerId = transaction.initiatorRole === 'BUYER' ? transaction.initiatorId : transaction.counterpartyId;
-    
+    const buyerId =
+      transaction.initiatorRole === 'BUYER' ? transaction.initiatorId : transaction.counterpartyId;
+
     if (buyerId !== userId) {
       throw new ForbiddenException('Only buyer can confirm receipt');
     }
@@ -403,8 +428,9 @@ export class TransactionService {
     }
 
     // Release funds to seller
-    const sellerId = transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
-    
+    const sellerId =
+      transaction.initiatorRole === 'SELLER' ? transaction.initiatorId : transaction.counterpartyId;
+
     if (!sellerId) {
       throw new BadRequestException('No seller found for this transaction');
     }
@@ -412,13 +438,13 @@ export class TransactionService {
     try {
       const amountMinor = transaction.amountMinor || BigInt(0);
       const platformFeeMinor = transaction.platformFeeMinor || BigInt(0);
-      
+
       // Calculate seller's amount after fee
       let sellerAmount = amountMinor;
       if (transaction.feePayer === 'SELLER') {
         sellerAmount = amountMinor - platformFeeMinor;
       } else if (transaction.feePayer === 'SPLIT') {
-        sellerAmount = amountMinor - (platformFeeMinor / BigInt(2));
+        sellerAmount = amountMinor - platformFeeMinor / BigInt(2);
       }
 
       // Transfer from buyer's locked balance to seller
@@ -457,9 +483,13 @@ export class TransactionService {
     }
   }
 
-  async dispute(id: string, userId: string, data: { reason: string; description: string }): Promise<ITransactionResponse> {
+  async dispute(
+    id: string,
+    userId: string,
+    data: { reason: string; description: string },
+  ): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -473,9 +503,7 @@ export class TransactionService {
     }
 
     // Create dispute record
-    const disputeReason = data.description
-      ? `${data.reason} - ${data.description}`
-      : data.reason;
+    const disputeReason = data.description ? `${data.reason} - ${data.description}` : data.reason;
 
     await (this.prisma as any).dispute.create({
       data: {
@@ -493,7 +521,8 @@ export class TransactionService {
     this.logger.log(`Transaction ${id} disputed by user ${userId}`);
 
     // Notify other party
-    const otherPartyId = transaction.initiatorId === userId ? transaction.counterpartyId : transaction.initiatorId;
+    const otherPartyId =
+      transaction.initiatorId === userId ? transaction.counterpartyId : transaction.initiatorId;
     if (otherPartyId) {
       await this.notificationService.sendTransactionNotification(
         otherPartyId,
@@ -508,7 +537,7 @@ export class TransactionService {
 
   async cancel(id: string, userId: string, reason?: string): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -533,7 +562,8 @@ export class TransactionService {
     this.logger.log(`Transaction ${id} cancelled by user ${userId}`);
 
     // Notify other party
-    const otherPartyId = transaction.initiatorId === userId ? transaction.counterpartyId : transaction.initiatorId;
+    const otherPartyId =
+      transaction.initiatorId === userId ? transaction.counterpartyId : transaction.initiatorId;
     if (otherPartyId) {
       await this.notificationService.sendTransactionNotification(
         otherPartyId,
@@ -546,9 +576,13 @@ export class TransactionService {
     return this.transformToResponse(updated);
   }
 
-  async rate(id: string, userId: string, data: { score: number; comment?: string }): Promise<{ message: string }> {
+  async rate(
+    id: string,
+    userId: string,
+    data: { score: number; comment?: string },
+  ): Promise<{ message: string }> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -562,7 +596,8 @@ export class TransactionService {
     }
 
     // Determine who is being rated
-    const ratedUserId = transaction.initiatorId === userId ? transaction.counterpartyId : transaction.initiatorId;
+    const ratedUserId =
+      transaction.initiatorId === userId ? transaction.counterpartyId : transaction.initiatorId;
 
     if (!ratedUserId) {
       throw new BadRequestException('No counterparty to rate');
@@ -602,7 +637,7 @@ export class TransactionService {
     updateStatusDto: UpdateTransactionStatusDto,
   ): Promise<ITransactionResponse> {
     const transaction = await this.transactionRepository.findById(id);
-    
+
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
@@ -634,7 +669,9 @@ export class TransactionService {
     };
 
     if (!validTransitions[currentStatus]?.includes(newStatus)) {
-      throw new BadRequestException(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+      throw new BadRequestException(
+        `Invalid status transition from ${currentStatus} to ${newStatus}`,
+      );
     }
   }
 
@@ -652,28 +689,48 @@ export class TransactionService {
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
-    
+
     if (transaction.initiatorId !== userId && transaction.counterpartyId !== userId) {
       throw new ForbiddenException('Access denied');
     }
-    
+
     // Return timeline based on transaction events
     const timeline: Array<{ event: string; timestamp: Date | null; description: string }> = [];
-    timeline.push({ event: 'created', timestamp: transaction.createdAt, description: 'Transaction created' });
-    
+    timeline.push({
+      event: 'created',
+      timestamp: transaction.createdAt,
+      description: 'Transaction created',
+    });
+
     if (transaction.acceptedAt) {
-      timeline.push({ event: 'accepted', timestamp: transaction.acceptedAt, description: 'Transaction accepted' });
+      timeline.push({
+        event: 'accepted',
+        timestamp: transaction.acceptedAt,
+        description: 'Transaction accepted',
+      });
     }
     if (transaction.paidAt) {
-      timeline.push({ event: 'paid', timestamp: transaction.paidAt, description: 'Payment confirmed' });
+      timeline.push({
+        event: 'paid',
+        timestamp: transaction.paidAt,
+        description: 'Payment confirmed',
+      });
     }
     if (transaction.completedAt) {
-      timeline.push({ event: 'completed', timestamp: transaction.completedAt, description: 'Transaction completed' });
+      timeline.push({
+        event: 'completed',
+        timestamp: transaction.completedAt,
+        description: 'Transaction completed',
+      });
     }
     if (transaction.cancelledAt) {
-      timeline.push({ event: 'cancelled', timestamp: transaction.cancelledAt, description: 'Transaction cancelled' });
+      timeline.push({
+        event: 'cancelled',
+        timestamp: transaction.cancelledAt,
+        description: 'Transaction cancelled',
+      });
     }
-    
+
     return timeline;
   }
 
@@ -682,18 +739,18 @@ export class TransactionService {
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
-    
+
     if (transaction.initiatorId !== userId && transaction.counterpartyId !== userId) {
       throw new ForbiddenException('Access denied');
     }
-    
+
     // Get messages from order comments
     const messages = await this.prisma.orderComment.findMany({
       where: { orderId: transactionId },
       orderBy: { createdAt: 'asc' },
       include: { user: { select: { id: true, username: true } } },
     });
-    
+
     return messages;
   }
 
@@ -702,11 +759,11 @@ export class TransactionService {
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
-    
+
     if (transaction.initiatorId !== userId && transaction.counterpartyId !== userId) {
       throw new ForbiddenException('Access denied');
     }
-    
+
     const comment = await this.prisma.orderComment.create({
       data: {
         orderId: transactionId,
@@ -715,14 +772,14 @@ export class TransactionService {
       },
       include: { user: { select: { id: true, username: true } } },
     });
-    
+
     return comment;
   }
 
   private transformToResponse(transaction: Transaction & any): ITransactionResponse {
     const amountMinor = transaction.amountMinor || BigInt(0);
     const platformFeeMinor = transaction.platformFeeMinor || BigInt(0);
-    
+
     return {
       id: transaction.id,
       orderNumber: transaction.orderNumber,

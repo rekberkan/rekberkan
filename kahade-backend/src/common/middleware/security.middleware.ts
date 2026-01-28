@@ -13,7 +13,7 @@ export class SecurityMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // Get client IP
     const clientIp = this.getClientIp(req);
-    
+
     // Log request (for audit trail)
     this.logger.log(
       `${req.method} ${req.originalUrl} - IP: ${clientIp} - UA: ${req.get('user-agent')?.substring(0, 50)}`,
@@ -25,7 +25,7 @@ export class SecurityMiddleware implements NestMiddleware {
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-    
+
     // Remove server header
     res.removeHeader('X-Powered-By');
 
@@ -67,7 +67,7 @@ export function sanitizeLogData(data: any): any {
   ];
 
   const sanitized = { ...data };
-  
+
   for (const field of sensitiveFields) {
     if (sanitized[field]) {
       sanitized[field] = '***REDACTED***';

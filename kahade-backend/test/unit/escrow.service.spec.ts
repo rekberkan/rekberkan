@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EscrowService, InvalidStateTransitionError, UnauthorizedTransitionError } from '../../src/core/escrow/escrow.service';
+import {
+  EscrowService,
+  InvalidStateTransitionError,
+  UnauthorizedTransitionError,
+} from '../../src/core/escrow/escrow.service';
 import { PrismaService } from '../../src/infrastructure/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../../src/core/wallet/wallet.service';
@@ -71,76 +75,79 @@ describe('EscrowService', () => {
 
   describe('State Machine Validation', () => {
     it('should allow ACTIVE -> RELEASED transition', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.ACTIVE, EscrowHoldStatus.RELEASED)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.ACTIVE, EscrowHoldStatus.RELEASED),
       ).not.toThrow();
     });
 
     it('should allow ACTIVE -> REFUNDED transition', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.ACTIVE, EscrowHoldStatus.REFUNDED)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.ACTIVE, EscrowHoldStatus.REFUNDED),
       ).not.toThrow();
     });
 
     it('should allow ACTIVE -> DISPUTED transition', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.ACTIVE, EscrowHoldStatus.DISPUTED)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.ACTIVE, EscrowHoldStatus.DISPUTED),
       ).not.toThrow();
     });
 
     it('should reject RELEASED -> ACTIVE transition (terminal state)', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.RELEASED, EscrowHoldStatus.ACTIVE)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.RELEASED, EscrowHoldStatus.ACTIVE),
       ).toThrow(InvalidStateTransitionError);
     });
 
     it('should reject REFUNDED -> RELEASED transition (terminal state)', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.REFUNDED, EscrowHoldStatus.RELEASED)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.REFUNDED, EscrowHoldStatus.RELEASED),
       ).toThrow(InvalidStateTransitionError);
     });
 
     it('should allow DISPUTED -> RELEASED transition', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.DISPUTED, EscrowHoldStatus.RELEASED)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.DISPUTED, EscrowHoldStatus.RELEASED),
       ).not.toThrow();
     });
 
     it('should allow DISPUTED -> REFUNDED transition', () => {
-      expect(() => 
-        service.validateEscrowTransition(EscrowHoldStatus.DISPUTED, EscrowHoldStatus.REFUNDED)
+      expect(() =>
+        service.validateEscrowTransition(EscrowHoldStatus.DISPUTED, EscrowHoldStatus.REFUNDED),
       ).not.toThrow();
     });
   });
 
   describe('Order State Machine Validation', () => {
     it('should allow WAITING_COUNTERPARTY -> PENDING_ACCEPT transition', () => {
-      expect(() => 
-        service.validateOrderTransition(OrderStatus.WAITING_COUNTERPARTY, OrderStatus.PENDING_ACCEPT)
+      expect(() =>
+        service.validateOrderTransition(
+          OrderStatus.WAITING_COUNTERPARTY,
+          OrderStatus.PENDING_ACCEPT,
+        ),
       ).not.toThrow();
     });
 
     it('should allow PAID -> COMPLETED transition', () => {
-      expect(() => 
-        service.validateOrderTransition(OrderStatus.PAID, OrderStatus.COMPLETED)
+      expect(() =>
+        service.validateOrderTransition(OrderStatus.PAID, OrderStatus.COMPLETED),
       ).not.toThrow();
     });
 
     it('should allow PAID -> DISPUTED transition', () => {
-      expect(() => 
-        service.validateOrderTransition(OrderStatus.PAID, OrderStatus.DISPUTED)
+      expect(() =>
+        service.validateOrderTransition(OrderStatus.PAID, OrderStatus.DISPUTED),
       ).not.toThrow();
     });
 
     it('should reject COMPLETED -> PAID transition (terminal state)', () => {
-      expect(() => 
-        service.validateOrderTransition(OrderStatus.COMPLETED, OrderStatus.PAID)
+      expect(() =>
+        service.validateOrderTransition(OrderStatus.COMPLETED, OrderStatus.PAID),
       ).toThrow(InvalidStateTransitionError);
     });
 
     it('should reject CANCELLED -> ACCEPTED transition (terminal state)', () => {
-      expect(() => 
-        service.validateOrderTransition(OrderStatus.CANCELLED, OrderStatus.ACCEPTED)
+      expect(() =>
+        service.validateOrderTransition(OrderStatus.CANCELLED, OrderStatus.ACCEPTED),
       ).toThrow(InvalidStateTransitionError);
     });
   });
@@ -207,7 +214,7 @@ describe('EscrowService', () => {
           sellerUserId: 'seller-1',
           amountMinor: 100000n,
           idempotencyKey: 'idem-1',
-        })
+        }),
       ).rejects.toThrow('Buyer wallet not found');
     });
   });
@@ -262,7 +269,7 @@ describe('EscrowService', () => {
           actorId: 'buyer-1',
           platformFeeMinor: 2500n,
           idempotencyKey: 'idem-1',
-        })
+        }),
       ).rejects.toThrow('Escrow not found');
     });
   });

@@ -19,13 +19,13 @@ export class CryptoUtil {
     const iv = crypto.randomBytes(this.IV_LENGTH);
     const salt = crypto.randomBytes(this.SALT_LENGTH);
     const derivedKey = crypto.pbkdf2Sync(key, salt, this.ITERATIONS, this.KEY_LENGTH, 'sha256');
-    
+
     const cipher = crypto.createCipheriv(this.ALGORITHM, derivedKey, iv);
     let encrypted = cipher.update(plaintext, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    
+
     const authTag = cipher.getAuthTag();
-    
+
     // Format: salt:iv:authTag:encrypted
     return `${salt.toString('hex')}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
@@ -47,10 +47,10 @@ export class CryptoUtil {
 
     const decipher = crypto.createDecipheriv(this.ALGORITHM, derivedKey, iv);
     decipher.setAuthTag(authTag);
-    
+
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-    
+
     return decrypted;
   }
 
@@ -75,12 +75,12 @@ export class CryptoUtil {
     const bytes = crypto.randomBytes(20);
     const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
     let result = '';
-    
+
     for (let i = 0; i < bytes.length; i++) {
       const index = bytes[i] % 32;
       result += base32Chars[index];
     }
-    
+
     return result;
   }
 
@@ -136,10 +136,10 @@ export class HashUtil {
     if (!saltHex || !hashHex) {
       return false;
     }
-    
+
     const salt = Buffer.from(saltHex, 'hex');
     const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512');
-    
+
     return crypto.timingSafeEqual(Buffer.from(hashHex, 'hex'), hash);
   }
 

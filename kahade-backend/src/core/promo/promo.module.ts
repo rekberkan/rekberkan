@@ -3,10 +3,10 @@ import { PromoController } from './promo.controller';
 import { PromoService } from './promo.service';
 import { PromoRepository } from './promo.repository';
 import { VoucherRepository } from './voucher.repository';
-import { PrismaModule } from '@infrastructure/database/prisma.module';
+import { DatabaseModule } from '@infrastructure/database/database.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [DatabaseModule],
   controllers: [PromoController],
   providers: [PromoService, PromoRepository, VoucherRepository],
   exports: [PromoService],

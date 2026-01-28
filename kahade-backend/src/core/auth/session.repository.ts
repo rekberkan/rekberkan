@@ -161,7 +161,9 @@ export class SessionRepository {
       },
     });
 
-    this.logger.warn(`Revoked session family ${sessionFamilyId}: ${reason}, count: ${result.count}`);
+    this.logger.warn(
+      `Revoked session family ${sessionFamilyId}: ${reason}, count: ${result.count}`,
+    );
 
     return result;
   }
@@ -169,10 +171,7 @@ export class SessionRepository {
   /**
    * BANK-GRADE: Rotate session (create new, link to old)
    */
-  async rotateSession(
-    oldToken: string,
-    newData: CreateSessionData,
-  ) {
+  async rotateSession(oldToken: string, newData: CreateSessionData) {
     const oldTokenHash = this.hashToken(oldToken);
     const newTokenHash = this.hashToken(newData.token);
 
@@ -235,7 +234,9 @@ export class SessionRepository {
 
     if (session) {
       // Token was already rotated - this is a reuse attempt!
-      this.logger.error(`TOKEN REUSE DETECTED! Session: ${session.id}, Family: ${session.sessionFamilyId}`);
+      this.logger.error(
+        `TOKEN REUSE DETECTED! Session: ${session.id}, Family: ${session.sessionFamilyId}`,
+      );
 
       // Revoke entire session family as security measure
       await this.revokeSessionFamily(session.sessionFamilyId!, 'token_reuse_detected');

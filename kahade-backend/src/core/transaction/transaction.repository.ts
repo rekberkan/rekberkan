@@ -91,7 +91,7 @@ export class TransactionRepository {
 
   async findByInviteToken(inviteToken: string): Promise<Transaction | null> {
     return (this.prisma as any).order.findFirst({
-      where: { 
+      where: {
         inviteToken,
         inviteExpiresAt: { gt: new Date() },
       },
@@ -180,7 +180,7 @@ export class TransactionRepository {
     options?: { status?: string },
   ): Promise<{ transactions: Transaction[]; total: number }> {
     const where: any = { deletedAt: null };
-    
+
     if (options?.status) {
       where.status = options.status.toUpperCase();
     }

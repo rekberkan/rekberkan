@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -26,7 +25,6 @@ import { EscrowService } from './escrow.service';
 import { CreateEscrowDto } from './dto/create-escrow.dto';
 import { ReleaseEscrowDto } from './dto/release-escrow.dto';
 import { RefundEscrowDto } from './dto/refund-escrow.dto';
-import { EscrowFilterDto } from './dto/escrow-filter.dto';
 
 @ApiTags('escrow')
 @Controller('escrow')
@@ -42,7 +40,11 @@ export class EscrowController {
   @Post()
   @Throttle({ default: { limit: 10, ttl: 3600000 } })
   @ApiOperation({ summary: 'Create a new escrow hold' })
-  @ApiHeader({ name: 'x-idempotency-key', required: true, description: 'Idempotency key for safe retries' })
+  @ApiHeader({
+    name: 'x-idempotency-key',
+    required: true,
+    description: 'Idempotency key for safe retries',
+  })
   @ApiResponse({ status: 201, description: 'Escrow created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or insufficient balance' })
   @ApiResponse({ status: 409, description: 'Duplicate request' })
@@ -52,32 +54,13 @@ export class EscrowController {
     @Headers('x-idempotency-key') idempotencyKey: string,
   ) {
     return this.escrowService.createEscrow({
-      ...createEscrowDto,
+      orderId: createEscrowDto.orderId,
       buyerUserId: userId,
+      sellerUserId: createEscrowDto.sellerUserId,
+      amountMinor: BigInt(createEscrowDto.amountMinor),
+      timeoutHours: createEscrowDto.timeoutHours,
       idempotencyKey,
     });
-  }
-
-  @Get()
-  @ApiOperation({ summary: 'Get user escrow holds with filters' })
-  @ApiResponse({ status: 200, description: 'Returns paginated escrow holds' })
-  async getEscrows(
-    @CurrentUser('id') userId: string,
-    @Query() filterDto: EscrowFilterDto,
-  ) {
-    return this.escrowService.getEscrows(userId, filterDto);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get escrow details by ID' })
-  @ApiParam({ name: 'id', description: 'Escrow ID' })
-  @ApiResponse({ status: 200, description: 'Returns escrow details' })
-  @ApiResponse({ status: 404, description: 'Escrow not found' })
-  async getEscrowById(
-    @CurrentUser('id') userId: string,
-    @Param('id', ParseUUIDPipe) escrowId: string,
-  ) {
-    return this.escrowService.getEscrowById(userId, escrowId);
   }
 
   @Post(':id/release')
@@ -85,7 +68,11 @@ export class EscrowController {
   @Throttle({ default: { limit: 10, ttl: 3600000 } })
   @ApiOperation({ summary: 'Release escrow funds to seller' })
   @ApiParam({ name: 'id', description: 'Escrow ID' })
-  @ApiHeader({ name: 'x-idempotency-key', required: true, description: 'Idempotency key for safe retries' })
+  @ApiHeader({
+    name: 'x-idempotency-key',
+    required: true,
+    description: 'Idempotency key for safe retries',
+  })
   @ApiResponse({ status: 200, description: 'Escrow released successfully' })
   @ApiResponse({ status: 400, description: 'Invalid escrow state' })
   @ApiResponse({ status: 403, description: 'Not authorized to release this escrow' })
@@ -108,7 +95,11 @@ export class EscrowController {
   @Throttle({ default: { limit: 10, ttl: 3600000 } })
   @ApiOperation({ summary: 'Refund escrow funds to buyer' })
   @ApiParam({ name: 'id', description: 'Escrow ID' })
-  @ApiHeader({ name: 'x-idempotency-key', required: true, description: 'Idempotency key for safe retries' })
+  @ApiHeader({
+    name: 'x-idempotency-key',
+    required: true,
+    description: 'Idempotency key for safe retries',
+  })
   @ApiResponse({ status: 200, description: 'Escrow refunded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid escrow state' })
   @ApiResponse({ status: 403, description: 'Not authorized to refund this escrow' })
@@ -126,30 +117,17 @@ export class EscrowController {
     });
   }
 
-  @Post(':id/extend')
+  @Post(':id/dispute')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 3600000 } })
-  @ApiOperation({ summary: 'Extend escrow timeout' })
+  @ApiOperation({ summary: 'Initiate dispute on escrow' })
   @ApiParam({ name: 'id', description: 'Escrow ID' })
-  @ApiResponse({ status: 200, description: 'Escrow timeout extended' })
-  @ApiResponse({ status: 400, description: 'Invalid escrow state or extension limit reached' })
-  async extendEscrow(
+  @ApiResponse({ status: 200, description: 'Dispute initiated' })
+  async initiateDispute(
     @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) escrowId: string,
-    @Body() body: { additionalHours: number },
+    @Body() body: { reason: string },
   ) {
-    return this.escrowService.extendTimeout(userId, escrowId, body.additionalHours);
-  }
-
-  // ============================================================================
-  // ESCROW STATISTICS
-  // ============================================================================
-
-  @Get('stats/summary')
-  @ApiOperation({ summary: 'Get escrow statistics summary' })
-  @ApiResponse({ status: 200, description: 'Returns escrow statistics' })
-  async getEscrowStats(@CurrentUser('id') userId: string) {
-    return this.escrowService.getEscrowStats(userId);
+    return this.escrowService.initiateDispute(escrowId, userId, body.reason);
   }
 
   // ============================================================================
@@ -157,7 +135,7 @@ export class EscrowController {
   // ============================================================================
 
   @Get('health')
-  health() {
-    return { status: 'ok', service: 'escrow' };
+  async health() {
+    return this.escrowService.healthCheck();
   }
 }

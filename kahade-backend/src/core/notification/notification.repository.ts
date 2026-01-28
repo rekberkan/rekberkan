@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Notification } from '@common/shims/prisma-types.shim';
+import { Notification } from '@prisma/client';
 
 export interface ICreateNotification {
   userId: string;
@@ -39,7 +39,7 @@ export class NotificationRepository {
     read?: boolean,
   ): Promise<{ notifications: Notification[]; total: number }> {
     const where: any = { userId };
-    
+
     if (read !== undefined) {
       if (read) {
         where.readAt = { not: null };

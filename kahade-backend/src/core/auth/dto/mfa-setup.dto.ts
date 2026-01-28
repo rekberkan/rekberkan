@@ -6,7 +6,7 @@ import { IsString, IsNotEmpty, Length, Matches } from 'class-validator';
 // ============================================================================
 
 export class MfaSetupDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'TOTP code from authenticator app to verify setup',
     example: '123456',
   })

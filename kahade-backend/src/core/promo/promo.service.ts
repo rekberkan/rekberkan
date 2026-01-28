@@ -97,11 +97,7 @@ export class PromoService {
     return promo;
   }
 
-  async listPromos(options: {
-    isActive?: boolean;
-    page?: number;
-    limit?: number;
-  }) {
+  async listPromos(options: { isActive?: boolean; page?: number; limit?: number }) {
     const { isActive, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
@@ -121,7 +117,7 @@ export class PromoService {
     ]);
 
     return {
-      data: promos.map(p => ({
+      data: promos.map((p) => ({
         ...p,
         discountValue: p.discountValue?.toString(),
         maxDiscountMinor: p.maxDiscountMinor?.toString(),
@@ -273,7 +269,7 @@ export class PromoService {
     ]);
 
     return {
-      data: vouchers.map(v => ({
+      data: vouchers.map((v) => ({
         ...v,
         discountMinor: v.discountMinor?.toString(),
         maxDiscountMinor: v.maxDiscountMinor?.toString(),
@@ -472,9 +468,7 @@ export class PromoService {
       }
     });
 
-    this.logger.log(
-      `Applied voucher ${code} for user ${userId}, discount: ${discountMinor}`,
-    );
+    this.logger.log(`Applied voucher ${code} for user ${userId}, discount: ${discountMinor}`);
 
     return {
       voucherId: voucher.id,
@@ -497,10 +491,7 @@ export class PromoService {
         status: VoucherStatus.ACTIVE,
         validFrom: { lte: now },
         validUntil: { gte: now },
-        OR: [
-          { assignedToUserId: userId },
-          { assignedToUserId: null },
-        ],
+        OR: [{ assignedToUserId: userId }, { assignedToUserId: null }],
       },
       orderBy: { validUntil: 'asc' },
     });
@@ -552,7 +543,7 @@ export class PromoService {
     ]);
 
     return {
-      data: usages.map(u => ({
+      data: usages.map((u) => ({
         ...u,
         originalMinor: u.originalMinor.toString(),
         discountMinor: u.discountMinor.toString(),

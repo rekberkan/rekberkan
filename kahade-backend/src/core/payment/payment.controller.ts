@@ -9,7 +9,6 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
-  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,16 +21,21 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { PaymentService } from './payment.service';
+import { PaymentService } from '@integrations/payment/payment.service';
+import { PaymentRepository } from './payment.repository';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentFilterDto } from './dto/payment-filter.dto';
+import { PaymentStatus, PaymentMethod } from '@prisma/client';
 
 @ApiTags('payments')
 @Controller('payments')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly paymentRepository: PaymentRepository,
+  ) {}
 
   // ============================================================================
   // PAYMENT OPERATIONS
@@ -46,20 +50,32 @@ export class PaymentController {
   @ApiResponse({ status: 409, description: 'Duplicate request' })
   async createPayment(
     @CurrentUser('id') userId: string,
+    @CurrentUser('email') userEmail: string,
     @Body() createPaymentDto: CreatePaymentDto,
-    @Headers('x-idempotency-key') idempotencyKey: string,
   ) {
-    return this.paymentService.createPayment(userId, createPaymentDto, idempotencyKey);
+    return this.paymentService.createPayment({
+      amount: createPaymentDto.amountMinor,
+      currency: createPaymentDto.currency || 'IDR',
+      transactionId: `TXN-${Date.now()}`,
+      customerEmail: userEmail || 'user@example.com',
+    });
   }
 
   @Get()
   @ApiOperation({ summary: 'Get user payment history' })
   @ApiResponse({ status: 200, description: 'Returns paginated payments' })
-  async getPayments(
-    @CurrentUser('id') userId: string,
-    @Query() filterDto: PaymentFilterDto,
-  ) {
-    return this.paymentService.getPayments(userId, filterDto);
+  async getPayments(@CurrentUser('id') userId: string, @Query() filterDto: PaymentFilterDto) {
+    return this.paymentRepository.findMany({
+      userId,
+      status: filterDto.status as unknown as PaymentStatus,
+      paymentMethod: filterDto.method as unknown as PaymentMethod,
+      dateFrom: filterDto.dateFrom ? new Date(filterDto.dateFrom) : undefined,
+      dateTo: filterDto.dateTo ? new Date(filterDto.dateTo) : undefined,
+      page: filterDto.page || 1,
+      limit: filterDto.limit || 10,
+      sortBy: filterDto.sortBy || 'createdAt',
+      sortOrder: (filterDto.sortOrder as 'asc' | 'desc') || 'desc',
+    });
   }
 
   @Get(':id')
@@ -71,7 +87,7 @@ export class PaymentController {
     @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) paymentId: string,
   ) {
-    return this.paymentService.getPaymentById(userId, paymentId);
+    return this.paymentRepository.findById(paymentId);
   }
 
   @Get(':id/status')
@@ -82,7 +98,7 @@ export class PaymentController {
     @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) paymentId: string,
   ) {
-    return this.paymentService.checkPaymentStatus(userId, paymentId);
+    return this.paymentService.verifyPayment(paymentId);
   }
 
   @Post(':id/cancel')
@@ -95,25 +111,7 @@ export class PaymentController {
     @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) paymentId: string,
   ) {
-    return this.paymentService.cancelPayment(userId, paymentId);
-  }
-
-  // ============================================================================
-  // PAYMENT METHODS
-  // ============================================================================
-
-  @Get('methods/available')
-  @ApiOperation({ summary: 'Get available payment methods' })
-  @ApiResponse({ status: 200, description: 'Returns available payment methods' })
-  async getPaymentMethods(@CurrentUser('id') userId: string) {
-    return this.paymentService.getAvailablePaymentMethods(userId);
-  }
-
-  @Get('methods/fees')
-  @ApiOperation({ summary: 'Get payment method fees' })
-  @ApiResponse({ status: 200, description: 'Returns payment method fees' })
-  async getPaymentFees(@Query('amount') amount: number) {
-    return this.paymentService.calculatePaymentFees(amount);
+    return this.paymentRepository.updateStatus(paymentId, PaymentStatus.FAILED);
   }
 
   // ============================================================================
@@ -124,7 +122,7 @@ export class PaymentController {
   @ApiOperation({ summary: 'Get payment statistics' })
   @ApiResponse({ status: 200, description: 'Returns payment statistics' })
   async getPaymentStats(@CurrentUser('id') userId: string) {
-    return this.paymentService.getPaymentStats(userId);
+    return this.paymentRepository.getStats(userId);
   }
 
   // ============================================================================

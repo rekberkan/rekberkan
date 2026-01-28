@@ -1,4 +1,12 @@
-import { CanActivate, ExecutionContext, Injectable, Logger, HttpException, HttpStatus, SetMetadata } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  HttpException,
+  HttpStatus,
+  SetMetadata,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 // ============================================================================
@@ -15,14 +23,14 @@ interface RateLimitRecord {
 export const RATE_LIMIT_KEY = 'rateLimit';
 
 // Decorator for custom rate limits
-export const RateLimit = (ttl: number, limit: number) => 
+export const RateLimit = (ttl: number, limit: number) =>
   SetMetadata(RATE_LIMIT_KEY, { ttl, limit });
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private readonly logger = new Logger(RateLimitGuard.name);
   private readonly storage = new Map<string, RateLimitRecord>();
-  
+
   // Default limits
   private readonly defaultTtl = 60000; // 1 minute
   private readonly defaultLimit = 100; // 100 requests per minute
@@ -66,9 +74,9 @@ export class RateLimitGuard implements CanActivate {
     if (record.count > limit) {
       const retryAfter = Math.ceil((record.resetAt - now) / 1000);
       this.logger.warn(`Rate limit exceeded for ${key}`);
-      
+
       this.setRateLimitHeaders(request, limit, 0, record.resetAt);
-      
+
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -86,14 +94,19 @@ export class RateLimitGuard implements CanActivate {
   private getKey(request: any, handlerName: string): string {
     const userId = request.user?.id;
     const ip = request.ip || request.connection?.remoteAddress || 'unknown';
-    
+
     if (userId) {
       return `user:${userId}:${handlerName}`;
     }
     return `ip:${ip}:${handlerName}`;
   }
 
-  private setRateLimitHeaders(request: any, limit: number, remaining: number, resetAt: number): void {
+  private setRateLimitHeaders(
+    request: any,
+    limit: number,
+    remaining: number,
+    resetAt: number,
+  ): void {
     const response = request.res;
     if (response) {
       response.setHeader('X-RateLimit-Limit', limit);
@@ -105,14 +118,14 @@ export class RateLimitGuard implements CanActivate {
   private cleanup(): void {
     const now = Date.now();
     let cleaned = 0;
-    
+
     for (const [key, record] of this.storage.entries()) {
       if (record.resetAt < now) {
         this.storage.delete(key);
         cleaned++;
       }
     }
-    
+
     if (cleaned > 0) {
       this.logger.debug(`Cleaned up ${cleaned} expired rate limit records`);
     }

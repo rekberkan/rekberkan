@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { User } from '@common/shims/prisma-types.shim';
+import { User as PrismaUser } from '@prisma/client';
+type User = PrismaUser;
 
 // ============================================================================
 // USER REPOSITORY - Production Ready
@@ -128,10 +129,7 @@ export class UserRepository {
     return this.prisma.user.findMany({
       where: {
         suspendedAt: { not: null },
-        OR: [
-          { suspendedUntil: null },
-          { suspendedUntil: { gt: new Date() } },
-        ],
+        OR: [{ suspendedUntil: null }, { suspendedUntil: { gt: new Date() } }],
       },
     });
   }

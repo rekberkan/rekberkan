@@ -25,7 +25,7 @@ describe('Order Flow (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-    
+
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
@@ -39,7 +39,7 @@ describe('Order Flow (e2e)', () => {
         phone: '+6281234567890',
         password: 'TestP@ssw0rd!',
       });
-    
+
     buyerToken = buyerResponse.body.accessToken;
     buyerId = buyerResponse.body.user.id;
 
@@ -51,7 +51,7 @@ describe('Order Flow (e2e)', () => {
         phone: '+6281234567891',
         password: 'TestP@ssw0rd!',
       });
-    
+
     sellerToken = sellerResponse.body.accessToken;
     sellerId = sellerResponse.body.user.id;
   });

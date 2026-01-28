@@ -8,7 +8,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { EscrowHold, EscrowHoldStatus, Order, OrderStatus, LedgerAccountType } from '@common/shims/prisma-types.shim';
+import {
+  EscrowHold,
+  EscrowHoldStatus,
+  Order,
+  OrderStatus,
+  LedgerAccountType,
+} from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../wallet/wallet.service';
 import { LedgerService } from '../ledger/ledger.service';
@@ -47,9 +53,21 @@ export class UnauthorizedTransitionError extends ForbiddenException {
  * Defines all valid state transitions
  */
 const ESCROW_STATE_MACHINE: Record<EscrowHoldStatus, EscrowHoldStatus[]> = {
-  [EscrowHoldStatus.ACTIVE]: [EscrowHoldStatus.RELEASED, EscrowHoldStatus.REFUNDED, EscrowHoldStatus.DISPUTED],
-  [EscrowHoldStatus.HELD]: [EscrowHoldStatus.RELEASED, EscrowHoldStatus.REFUNDED, EscrowHoldStatus.DISPUTED],
-  [EscrowHoldStatus.DISPUTED]: [EscrowHoldStatus.ADJUSTED, EscrowHoldStatus.RELEASED, EscrowHoldStatus.REFUNDED],
+  [EscrowHoldStatus.ACTIVE]: [
+    EscrowHoldStatus.RELEASED,
+    EscrowHoldStatus.REFUNDED,
+    EscrowHoldStatus.DISPUTED,
+  ],
+  [EscrowHoldStatus.HELD]: [
+    EscrowHoldStatus.RELEASED,
+    EscrowHoldStatus.REFUNDED,
+    EscrowHoldStatus.DISPUTED,
+  ],
+  [EscrowHoldStatus.DISPUTED]: [
+    EscrowHoldStatus.ADJUSTED,
+    EscrowHoldStatus.RELEASED,
+    EscrowHoldStatus.REFUNDED,
+  ],
   [EscrowHoldStatus.RELEASED]: [], // Terminal state
   [EscrowHoldStatus.REFUNDED]: [], // Terminal state
   [EscrowHoldStatus.ADJUSTED]: [], // Terminal state (dispute resolution)
@@ -137,10 +155,7 @@ export class EscrowService {
   /**
    * BANK-GRADE: Validate order state transition
    */
-  validateOrderTransition(
-    currentStatus: OrderStatus,
-    targetStatus: OrderStatus,
-  ): boolean {
+  validateOrderTransition(currentStatus: OrderStatus, targetStatus: OrderStatus): boolean {
     const allowedTransitions = ORDER_STATE_MACHINE[currentStatus];
     if (!allowedTransitions.includes(targetStatus)) {
       throw new InvalidStateTransitionError(currentStatus, targetStatus);
@@ -305,9 +320,7 @@ export class EscrowService {
       return newEscrow;
     });
 
-    this.logger.log(
-      `Created escrow ${escrow.id} for order ${orderId}, amount: ${amountMinor}`,
-    );
+    this.logger.log(`Created escrow ${escrow.id} for order ${orderId}, amount: ${amountMinor}`);
 
     return escrow;
   }
@@ -514,11 +527,7 @@ export class EscrowService {
   /**
    * BANK-GRADE: Initiate dispute
    */
-  async initiateDispute(
-    escrowId: string,
-    actorId: string,
-    reason: string,
-  ): Promise<EscrowHold> {
+  async initiateDispute(escrowId: string, actorId: string, reason: string): Promise<EscrowHold> {
     const escrow = await this.prisma.escrowHold.findUnique({
       where: { id: escrowId },
       include: { order: true },
@@ -554,9 +563,7 @@ export class EscrowService {
       }),
     ]);
 
-    this.logger.log(
-      `Dispute initiated for escrow ${escrowId} by ${actorId}: ${reason}`,
-    );
+    this.logger.log(`Dispute initiated for escrow ${escrowId} by ${actorId}: ${reason}`);
 
     return updatedEscrow;
   }
@@ -742,9 +749,7 @@ export class EscrowService {
         processedCount++;
         this.logger.log(`Auto-released expired escrow ${escrow.id}`);
       } catch (error) {
-        this.logger.error(
-          `Failed to auto-release escrow ${escrow.id}: ${error.message}`,
-        );
+        this.logger.error(`Failed to auto-release escrow ${escrow.id}: ${error.message}`);
       }
     }
 

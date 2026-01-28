@@ -10,7 +10,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const { method, url: rawUrl } = request;
     const now = Date.now();
-    
+
     // Sanitize URL for logging (remove potential sensitive query params)
     const url = rawUrl.split('?')[0];
 

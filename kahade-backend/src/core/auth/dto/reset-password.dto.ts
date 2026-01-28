@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsStrongPassword, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  IsStrongPassword,
+  IsEmail,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // ============================================================================
@@ -7,7 +14,7 @@ import { Transform } from 'class-transformer';
 // ============================================================================
 
 export class ResetPasswordDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Password reset token from email',
     example: 'abc123def456...',
   })
@@ -17,7 +24,7 @@ export class ResetPasswordDto {
   @MaxLength(256, { message: 'Invalid reset token' })
   token: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'New password',
     example: 'NewSecureP@ss123!',
     minLength: 8,
@@ -26,20 +33,24 @@ export class ResetPasswordDto {
   @IsNotEmpty({ message: 'New password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-  }, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-  })
+  @IsStrongPassword(
+    {
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minNumbers: 1,
+      minSymbols: 1,
+    },
+    {
+      message:
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    },
+  )
   password: string;
 }
 
 export class ForgotPasswordDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Email address for password reset',
     example: 'john.doe@example.com',
   })
@@ -51,7 +62,7 @@ export class ForgotPasswordDto {
 }
 
 export class ChangePasswordDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current password',
     example: 'CurrentP@ss123!',
   })
@@ -59,7 +70,7 @@ export class ChangePasswordDto {
   @IsNotEmpty({ message: 'Current password is required' })
   currentPassword: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'New password',
     example: 'NewSecureP@ss123!',
     minLength: 8,
@@ -68,14 +79,18 @@ export class ChangePasswordDto {
   @IsNotEmpty({ message: 'New password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-  }, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-  })
+  @IsStrongPassword(
+    {
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minNumbers: 1,
+      minSymbols: 1,
+    },
+    {
+      message:
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    },
+  )
   newPassword: string;
 }

@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
-import { MfaGuard } from '@common/guards/mfa.guard';
+import { MfaGuard } from '@security/guards/mfa.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { WithdrawalService } from './withdrawal.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
@@ -53,55 +53,23 @@ export class WithdrawalController {
     @Body() createWithdrawalDto: CreateWithdrawalDto,
     @Headers('x-idempotency-key') idempotencyKey: string,
   ) {
-    return this.withdrawalService.createWithdrawal(userId, createWithdrawalDto, idempotencyKey);
-  }
-
-  @Get()
-  @ApiOperation({ summary: 'Get withdrawal history' })
-  @ApiResponse({ status: 200, description: 'Returns paginated withdrawals' })
-  async getWithdrawals(
-    @CurrentUser('id') userId: string,
-    @Query() filterDto: WithdrawalFilterDto,
-  ) {
-    return this.withdrawalService.getWithdrawals(userId, filterDto);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get withdrawal details by ID' })
-  @ApiParam({ name: 'id', description: 'Withdrawal ID' })
-  @ApiResponse({ status: 200, description: 'Returns withdrawal details' })
-  @ApiResponse({ status: 404, description: 'Withdrawal not found' })
-  async getWithdrawalById(
-    @CurrentUser('id') userId: string,
-    @Param('id', ParseUUIDPipe) withdrawalId: string,
-  ) {
-    return this.withdrawalService.getWithdrawalById(userId, withdrawalId);
-  }
-
-  @Post(':id/cancel')
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 3600000 } })
-  @ApiOperation({ summary: 'Cancel a pending withdrawal' })
-  @ApiParam({ name: 'id', description: 'Withdrawal ID' })
-  @ApiResponse({ status: 200, description: 'Withdrawal cancelled' })
-  @ApiResponse({ status: 400, description: 'Cannot cancel - already processed' })
-  @ApiResponse({ status: 403, description: 'Not authorized' })
-  async cancelWithdrawal(
-    @CurrentUser('id') userId: string,
-    @Param('id', ParseUUIDPipe) withdrawalId: string,
-  ) {
-    return this.withdrawalService.cancelWithdrawal(userId, withdrawalId);
+    return this.withdrawalService.createWithdrawal({
+      userId,
+      bankAccountId: createWithdrawalDto.bankAccountId,
+      amountMinor: BigInt(createWithdrawalDto.amountMinor),
+      idempotencyKey,
+    });
   }
 
   // ============================================================================
   // WITHDRAWAL LIMITS
   // ============================================================================
 
-  @Get('limits/daily')
-  @ApiOperation({ summary: 'Get daily withdrawal limits and usage' })
-  @ApiResponse({ status: 200, description: 'Returns daily limits' })
-  async getDailyLimits(@CurrentUser('id') userId: string) {
-    return this.withdrawalService.getDailyLimits(userId);
+  @Get('limits')
+  @ApiOperation({ summary: 'Get withdrawal limits and usage' })
+  @ApiResponse({ status: 200, description: 'Returns withdrawal limits' })
+  async getWithdrawalLimits(@CurrentUser('id') userId: string) {
+    return this.withdrawalService.getWithdrawalLimits(userId);
   }
 
   // ============================================================================

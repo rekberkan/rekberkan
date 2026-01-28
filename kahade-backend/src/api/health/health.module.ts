@@ -4,7 +4,7 @@ import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './health.controller';
 import { PrismaHealthIndicator } from './prisma-health.indicator';
 import { RedisHealthIndicator } from './redis-health.indicator';
-import { PrismaModule } from '@infrastructure/database/prisma.module';
+import { DatabaseModule } from '@infrastructure/database/database.module';
 
 // ============================================================================
 // HEALTH MODULE
@@ -13,19 +13,9 @@ import { PrismaModule } from '@infrastructure/database/prisma.module';
 // ============================================================================
 
 @Module({
-  imports: [
-    TerminusModule,
-    HttpModule,
-    PrismaModule,
-  ],
+  imports: [TerminusModule, HttpModule, DatabaseModule],
   controllers: [HealthController],
-  providers: [
-    PrismaHealthIndicator,
-    RedisHealthIndicator,
-  ],
-  exports: [
-    PrismaHealthIndicator,
-    RedisHealthIndicator,
-  ],
+  providers: [PrismaHealthIndicator, RedisHealthIndicator],
+  exports: [PrismaHealthIndicator, RedisHealthIndicator],
 })
 export class HealthModule {}

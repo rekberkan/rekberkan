@@ -23,34 +23,34 @@ export interface RateLimitConfig {
 export const RateLimits = {
   // Authentication endpoints - strict limits
   AUTH: { ttl: 60, limit: 5 },
-  
+
   // Registration - very strict
   REGISTER: { ttl: 3600, limit: 3 },
-  
+
   // Password reset - strict
   PASSWORD_RESET: { ttl: 3600, limit: 3 },
-  
+
   // Standard API endpoints
   API: { ttl: 60, limit: 100 },
-  
+
   // Read-heavy endpoints
   READ: { ttl: 60, limit: 200 },
-  
+
   // Write endpoints
   WRITE: { ttl: 60, limit: 50 },
-  
+
   // Webhook endpoints - high limit
   WEBHOOK: { ttl: 60, limit: 1000 },
-  
+
   // Admin endpoints
   ADMIN: { ttl: 60, limit: 100 },
-  
+
   // File upload
   UPLOAD: { ttl: 60, limit: 10 },
-  
+
   // OTP/MFA verification
   OTP: { ttl: 60, limit: 5 },
-  
+
   // Search endpoints
   SEARCH: { ttl: 60, limit: 30 },
 } as const;
@@ -115,7 +115,7 @@ export const SearchRateLimit = () => Throttle({ default: RateLimits.SEARCH });
  * @param ttl Time window in seconds
  * @param limit Maximum requests in window
  */
-export const CustomRateLimit = (ttl: number, limit: number) => 
+export const CustomRateLimit = (ttl: number, limit: number) =>
   Throttle({ default: { ttl, limit } });
 
 /**

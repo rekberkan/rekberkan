@@ -1,4 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, BadRequestException, Logger, RawBodyRequest, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  Headers,
+  BadRequestException,
+  Logger,
+  RawBodyRequest,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
 import { ConfigService } from '@nestjs/config';
@@ -82,7 +94,11 @@ export class WebhookController {
     // Step 2: Check idempotency
     const webhookId = `xendit_invoice_${payload.id}`;
     const idempotencyKey = `webhook:xendit:invoice:${webhookId}`;
-    const lockAcquired = await this.cacheService.setnx(idempotencyKey, true, this.webhookTtlSeconds);
+    const lockAcquired = await this.cacheService.setnx(
+      idempotencyKey,
+      true,
+      this.webhookTtlSeconds,
+    );
     if (!lockAcquired) {
       this.logger.log(`Duplicate webhook ignored: ${webhookId}`);
       return { status: 'duplicate', message: 'Webhook already processed' };
@@ -96,16 +112,18 @@ export class WebhookController {
 
     // Step 4: Process webhook
     try {
-      this.logger.log(`Processing Xendit invoice webhook: ${payload.id}, status: ${payload.status}`);
-      
+      this.logger.log(
+        `Processing Xendit invoice webhook: ${payload.id}, status: ${payload.status}`,
+      );
+
       // Process payment based on status
       await this.processXenditPayment(payload);
 
       // Mark as processed
       await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
-      return { 
-        status: 'processed', 
+      return {
+        status: 'processed',
         webhookId: payload.id,
         timestamp: new Date().toISOString(),
       };
@@ -134,7 +152,11 @@ export class WebhookController {
 
     const webhookId = `xendit_disbursement_${payload.id}`;
     const idempotencyKey = `webhook:xendit:disbursement:${webhookId}`;
-    const lockAcquired = await this.cacheService.setnx(idempotencyKey, true, this.webhookTtlSeconds);
+    const lockAcquired = await this.cacheService.setnx(
+      idempotencyKey,
+      true,
+      this.webhookTtlSeconds,
+    );
     if (!lockAcquired) {
       return { status: 'duplicate' };
     }
@@ -192,7 +214,11 @@ export class WebhookController {
     // Step 2: Check idempotency
     const webhookId = `midtrans_${payload.transaction_id}`;
     const idempotencyKey = `webhook:midtrans:notification:${webhookId}`;
-    const lockAcquired = await this.cacheService.setnx(idempotencyKey, true, this.webhookTtlSeconds);
+    const lockAcquired = await this.cacheService.setnx(
+      idempotencyKey,
+      true,
+      this.webhookTtlSeconds,
+    );
     if (!lockAcquired) {
       return { status: 'duplicate' };
     }
@@ -203,7 +229,9 @@ export class WebhookController {
     }
 
     // Step 4: Process
-    this.logger.log(`Processing Midtrans notification: ${payload.transaction_id}, status: ${payload.transaction_status}`);
+    this.logger.log(
+      `Processing Midtrans notification: ${payload.transaction_id}, status: ${payload.transaction_status}`,
+    );
     try {
       // Process payment
       await this.processMidtransPayment(payload);
@@ -223,7 +251,7 @@ export class WebhookController {
 
   private async processXenditPayment(payload: XenditWebhookPayload): Promise<void> {
     const { external_id, status, amount, paid_amount } = payload;
-    
+
     // external_id format: "topup_{walletId}_{timestamp}" or "order_{orderId}"
     const parts = external_id.split('_');
     const type = parts[0];
@@ -238,7 +266,11 @@ export class WebhookController {
     }
   }
 
-  private async processTopUpPayment(walletId: string, status: string, amount: number): Promise<void> {
+  private async processTopUpPayment(
+    walletId: string,
+    status: string,
+    amount: number,
+  ): Promise<void> {
     if (status === 'PAID' || status === 'SETTLED') {
       // Credit wallet
       await this.prisma.$transaction(async (tx) => {
@@ -248,14 +280,17 @@ export class WebhookController {
             balanceMinor: { increment: Math.round(amount * 100) },
           },
         });
-
       });
 
       this.logger.log(`Top-up completed for wallet ${walletId}: ${amount}`);
     }
   }
 
-  private async processOrderPayment(orderId: string, status: string, amount: number): Promise<void> {
+  private async processOrderPayment(
+    orderId: string,
+    status: string,
+    amount: number,
+  ): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { initiator: true, counterparty: true },
@@ -270,7 +305,7 @@ export class WebhookController {
       // Update order status to PAID
       await this.prisma.order.update({
         where: { id: orderId },
-        data: { 
+        data: {
           status: 'PAID',
           paidAt: new Date(),
         },
@@ -290,17 +325,17 @@ export class WebhookController {
 
   private async processXenditDisbursement(payload: any): Promise<void> {
     const { external_id, status, amount } = payload;
-    
+
     // external_id format: "withdrawal_{withdrawalId}"
     const parts = external_id.split('_');
     if (parts[0] !== 'withdrawal') return;
-    
+
     const withdrawalId = parts[1];
 
     if (status === 'COMPLETED') {
       await this.prisma.withdrawal.update({
         where: { id: withdrawalId },
-        data: { 
+        data: {
           status: 'COMPLETED',
           completedAt: new Date(),
         },
@@ -317,7 +352,7 @@ export class WebhookController {
         await this.prisma.$transaction(async (tx) => {
           await tx.withdrawal.update({
             where: { id: withdrawalId },
-            data: { 
+            data: {
               status: 'FAILED',
               rejectionReason: payload.failure_code || 'Unknown error',
             },
@@ -339,7 +374,7 @@ export class WebhookController {
 
   private async processMidtransPayment(payload: MidtransWebhookPayload): Promise<void> {
     const { order_id, transaction_status, gross_amount, fraud_status } = payload;
-    
+
     // order_id format: "topup_{walletId}_{timestamp}" or "order_{orderId}"
     const parts = order_id.split('_');
     const type = parts[0];
@@ -353,8 +388,9 @@ export class WebhookController {
     }
 
     // Map Midtrans status to our status
-    const isPaid = ['capture', 'settlement'].includes(transaction_status) && 
-                   (fraud_status === 'accept' || !fraud_status);
+    const isPaid =
+      ['capture', 'settlement'].includes(transaction_status) &&
+      (fraud_status === 'accept' || !fraud_status);
     const isFailed = ['deny', 'cancel', 'expire'].includes(transaction_status);
 
     if (type === 'topup') {
@@ -380,7 +416,7 @@ export class WebhookController {
   private secureCompare(a: string, b: string): boolean {
     if (!a || !b) return false;
     if (a.length !== b.length) return false;
-    
+
     try {
       return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
     } catch {

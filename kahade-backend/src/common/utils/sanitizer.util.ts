@@ -8,7 +8,7 @@
  */
 export function sanitizeHtml(input: string): string {
   if (!input || typeof input !== 'string') return '';
-  
+
   return input
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -23,13 +23,13 @@ export function sanitizeHtml(input: string): string {
  */
 export function sanitizeInput(input: string): string {
   if (!input || typeof input !== 'string') return '';
-  
+
   // Remove null bytes
   let sanitized = input.replace(/\0/g, '');
-  
+
   // Remove control characters except newlines and tabs
   sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-  
+
   return sanitized.trim();
 }
 
@@ -38,7 +38,7 @@ export function sanitizeInput(input: string): string {
  */
 export function sanitizeFilename(filename: string): string {
   if (!filename || typeof filename !== 'string') return '';
-  
+
   // Remove path separators and special characters
   return filename
     .replace(/[\/\\:*?"<>|]/g, '')
@@ -51,7 +51,7 @@ export function sanitizeFilename(filename: string): string {
  */
 export function sanitizeEmail(email: string): string {
   if (!email || typeof email !== 'string') return '';
-  
+
   return email.toLowerCase().trim();
 }
 
@@ -60,7 +60,7 @@ export function sanitizeEmail(email: string): string {
  */
 export function sanitizePhone(phone: string): string {
   if (!phone || typeof phone !== 'string') return '';
-  
+
   // Keep only digits and plus sign
   return phone.replace(/[^\d+]/g, '');
 }
@@ -70,7 +70,7 @@ export function sanitizePhone(phone: string): string {
  */
 export function sanitizeNumericString(input: string): string {
   if (!input || typeof input !== 'string') return '';
-  
+
   return input.replace(/\D/g, '');
 }
 
@@ -79,7 +79,7 @@ export function sanitizeNumericString(input: string): string {
  */
 export function sanitizeAlphanumeric(input: string): string {
   if (!input || typeof input !== 'string') return '';
-  
+
   return input.replace(/[^a-zA-Z0-9]/g, '');
 }
 
@@ -88,9 +88,12 @@ export function sanitizeAlphanumeric(input: string): string {
  */
 export function sanitizeUsername(username: string): string {
   if (!username || typeof username !== 'string') return '';
-  
+
   // Allow letters, numbers, underscores
-  return username.toLowerCase().replace(/[^a-z0-9_]/g, '').trim();
+  return username
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '')
+    .trim();
 }
 
 /**
@@ -98,15 +101,15 @@ export function sanitizeUsername(username: string): string {
  */
 export function sanitizeUrl(url: string): string | null {
   if (!url || typeof url !== 'string') return null;
-  
+
   try {
     const parsed = new URL(url);
-    
+
     // Only allow http and https protocols
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       return null;
     }
-    
+
     return parsed.toString();
   } catch {
     return null;
@@ -118,7 +121,7 @@ export function sanitizeUrl(url: string): string | null {
  */
 export function isValidUUID(uuid: string): boolean {
   if (!uuid || typeof uuid !== 'string') return false;
-  
+
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
@@ -128,8 +131,8 @@ export function isValidUUID(uuid: string): boolean {
  */
 export function truncate(input: string, maxLength: number): string {
   if (!input || typeof input !== 'string') return '';
-  
+
   if (input.length <= maxLength) return input;
-  
+
   return input.substring(0, maxLength);
 }

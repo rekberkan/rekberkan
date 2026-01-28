@@ -25,7 +25,7 @@ export function escapeHtml(str: string): string {
   if (!str || typeof str !== 'string') {
     return str;
   }
-  
+
   return str.replace(/[&<>"'`=/]/g, (char) => HTML_ENTITIES[char] || char);
 }
 
@@ -36,7 +36,7 @@ export function stripHtml(str: string): string {
   if (!str || typeof str !== 'string') {
     return str;
   }
-  
+
   return str.replace(/<[^>]*>/g, '');
 }
 
@@ -50,7 +50,7 @@ export function sanitizeString(str: string): string {
   if (!str || typeof str !== 'string') {
     return str;
   }
-  
+
   return escapeHtml(stripHtml(str.trim()));
 }
 
@@ -64,7 +64,7 @@ export function sanitizeEmail(email: string): string {
   if (!email || typeof email !== 'string') {
     return email;
   }
-  
+
   return email.toLowerCase().trim();
 }
 
@@ -77,15 +77,15 @@ export function sanitizePhone(phone: string): string {
   if (!phone || typeof phone !== 'string') {
     return phone;
   }
-  
+
   // Keep only digits and leading +
   let sanitized = phone.replace(/[^\d+]/g, '');
-  
+
   // Ensure + is only at the start
   if (sanitized.includes('+')) {
     sanitized = '+' + sanitized.replace(/\+/g, '');
   }
-  
+
   return sanitized;
 }
 
@@ -99,7 +99,7 @@ export function sanitizeUsername(username: string): string {
   if (!username || typeof username !== 'string') {
     return username;
   }
-  
+
   return username
     .toLowerCase()
     .trim()
@@ -115,24 +115,24 @@ export function sanitizeUrl(url: string): string | null {
   if (!url || typeof url !== 'string') {
     return null;
   }
-  
+
   const trimmed = url.trim();
-  
+
   // Block dangerous protocols
   const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
   const lowerUrl = trimmed.toLowerCase();
-  
+
   for (const protocol of dangerousProtocols) {
     if (lowerUrl.startsWith(protocol)) {
       return null;
     }
   }
-  
+
   // Ensure valid protocol
   if (!lowerUrl.startsWith('http://') && !lowerUrl.startsWith('https://')) {
     return 'https://' + trimmed;
   }
-  
+
   return trimmed;
 }
 
@@ -146,26 +146,26 @@ export function sanitizeFilename(filename: string, maxLength = 255): string {
   if (!filename || typeof filename !== 'string') {
     return 'unnamed';
   }
-  
+
   // Remove path traversal
   let sanitized = filename.replace(/\.\./g, '');
-  
+
   // Remove directory separators
   sanitized = sanitized.replace(/[/\\]/g, '');
-  
+
   // Remove null bytes
   sanitized = sanitized.replace(/\0/g, '');
-  
+
   // Keep only safe characters
   sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');
-  
+
   // Limit length
   if (sanitized.length > maxLength) {
     const ext = sanitized.split('.').pop() || '';
     const name = sanitized.substring(0, maxLength - ext.length - 1);
     sanitized = `${name}.${ext}`;
   }
-  
+
   return sanitized || 'unnamed';
 }
 
@@ -179,9 +179,9 @@ export function sanitizeSearchQuery(query: string, maxLength = 100): string {
   if (!query || typeof query !== 'string') {
     return '';
   }
-  
+
   let sanitized = query.trim();
-  
+
   // Remove SQL injection patterns
   const sqlPatterns = [
     /--/g,
@@ -201,16 +201,16 @@ export function sanitizeSearchQuery(query: string, maxLength = 100): string {
     /union/gi,
     /select/gi,
   ];
-  
+
   for (const pattern of sqlPatterns) {
     sanitized = sanitized.replace(pattern, '');
   }
-  
+
   // Limit length
   if (sanitized.length > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
-  
+
   return sanitized;
 }
 
@@ -223,15 +223,15 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
-  
+
   const result: Record<string, any> = Array.isArray(obj) ? [] : {};
-  
+
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
       result[key] = sanitizeString(value);
     } else if (Array.isArray(value)) {
-      result[key] = value.map(item => 
-        typeof item === 'string' ? sanitizeString(item) : sanitizeObject(item)
+      result[key] = value.map((item) =>
+        typeof item === 'string' ? sanitizeString(item) : sanitizeObject(item),
       );
     } else if (typeof value === 'object' && value !== null) {
       result[key] = sanitizeObject(value);
@@ -239,7 +239,7 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
       result[key] = value;
     }
   }
-  
+
   return result as T;
 }
 
@@ -250,7 +250,7 @@ export function sanitizeJson(jsonString: string): any {
   if (!jsonString || typeof jsonString !== 'string') {
     return null;
   }
-  
+
   try {
     const parsed = JSON.parse(jsonString);
     return sanitizeObject(parsed);

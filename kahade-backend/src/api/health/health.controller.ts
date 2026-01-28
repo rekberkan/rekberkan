@@ -1,6 +1,12 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { HealthCheck, HealthCheckService, HttpHealthIndicator, MemoryHealthIndicator, DiskHealthIndicator } from '@nestjs/terminus';
+import {
+  HealthCheck,
+  HealthCheckService,
+  HttpHealthIndicator,
+  MemoryHealthIndicator,
+  DiskHealthIndicator,
+} from '@nestjs/terminus';
 import { PrismaHealthIndicator } from './prisma-health.indicator';
 import { RedisHealthIndicator } from './redis-health.indicator';
 
@@ -49,19 +55,20 @@ export class HealthController {
     return this.health.check([
       // Database health
       () => this.prisma.isHealthy('database'),
-      
+
       // Redis health
       () => this.redis.isHealthy('redis'),
-      
+
       // Memory health (warn if heap > 300MB, fail if > 500MB)
       () => this.memory.checkHeap('memory_heap', 500 * 1024 * 1024),
       () => this.memory.checkRSS('memory_rss', 1024 * 1024 * 1024), // 1GB RSS limit
-      
+
       // Disk health (fail if disk usage > 90%)
-      () => this.disk.checkStorage('disk', {
-        path: '/',
-        thresholdPercent: 0.9,
-      }),
+      () =>
+        this.disk.checkStorage('disk', {
+          path: '/',
+          thresholdPercent: 0.9,
+        }),
     ]);
   }
 
@@ -94,7 +101,7 @@ export class HealthController {
         () => this.prisma.isHealthy('database'),
         () => this.redis.isHealthy('redis'),
       ]);
-      
+
       return result;
     } catch (error) {
       throw new ServiceUnavailableException('Application not ready');
@@ -114,13 +121,13 @@ export class HealthController {
       this.prisma.isHealthy('database'),
       this.redis.isHealthy('redis'),
     ]);
-    
-    const allHealthy = checks.every(c => c.status === 'fulfilled');
-    
+
+    const allHealthy = checks.every((c) => c.status === 'fulfilled');
+
     if (!allHealthy) {
       throw new ServiceUnavailableException('Application still starting');
     }
-    
+
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),

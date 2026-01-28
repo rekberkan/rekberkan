@@ -1,20 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
-import { EscrowHold, EscrowStatus, Currency } from '@common/shims/prisma-types.shim';
+import { Prisma, EscrowHoldStatus } from '@prisma/client';
+import { Currency } from '@prisma/client';
 
 export interface CreateEscrowData {
   orderId: string;
-  buyerUserId: string;
-  sellerUserId?: string;
+  buyerWalletId: string;
+  sellerWalletId?: string;
   amountMinor: bigint;
   currency?: Currency;
   timeoutHours: number;
 }
 
 export interface EscrowFilterOptions {
-  userId: string;
-  status?: EscrowStatus;
+  walletId: string;
+  status?: EscrowHoldStatus;
   role?: 'as_buyer' | 'as_seller';
   dateFrom?: Date;
   dateTo?: Date;
@@ -25,7 +25,7 @@ export interface EscrowFilterOptions {
 }
 
 export interface PaginatedEscrows {
-  data: EscrowHold[];
+  data: any[];
   total: number;
   page: number;
   limit: number;
@@ -41,18 +41,18 @@ export class EscrowRepository {
   /**
    * Create a new escrow hold
    */
-  async create(data: CreateEscrowData, tx?: Prisma.TransactionClient): Promise<EscrowHold> {
+  async create(data: CreateEscrowData, tx?: Prisma.TransactionClient): Promise<any> {
     const prisma = tx ?? this.prisma;
     const timeoutAt = new Date(Date.now() + data.timeoutHours * 60 * 60 * 1000);
 
     const escrow = await prisma.escrowHold.create({
       data: {
         orderId: data.orderId,
-        buyerUserId: data.buyerUserId,
-        sellerUserId: data.sellerUserId,
+        buyerWalletId: data.buyerWalletId,
+        sellerWalletId: data.sellerWalletId,
         amountMinor: data.amountMinor,
-        currency: data.currency || Currency.IDR,
-        status: EscrowStatus.ACTIVE,
+        currency: data.currency || 'IDR',
+        status: 'ACTIVE',
         timeoutAt,
       },
       include: {
@@ -63,16 +63,16 @@ export class EscrowRepository {
             title: true,
           },
         },
-        buyer: {
+        buyerWallet: {
           select: {
             id: true,
-            username: true,
+            userId: true,
           },
         },
-        seller: {
+        sellerWallet: {
           select: {
             id: true,
-            username: true,
+            userId: true,
           },
         },
       },
@@ -85,9 +85,9 @@ export class EscrowRepository {
   /**
    * Find escrow by ID
    */
-  async findById(id: string, tx?: Prisma.TransactionClient): Promise<EscrowHold | null> {
+  async findById(id: string, tx?: Prisma.TransactionClient): Promise<any | null> {
     const prisma = tx ?? this.prisma;
-    
+
     return prisma.escrowHold.findUnique({
       where: { id },
       include: {
@@ -101,18 +101,26 @@ export class EscrowRepository {
             counterpartyId: true,
           },
         },
-        buyer: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
+        buyerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+              },
+            },
           },
         },
-        seller: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
+        sellerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+              },
+            },
           },
         },
       },
@@ -122,21 +130,29 @@ export class EscrowRepository {
   /**
    * Find escrow by order ID
    */
-  async findByOrderId(orderId: string): Promise<EscrowHold | null> {
+  async findByOrderId(orderId: string): Promise<any | null> {
     return this.prisma.escrowHold.findUnique({
       where: { orderId },
       include: {
         order: true,
-        buyer: {
-          select: {
-            id: true,
-            username: true,
+        buyerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
-        seller: {
-          select: {
-            id: true,
-            username: true,
+        sellerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
       },
@@ -147,13 +163,10 @@ export class EscrowRepository {
    * Find escrows with filters and pagination
    */
   async findMany(options: EscrowFilterOptions): Promise<PaginatedEscrows> {
-    const { userId, status, role, dateFrom, dateTo, page, limit, sortBy, sortOrder } = options;
+    const { walletId, status, role, dateFrom, dateTo, page, limit, sortBy, sortOrder } = options;
 
     const where: Prisma.EscrowHoldWhereInput = {
-      OR: [
-        { buyerUserId: userId },
-        { sellerUserId: userId },
-      ],
+      OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
     };
 
     if (status) {
@@ -161,10 +174,10 @@ export class EscrowRepository {
     }
 
     if (role === 'as_buyer') {
-      where.buyerUserId = userId;
+      where.buyerWalletId = walletId;
       delete where.OR;
     } else if (role === 'as_seller') {
-      where.sellerUserId = userId;
+      where.sellerWalletId = walletId;
       delete where.OR;
     }
 
@@ -187,16 +200,24 @@ export class EscrowRepository {
             status: true,
           },
         },
-        buyer: {
-          select: {
-            id: true,
-            username: true,
+        buyerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
-        seller: {
-          select: {
-            id: true,
-            username: true,
+        sellerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
       },
@@ -219,10 +240,10 @@ export class EscrowRepository {
    */
   async updateStatus(
     id: string,
-    status: EscrowStatus,
-    additionalData?: Partial<EscrowHold>,
+    status: EscrowHoldStatus,
+    additionalData?: Record<string, any>,
     tx?: Prisma.TransactionClient,
-  ): Promise<EscrowHold> {
+  ): Promise<any> {
     const prisma = tx ?? this.prisma;
 
     const updateData: Prisma.EscrowHoldUpdateInput = {
@@ -231,16 +252,8 @@ export class EscrowRepository {
     };
 
     // Set timestamp based on status
-    switch (status) {
-      case EscrowStatus.RELEASED:
-        updateData.releasedAt = new Date();
-        break;
-      case EscrowStatus.REFUNDED:
-        updateData.refundedAt = new Date();
-        break;
-      case EscrowStatus.DISPUTED:
-        updateData.disputedAt = new Date();
-        break;
+    if (status === 'RELEASED' || status === 'REFUNDED' || status === 'DISPUTED') {
+      updateData.resolvedAt = new Date();
     }
 
     return prisma.escrowHold.update({
@@ -254,16 +267,24 @@ export class EscrowRepository {
             title: true,
           },
         },
-        buyer: {
-          select: {
-            id: true,
-            username: true,
+        buyerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
-        seller: {
-          select: {
-            id: true,
-            username: true,
+        sellerWallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
       },
@@ -273,7 +294,11 @@ export class EscrowRepository {
   /**
    * Extend escrow timeout
    */
-  async extendTimeout(id: string, additionalHours: number, tx?: Prisma.TransactionClient): Promise<EscrowHold> {
+  async extendTimeout(
+    id: string,
+    additionalHours: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<any> {
     const prisma = tx ?? this.prisma;
 
     const escrow = await prisma.escrowHold.findUnique({ where: { id } });
@@ -288,7 +313,6 @@ export class EscrowRepository {
       where: { id },
       data: {
         timeoutAt: newTimeout,
-        extensionCount: { increment: 1 },
       },
     });
   }
@@ -296,26 +320,34 @@ export class EscrowRepository {
   /**
    * Find escrows pending timeout
    */
-  async findPendingTimeout(): Promise<EscrowHold[]> {
+  async findPendingTimeout(): Promise<any[]> {
     return this.prisma.escrowHold.findMany({
       where: {
-        status: EscrowStatus.ACTIVE,
+        status: 'ACTIVE',
         timeoutAt: {
           lte: new Date(),
         },
       },
       include: {
         order: true,
-        buyer: true,
-        seller: true,
+        buyerWallet: {
+          include: {
+            user: true,
+          },
+        },
+        sellerWallet: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
   }
 
   /**
-   * Get escrow statistics for user
+   * Get escrow statistics for wallet
    */
-  async getStats(userId: string): Promise<{
+  async getStats(walletId: string): Promise<{
     totalActive: number;
     totalCompleted: number;
     totalDisputed: number;
@@ -325,33 +357,33 @@ export class EscrowRepository {
     const [activeCount, completedCount, disputedCount, activeSum, releasedSum] = await Promise.all([
       this.prisma.escrowHold.count({
         where: {
-          OR: [{ buyerUserId: userId }, { sellerUserId: userId }],
-          status: EscrowStatus.ACTIVE,
+          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+          status: 'ACTIVE',
         },
       }),
       this.prisma.escrowHold.count({
         where: {
-          OR: [{ buyerUserId: userId }, { sellerUserId: userId }],
-          status: EscrowStatus.RELEASED,
+          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+          status: 'RELEASED',
         },
       }),
       this.prisma.escrowHold.count({
         where: {
-          OR: [{ buyerUserId: userId }, { sellerUserId: userId }],
-          status: EscrowStatus.DISPUTED,
+          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+          status: 'DISPUTED',
         },
       }),
       this.prisma.escrowHold.aggregate({
         where: {
-          OR: [{ buyerUserId: userId }, { sellerUserId: userId }],
-          status: EscrowStatus.ACTIVE,
+          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+          status: 'ACTIVE',
         },
         _sum: { amountMinor: true },
       }),
       this.prisma.escrowHold.aggregate({
         where: {
-          OR: [{ buyerUserId: userId }, { sellerUserId: userId }],
-          status: EscrowStatus.RELEASED,
+          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+          status: 'RELEASED',
         },
         _sum: { amountMinor: true },
       }),

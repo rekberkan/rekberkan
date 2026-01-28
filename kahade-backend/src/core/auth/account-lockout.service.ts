@@ -26,7 +26,7 @@ interface FailedAttemptRecord {
 export class AccountLockoutService {
   private readonly logger = new Logger(AccountLockoutService.name);
   private readonly CACHE_PREFIX = 'lockout:';
-  
+
   private readonly maxFailedAttempts: number;
   private readonly lockoutDurationMs: number;
   private readonly attemptWindowMs: number;
@@ -36,8 +36,10 @@ export class AccountLockoutService {
     private readonly configService: ConfigService,
   ) {
     this.maxFailedAttempts = this.configService.get<number>('security.bruteForce.maxAttempts', 5);
-    this.lockoutDurationMs = this.configService.get<number>('security.bruteForce.lockoutDuration', 900) * 1000; // 15 min
-    this.attemptWindowMs = this.configService.get<number>('security.bruteForce.attemptWindow', 300) * 1000; // 5 min
+    this.lockoutDurationMs =
+      this.configService.get<number>('security.bruteForce.lockoutDuration', 900) * 1000; // 15 min
+    this.attemptWindowMs =
+      this.configService.get<number>('security.bruteForce.attemptWindow', 300) * 1000; // 5 min
   }
 
   /**
@@ -68,7 +70,7 @@ export class AccountLockoutService {
       }
     }
 
-    return { 
+    return {
       isLocked: false,
       failedAttempts: record.count,
     };
@@ -81,7 +83,7 @@ export class AccountLockoutService {
   async recordFailedAttempt(identifier: string): Promise<boolean> {
     const key = this.buildKey(identifier);
     const now = Date.now();
-    
+
     let record = await this.cacheManager.get<FailedAttemptRecord>(key);
 
     if (!record) {
@@ -106,11 +108,13 @@ export class AccountLockoutService {
     // Check if we should lock the account
     if (record.count >= this.maxFailedAttempts) {
       record.lockedUntil = now + this.lockoutDurationMs;
-      
+
       // Store with lockout duration TTL
       await this.cacheManager.set(key, record, this.lockoutDurationMs);
-      
-      this.logger.warn(`Account ${this.maskIdentifier(identifier)} locked after ${record.count} failed attempts`);
+
+      this.logger.warn(
+        `Account ${this.maskIdentifier(identifier)} locked after ${record.count} failed attempts`,
+      );
       return true;
     }
 
@@ -142,7 +146,9 @@ export class AccountLockoutService {
     };
 
     await this.cacheManager.set(key, record, duration);
-    this.logger.log(`Account ${this.maskIdentifier(identifier)} manually locked for ${duration / 60000} minutes`);
+    this.logger.log(
+      `Account ${this.maskIdentifier(identifier)} manually locked for ${duration / 60000} minutes`,
+    );
   }
 
   /**
@@ -184,9 +190,10 @@ export class AccountLockoutService {
     if (identifier.includes('@')) {
       // Email - mask middle part
       const [local, domain] = identifier.split('@');
-      const maskedLocal = local.length > 2 
-        ? local[0] + '*'.repeat(local.length - 2) + local[local.length - 1]
-        : local;
+      const maskedLocal =
+        local.length > 2
+          ? local[0] + '*'.repeat(local.length - 2) + local[local.length - 1]
+          : local;
       return `${maskedLocal}@${domain}`;
     }
     // Other identifiers - mask all but first 2 chars

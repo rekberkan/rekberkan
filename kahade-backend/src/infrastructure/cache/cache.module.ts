@@ -12,7 +12,7 @@ import { CacheService } from './cache.service';
       useFactory: async (configService: ConfigService) => {
         const redisHost = configService.get<string>('redis.host');
         const useRedis = redisHost && process.env.REDIS_ENABLED === 'true';
-        
+
         if (useRedis) {
           const redisStore = await import('cache-manager-redis-store');
           Logger.log('Using Redis cache store', 'CacheModule');
@@ -25,7 +25,7 @@ import { CacheService } from './cache.service';
             ttl: configService.get<number>('redis.ttl', 3600),
           };
         }
-        
+
         Logger.log('Using in-memory cache store (Redis not available)', 'CacheModule');
         return {
           ttl: configService.get<number>('redis.ttl', 3600),

@@ -7,8 +7,8 @@ import { ApiProperty } from '@nestjs/swagger';
 // ============================================================================
 
 export class WithdrawDto {
-  @ApiProperty({ 
-    description: 'Amount to withdraw in IDR', 
+  @ApiProperty({
+    description: 'Amount to withdraw in IDR',
     minimum: 50000,
     maximum: 50000000,
     example: 100000,
@@ -32,7 +32,7 @@ export class WithdrawDto {
     example: 'BCA',
     required: false,
   })
-  @ValidateIf(o => !o.bankAccountId)
+  @ValidateIf((o) => !o.bankAccountId)
   @IsString()
   @IsNotEmpty({ message: 'Bank code is required when not using saved bank account' })
   bankCode?: string;
@@ -42,7 +42,7 @@ export class WithdrawDto {
     example: '1234567890',
     required: false,
   })
-  @ValidateIf(o => !o.bankAccountId)
+  @ValidateIf((o) => !o.bankAccountId)
   @IsString()
   @IsNotEmpty({ message: 'Account number is required when not using saved bank account' })
   accountNumber?: string;
@@ -52,7 +52,7 @@ export class WithdrawDto {
     example: 'John Doe',
     required: false,
   })
-  @ValidateIf(o => !o.bankAccountId)
+  @ValidateIf((o) => !o.bankAccountId)
   @IsString()
   @IsNotEmpty({ message: 'Account name is required when not using saved bank account' })
   accountName?: string;

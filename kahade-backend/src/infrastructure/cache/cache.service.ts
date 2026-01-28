@@ -21,7 +21,7 @@ export class CacheService implements OnModuleDestroy {
     if (store && store.getClient) {
       this.redisClient = store.getClient();
     }
-    
+
     // Start cleanup interval for memory fallback
     this.startCleanupInterval();
   }

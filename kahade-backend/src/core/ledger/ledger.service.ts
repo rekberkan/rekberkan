@@ -6,7 +6,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { LedgerJournal, LedgerEntry, LedgerAccount, JournalType, LedgerAccountType } from '@common/shims/prisma-types.shim';
+import {
+  LedgerJournal,
+  LedgerEntry,
+  LedgerAccount,
+  JournalType,
+  LedgerAccountType,
+} from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 
@@ -80,15 +86,7 @@ export class LedgerService {
    * CRITICAL: Sum of all entries MUST equal zero (balanced)
    */
   async createJournal(options: CreateJournalOptions): Promise<JournalWithEntries> {
-    const {
-      type,
-      amountMinor,
-      description,
-      entries,
-      idempotencyKey,
-      tx,
-      ...linkIds
-    } = options;
+    const { type, amountMinor, description, entries, idempotencyKey, tx, ...linkIds } = options;
 
     const prisma = tx ?? this.prisma;
 
@@ -140,20 +138,13 @@ export class LedgerService {
     }
 
     // Step 5: Post-validation (paranoid check)
-    const postSum = journal.entries.reduce(
-      (acc, entry) => acc + entry.amountMinor,
-      0n,
-    );
+    const postSum = journal.entries.reduce((acc, entry) => acc + entry.amountMinor, 0n);
     if (postSum !== 0n) {
-      this.logger.error(
-        `CRITICAL: Post-creation invariant violation for journal ${journal.id}`,
-      );
+      this.logger.error(`CRITICAL: Post-creation invariant violation for journal ${journal.id}`);
       throw new LedgerInvariantError(journal.id, postSum);
     }
 
-    this.logger.log(
-      `Created journal ${journal.id} (${type}) with ${entries.length} entries`,
-    );
+    this.logger.log(`Created journal ${journal.id} (${type}) with ${entries.length} entries`);
 
     return journal as JournalWithEntries;
   }
@@ -312,9 +303,7 @@ export class LedgerService {
   ): Promise<JournalWithEntries> {
     const totalEscrow = buyerRefundMinor + sellerAmountMinor + platformFeeMinor;
 
-    const entries: LedgerEntryInput[] = [
-      { accountId: escrowAccountId, amountMinor: -totalEscrow },
-    ];
+    const entries: LedgerEntryInput[] = [{ accountId: escrowAccountId, amountMinor: -totalEscrow }];
 
     if (buyerRefundMinor > 0n) {
       entries.push({ accountId: buyerAccountId, amountMinor: buyerRefundMinor });
@@ -468,15 +457,10 @@ export class LedgerService {
     const unbalancedJournals: string[] = [];
 
     for (const journal of journals) {
-      const sum = journal.entries.reduce(
-        (acc, entry) => acc + entry.amountMinor,
-        0n,
-      );
+      const sum = journal.entries.reduce((acc, entry) => acc + entry.amountMinor, 0n);
       if (sum !== 0n) {
         unbalancedJournals.push(journal.id);
-        this.logger.error(
-          `Unbalanced journal detected: ${journal.id}, sum=${sum}`,
-        );
+        this.logger.error(`Unbalanced journal detected: ${journal.id}, sum=${sum}`);
       }
     }
 
@@ -549,10 +533,7 @@ export class LedgerService {
   /**
    * Generate idempotency key for operations
    */
-  generateIdempotencyKey(
-    operation: string,
-    ...identifiers: string[]
-  ): string {
+  generateIdempotencyKey(operation: string, ...identifiers: string[]): string {
     const data = [operation, ...identifiers, Date.now().toString()].join(':');
     return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32);
   }

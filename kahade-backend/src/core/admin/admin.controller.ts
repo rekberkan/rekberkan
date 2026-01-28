@@ -19,7 +19,7 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { DisputeService } from '../dispute/dispute.service';
-import { DisputeDecision } from '@common/shims/prisma-types.shim';
+import { DisputeDecision } from '@prisma/client';
 
 // ============================================================================
 // ADMIN CONTROLLER - Production Ready
@@ -60,11 +60,11 @@ export class AdminController {
       recentTransactions,
     ] = await Promise.all([
       this.prisma.user.count({ where: { deletedAt: null } }),
-      this.prisma.user.count({ 
-        where: { 
+      this.prisma.user.count({
+        where: {
           deletedAt: null,
-          lastLoginAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-        } 
+          lastLoginAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
       }),
       (this.prisma as any).order.count({ where: { deletedAt: null } }),
       (this.prisma as any).order.count({
@@ -250,10 +250,7 @@ export class AdminController {
   @Post('users/:id/activate')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Activate suspended user' })
-  async activateUser(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-  ) {
+  async activateUser(@Param('id') id: string, @CurrentUser('id') adminId: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
@@ -281,10 +278,7 @@ export class AdminController {
   @Post('users/:id/kyc/approve')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Approve user KYC' })
-  async approveKYC(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-  ) {
+  async approveKYC(@Param('id') id: string, @CurrentUser('id') adminId: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
@@ -325,7 +319,7 @@ export class AdminController {
 
     await this.prisma.user.update({
       where: { id },
-      data: { 
+      data: {
         kycStatus: 'REJECTED',
       },
     });
@@ -586,10 +580,7 @@ export class AdminController {
   @Post('disputes/:id/review')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Start reviewing dispute' })
-  async startReview(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-  ) {
+  async startReview(@Param('id') id: string, @CurrentUser('id') adminId: string) {
     const dispute = await (this.prisma as any).dispute.findUnique({
       where: { id },
     });
@@ -721,10 +712,7 @@ export class AdminController {
   @Post('withdrawals/:id/approve')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Approve withdrawal' })
-  async approveWithdrawal(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-  ) {
+  async approveWithdrawal(@Param('id') id: string, @CurrentUser('id') adminId: string) {
     const withdrawal = await (this.prisma as any).withdrawal.findUnique({
       where: { id },
     });
@@ -876,7 +864,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Get system settings' })
   async getSettings() {
     const settings = await (this.prisma as any).systemConfig.findMany();
-    
+
     return settings.reduce((acc: any, s: any) => {
       acc[s.key] = s.value;
       return acc;
@@ -886,10 +874,7 @@ export class AdminController {
   @Patch('settings')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update system settings' })
-  async updateSettings(
-    @CurrentUser('id') adminId: string,
-    @Body() dto: Record<string, any>,
-  ) {
+  async updateSettings(@CurrentUser('id') adminId: string, @Body() dto: Record<string, any>) {
     for (const [key, value] of Object.entries(dto)) {
       await (this.prisma as any).systemConfig.upsert({
         where: { key },
@@ -936,8 +921,14 @@ export class AdminController {
       },
     });
 
-    const totalRevenue = completedOrders.reduce((sum: bigint, o: any) => sum + (o.platformFeeMinor || 0n), 0n);
-    const totalVolume = completedOrders.reduce((sum: bigint, o: any) => sum + (o.amountMinor || 0n), 0n);
+    const totalRevenue = completedOrders.reduce(
+      (sum: bigint, o: any) => sum + (o.platformFeeMinor || 0n),
+      0n,
+    );
+    const totalVolume = completedOrders.reduce(
+      (sum: bigint, o: any) => sum + (o.amountMinor || 0n),
+      0n,
+    );
 
     // Group by date for chart data
     const dailyRevenue: Record<string, { revenue: number; volume: number; count: number }> = {};
@@ -958,10 +949,12 @@ export class AdminController {
         totalTransactions: completedOrders.length,
         period: { start, end },
       },
-      dailyData: Object.entries(dailyRevenue).map(([date, data]) => ({
-        date,
-        ...data,
-      })).sort((a, b) => a.date.localeCompare(b.date)),
+      dailyData: Object.entries(dailyRevenue)
+        .map(([date, data]) => ({
+          date,
+          ...data,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
     };
   }
 
@@ -1027,10 +1020,12 @@ export class AdminController {
         count: c._count.id,
         volume: Number(c._sum.amountMinor || 0n) / 100,
       })),
-      dailyData: Object.entries(dailyData).map(([date, data]) => ({
-        date,
-        ...data,
-      })).sort((a, b) => a.date.localeCompare(b.date)),
+      dailyData: Object.entries(dailyData)
+        .map(([date, data]) => ({
+          date,
+          ...data,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
       period: { start, end },
     };
   }
@@ -1040,10 +1035,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Get users report' })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  async getUserReport(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
+  async getUserReport(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
@@ -1101,10 +1093,12 @@ export class AdminController {
         status: k.kycStatus,
         count: k._count.id,
       })),
-      dailyRegistrations: Object.entries(dailyData).map(([date, count]) => ({
-        date,
-        count,
-      })).sort((a, b) => a.date.localeCompare(b.date)),
+      dailyRegistrations: Object.entries(dailyData)
+        .map(([date, count]) => ({
+          date,
+          count,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
       period: { start, end },
     };
   }

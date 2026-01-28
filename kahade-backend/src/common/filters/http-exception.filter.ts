@@ -1,4 +1,11 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 
@@ -33,7 +40,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
     };
 
-    if (nodeEnv !== 'production' && exception instanceof Error && status === HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (
+      nodeEnv !== 'production' &&
+      exception instanceof Error &&
+      status === HttpStatus.INTERNAL_SERVER_ERROR
+    ) {
       (errorResponse as any).stack = exception.stack;
     }
 

@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'wouter';
 import {
   MagnifyingGlass, Calendar, Clock, User, Tag,
-  ArrowRight, BookOpen, TrendingUp, Lightbulb
+  ArrowRight, BookOpen, TrendUp, Lightbulb
 } from '@phosphor-icons/react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -172,7 +172,7 @@ export default function Blog() {
             >
               <div className="grid lg:grid-cols-2 gap-0">
                 <div className="h-64 lg:h-auto bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center">
-                  <TrendingUp className="w-24 h-24 text-accent/50" weight="fill" />
+                  <TrendUp className="w-24 h-24 text-accent/50" weight="fill" />
                 </div>
                 <div className="p-8 lg:p-12">
                   <div className="flex items-center gap-4 mb-4">

@@ -1,4 +1,17 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Request, Get, Ip, Headers, Delete, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Request,
+  Get,
+  Ip,
+  Headers,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -97,10 +110,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout from all devices' })
   @ApiResponse({ status: 200, description: 'Logged out from all devices' })
-  async logoutAll(
-    @CurrentUser('id') userId: string,
-    @Request() req: any,
-  ) {
+  async logoutAll(@CurrentUser('id') userId: string, @Request() req: any) {
     const accessToken = req.headers.authorization?.split(' ')[1];
     return this.authService.logoutAll(userId, accessToken);
   }
@@ -153,10 +163,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Change password (authenticated)' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 401, description: 'Current password incorrect' })
-  async changePassword(
-    @CurrentUser('id') userId: string,
-    @Body() dto: ChangePasswordDto,
-  ) {
+  async changePassword(@CurrentUser('id') userId: string, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(userId, dto.currentPassword, dto.newPassword);
   }
 
@@ -217,10 +224,7 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Verify MFA and enable' })
   @ApiResponse({ status: 200, description: 'MFA enabled' })
-  async verifyMfa(
-    @CurrentUser('id') userId: string,
-    @Body() dto: MfaVerifyDto,
-  ) {
+  async verifyMfa(@CurrentUser('id') userId: string, @Body() dto: MfaVerifyDto) {
     return this.authService.enableMfa(userId, dto.code);
   }
 
@@ -229,10 +233,7 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Disable MFA' })
   @ApiResponse({ status: 200, description: 'MFA disabled' })
-  async disableMfa(
-    @CurrentUser('id') userId: string,
-    @Body() dto: MfaDisableDto,
-  ) {
+  async disableMfa(@CurrentUser('id') userId: string, @Body() dto: MfaDisableDto) {
     return this.authService.disableMfa(userId, dto.password, dto.code);
   }
 
@@ -262,10 +263,7 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Revoke a session' })
   @ApiResponse({ status: 200, description: 'Session revoked' })
-  async revokeSession(
-    @CurrentUser('id') userId: string,
-    @Param('id') sessionId: string,
-  ) {
+  async revokeSession(@CurrentUser('id') userId: string, @Param('id') sessionId: string) {
     return this.authService.revokeSession(userId, sessionId);
   }
 

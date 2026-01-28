@@ -8,7 +8,7 @@ import { Transform } from 'class-transformer';
 // ============================================================================
 
 export class LoginDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'john.doe@example.com',
     description: 'Registered email address',
   })
@@ -17,7 +17,7 @@ export class LoginDto {
   @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'password123',
     description: 'Account password',
     minLength: 8,
