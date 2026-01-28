@@ -18,10 +18,10 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test": "jest --config jest.config.js",
+    "test:watch": "jest --config jest.config.js --watch",
+    "test:cov": "jest --config jest.config.js --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config jest.config.js",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "audit:security": "npm audit --audit-level=high --production",
     "audit:fix": "npm audit fix",
@@ -131,31 +131,5 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1",
-      "^@core/(.*)$": "<rootDir>/core/$1",
-      "^@common/(.*)$": "<rootDir>/common/$1",
-      "^@config/(.*)$": "<rootDir>/config/$1",
-      "^@infrastructure/(.*)$": "<rootDir>/infrastructure/$1",
-      "^@integrations/(.*)$": "<rootDir>/integrations/$1",
-      "^@security/(.*)$": "<rootDir>/security/$1"
-    }
   }
 }

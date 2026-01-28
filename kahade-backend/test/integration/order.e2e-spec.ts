@@ -15,8 +15,9 @@ describe('Order Flow (e2e)', () => {
   let prisma: PrismaService;
   let buyerToken: string;
   let sellerToken: string;
-  let buyerId: string;
-  let sellerId: string;
+  // User IDs stored for potential future use in extended tests
+  let _buyerId: string;
+  let _sellerId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -41,7 +42,7 @@ describe('Order Flow (e2e)', () => {
       });
 
     buyerToken = buyerResponse.body.accessToken;
-    buyerId = buyerResponse.body.user.id;
+    _buyerId = buyerResponse.body.user.id;
 
     const sellerResponse = await request(app.getHttpServer())
       .post('/auth/register')
@@ -53,7 +54,7 @@ describe('Order Flow (e2e)', () => {
       });
 
     sellerToken = sellerResponse.body.accessToken;
-    sellerId = sellerResponse.body.user.id;
+    _sellerId = sellerResponse.body.user.id;
   });
 
   afterAll(async () => {

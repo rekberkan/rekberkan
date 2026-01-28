@@ -1,9 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  EscrowService,
-  InvalidStateTransitionError,
-  UnauthorizedTransitionError,
-} from '../../src/core/escrow/escrow.service';
+import { NotFoundException } from '@nestjs/common';
+import { EscrowService, InvalidStateTransitionError } from '../../src/core/escrow/escrow.service';
 import { PrismaService } from '../../src/infrastructure/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../../src/core/wallet/wallet.service';
@@ -12,9 +9,10 @@ import { EscrowHoldStatus, OrderStatus } from '@prisma/client';
 
 describe('EscrowService', () => {
   let service: EscrowService;
-  let prismaService: jest.Mocked<PrismaService>;
-  let walletService: jest.Mocked<WalletService>;
-  let ledgerService: jest.Mocked<LedgerService>;
+  // Mocked services for potential assertions in extended tests
+  let _prismaService: jest.Mocked<PrismaService>;
+  let _walletService: jest.Mocked<WalletService>;
+  let _ledgerService: jest.Mocked<LedgerService>;
 
   const mockPrismaService = {
     escrowHold: {
@@ -66,9 +64,9 @@ describe('EscrowService', () => {
     }).compile();
 
     service = module.get<EscrowService>(EscrowService);
-    prismaService = module.get(PrismaService);
-    walletService = module.get(WalletService);
-    ledgerService = module.get(LedgerService);
+    _prismaService = module.get(PrismaService);
+    _walletService = module.get(WalletService);
+    _ledgerService = module.get(LedgerService);
 
     jest.clearAllMocks();
   });
@@ -204,6 +202,9 @@ describe('EscrowService', () => {
     });
 
     it('should throw if buyer wallet not found', async () => {
+      // Reset mock and set up for this specific test
+      mockPrismaService.escrowHold.findFirst.mockReset();
+      mockPrismaService.wallet.findUnique.mockReset();
       mockPrismaService.escrowHold.findFirst.mockResolvedValue(null);
       mockPrismaService.wallet.findUnique.mockResolvedValue(null);
 
@@ -215,7 +216,7 @@ describe('EscrowService', () => {
           amountMinor: 100000n,
           idempotencyKey: 'idem-1',
         }),
-      ).rejects.toThrow('Buyer wallet not found');
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

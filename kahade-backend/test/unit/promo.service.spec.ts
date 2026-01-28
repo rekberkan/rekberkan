@@ -2,11 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PromoService } from '../../src/core/promo/promo.service';
 import { PrismaService } from '../../src/infrastructure/database/prisma.service';
 import { VoucherStatus, VoucherType } from '@prisma/client';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 
 describe('PromoService', () => {
   let service: PromoService;
-  let prismaService: jest.Mocked<PrismaService>;
+  // Mocked service for potential assertions in extended tests
+  let _prismaService: jest.Mocked<PrismaService>;
 
   const mockPrismaService = {
     promo: {
@@ -42,7 +43,7 @@ describe('PromoService', () => {
     }).compile();
 
     service = module.get<PromoService>(PromoService);
-    prismaService = module.get(PrismaService);
+    _prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -60,7 +61,7 @@ describe('PromoService', () => {
       currentUsages: 50,
       status: VoucherStatus.ACTIVE,
       validFrom: new Date('2024-01-01'),
-      validUntil: new Date('2025-12-31'),
+      validUntil: new Date('2027-12-31'),
       assignedToUserId: null,
       applicableCategories: null,
       promoId: null,
@@ -171,7 +172,7 @@ describe('PromoService', () => {
       currentUsages: 50,
       status: VoucherStatus.ACTIVE,
       validFrom: new Date('2024-01-01'),
-      validUntil: new Date('2025-12-31'),
+      validUntil: new Date('2027-12-31'),
       assignedToUserId: null,
       applicableCategories: null,
       promoId: null,
