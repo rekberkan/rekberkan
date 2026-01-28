@@ -31,7 +31,7 @@ import { KycModule } from './core/kyc/kyc.module';
 import { LedgerModule } from './core/ledger/ledger.module';
 import { NotificationModule } from './core/notification/notification.module';
 import { OrderModule } from './core/order/order.module';
-import { PaymentModule as CorePaymentModule } from './core/payment/payment.module';
+import { CorePaymentModule } from './core/payment/payment.module';
 import { PromoModule } from './core/promo/promo.module';
 import { RatingModule } from './core/rating/rating.module';
 import { ReferralModule } from './core/referral/referral.module';
