@@ -8,7 +8,7 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('security', () => {
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   return {
     // Helmet configuration for security headers
     helmet: {
@@ -26,62 +26,57 @@ export default registerAs('security', () => {
           upgradeInsecureRequests: isProduction ? [] : null,
         },
       },
-      
+
       // Cross-Origin-Embedder-Policy
       crossOriginEmbedderPolicy: false, // Disable for API
-      
+
       // Cross-Origin-Opener-Policy
       crossOriginOpenerPolicy: { policy: 'same-origin' },
-      
+
       // Cross-Origin-Resource-Policy
       crossOriginResourcePolicy: { policy: 'same-origin' },
-      
+
       // DNS Prefetch Control
       dnsPrefetchControl: { allow: false },
-      
+
       // Frameguard (X-Frame-Options)
       frameguard: { action: 'deny' },
-      
+
       // Hide Powered By
       hidePoweredBy: true,
-      
+
       // HSTS
       hsts: {
         maxAge: 31536000, // 1 year
         includeSubDomains: true,
         preload: true,
       },
-      
+
       // IE No Open
       ieNoOpen: true,
-      
+
       // No Sniff (X-Content-Type-Options)
       noSniff: true,
-      
+
       // Origin Agent Cluster
       originAgentCluster: true,
-      
+
       // Permitted Cross-Domain Policies
       permittedCrossDomainPolicies: { permittedPolicies: 'none' },
-      
+
       // Referrer Policy
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-      
+
       // XSS Filter
       xssFilter: true,
     },
-    
+
     // CORS configuration
     cors: {
       origin: process.env.CORS_ORIGIN?.split(',') || (isProduction ? [] : '*'),
       credentials: process.env.CORS_CREDENTIALS === 'true',
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: [
-        'Content-Type',
-        'Authorization',
-        'X-Request-ID',
-        'X-CSRF-Token',
-      ],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-CSRF-Token'],
       exposedHeaders: [
         'X-Request-ID',
         'X-RateLimit-Limit',
@@ -90,12 +85,12 @@ export default registerAs('security', () => {
       ],
       maxAge: 86400, // 24 hours
     },
-    
+
     // Rate limiting
     rateLimit: {
       ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
       limit: parseInt(process.env.RATE_LIMIT_LIMIT || '100', 10),
-      
+
       // Endpoint-specific limits
       endpoints: {
         auth: {
@@ -120,7 +115,7 @@ export default registerAs('security', () => {
         },
       },
     },
-    
+
     // CSRF protection
     csrf: {
       enabled: process.env.CSRF_ENABLED !== 'false',
@@ -131,7 +126,7 @@ export default registerAs('security', () => {
         sameSite: 'strict' as const,
       },
     },
-    
+
     // Cookie settings
     cookie: {
       secret: process.env.COOKIE_SECRET,
@@ -140,20 +135,20 @@ export default registerAs('security', () => {
       sameSite: 'strict' as const,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
-    
+
     // Trust proxy configuration
     trustProxy: parseInt(process.env.TRUST_PROXY_HOPS || '1', 10),
-    
+
     // IP whitelist for admin endpoints
     adminIpWhitelist: process.env.ADMIN_IP_WHITELIST?.split(',') || [],
-    
+
     // Brute force protection
     bruteForce: {
       maxAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
       lockoutDuration: parseInt(process.env.LOCKOUT_DURATION || '900', 10), // 15 minutes
       attemptWindow: parseInt(process.env.ATTEMPT_WINDOW || '300', 10), // 5 minutes
     },
-    
+
     // Password policy
     password: {
       minLength: parseInt(process.env.PASSWORD_MIN_LENGTH || '8', 10),
@@ -163,7 +158,7 @@ export default registerAs('security', () => {
       requireSpecialChars: true,
       preventCommonPasswords: true,
     },
-    
+
     // Session settings
     session: {
       maxConcurrentSessions: parseInt(process.env.MAX_CONCURRENT_SESSIONS || '5', 10),

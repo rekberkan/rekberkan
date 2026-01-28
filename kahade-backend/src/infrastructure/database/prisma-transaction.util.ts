@@ -9,10 +9,17 @@ import { Logger } from '@nestjs/common';
 
 const logger = new Logger('PrismaTransaction');
 
+// Define TransactionOptions locally since it's not exported from Prisma
+export interface TransactionOptions {
+  maxWait?: number;
+  timeout?: number;
+  isolationLevel?: Prisma.TransactionIsolationLevel;
+}
+
 /**
  * Default transaction options
  */
-export const DEFAULT_TRANSACTION_OPTIONS: Prisma.TransactionOptions = {
+export const DEFAULT_TRANSACTION_OPTIONS: TransactionOptions = {
   maxWait: 10000, // Maximum time to wait for a transaction slot (10s)
   timeout: 30000, // Maximum time for the transaction to complete (30s)
   isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
@@ -22,7 +29,7 @@ export const DEFAULT_TRANSACTION_OPTIONS: Prisma.TransactionOptions = {
  * Transaction options for financial operations
  * Uses Serializable isolation to prevent race conditions
  */
-export const FINANCIAL_TRANSACTION_OPTIONS: Prisma.TransactionOptions = {
+export const FINANCIAL_TRANSACTION_OPTIONS: TransactionOptions = {
   maxWait: 15000, // 15s wait for slot
   timeout: 60000, // 60s timeout for complex financial operations
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
@@ -31,7 +38,7 @@ export const FINANCIAL_TRANSACTION_OPTIONS: Prisma.TransactionOptions = {
 /**
  * Transaction options for read-heavy operations
  */
-export const READ_TRANSACTION_OPTIONS: Prisma.TransactionOptions = {
+export const READ_TRANSACTION_OPTIONS: TransactionOptions = {
   maxWait: 5000, // 5s wait
   timeout: 15000, // 15s timeout
   isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
@@ -47,26 +54,24 @@ export const READ_TRANSACTION_OPTIONS: Prisma.TransactionOptions = {
 export async function executeWithRetry<T>(
   prisma: PrismaClient,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
-  options: Prisma.TransactionOptions = DEFAULT_TRANSACTION_OPTIONS,
+  options: TransactionOptions = DEFAULT_TRANSACTION_OPTIONS,
   maxRetries = 3,
 ): Promise<T> {
   let lastError: Error | null = null;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await prisma.$transaction(fn, options);
     } catch (error) {
       lastError = error as Error;
-      
+
       // Check if error is retryable
       if (!isRetryableError(error)) {
         throw error;
       }
-      
-      logger.warn(
-        `Transaction attempt ${attempt}/${maxRetries} failed: ${error.message}`,
-      );
-      
+
+      logger.warn(`Transaction attempt ${attempt}/${maxRetries} failed: ${error.message}`);
+
       if (attempt < maxRetries) {
         // Exponential backoff with jitter
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
@@ -75,7 +80,7 @@ export async function executeWithRetry<T>(
       }
     }
   }
-  
+
   throw lastError;
 }
 
@@ -99,27 +104,27 @@ function isRetryableError(error: any): boolean {
     'P2024', // Timed out fetching a new connection from the connection pool
     'P2034', // Transaction failed due to a write conflict or a deadlock
   ];
-  
+
   if (error.code && retryableCodes.includes(error.code)) {
     return true;
   }
-  
+
   // PostgreSQL error codes that are retryable
   const pgRetryableCodes = [
     '40001', // Serialization failure
     '40P01', // Deadlock detected
     '57014', // Query cancelled
   ];
-  
+
   if (error.meta?.code && pgRetryableCodes.includes(error.meta.code)) {
     return true;
   }
-  
+
   // Check for timeout errors
   if (error.message?.includes('timed out') || error.message?.includes('timeout')) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -142,14 +147,14 @@ export async function withOptimisticLock<T extends { version: number }>(
   updateFn: () => Promise<T>,
 ): Promise<T> {
   const result = await updateFn();
-  
+
   if (result.version !== currentVersion + 1) {
     throw new Error(
       `Optimistic lock failed for ${tableName}:${id}. ` +
-      `Expected version ${currentVersion + 1}, got ${result.version}`,
+        `Expected version ${currentVersion + 1}, got ${result.version}`,
     );
   }
-  
+
   return result;
 }
 
@@ -163,15 +168,12 @@ export async function withPessimisticLock<T>(
   updateFn: (locked: T) => Promise<T>,
 ): Promise<T> {
   // Execute SELECT FOR UPDATE to acquire lock
-  const [locked] = await tx.$queryRawUnsafe<T[]>(
-    `${query} FOR UPDATE`,
-    ...params,
-  );
-  
+  const [locked] = await tx.$queryRawUnsafe<T[]>(`${query} FOR UPDATE`, ...params);
+
   if (!locked) {
     throw new Error('Record not found for pessimistic lock');
   }
-  
+
   return updateFn(locked);
 }
 
@@ -182,16 +184,13 @@ export async function withPessimisticLock<T>(
 export async function batchTransaction<T>(
   prisma: PrismaClient,
   operations: Array<(tx: Prisma.TransactionClient) => Promise<any>>,
-  options: Prisma.TransactionOptions = DEFAULT_TRANSACTION_OPTIONS,
+  options: TransactionOptions = DEFAULT_TRANSACTION_OPTIONS,
 ): Promise<T[]> {
-  return prisma.$transaction(
-    async (tx) => {
-      const results: T[] = [];
-      for (const operation of operations) {
-        results.push(await operation(tx));
-      }
-      return results;
-    },
-    options,
-  );
+  return prisma.$transaction(async (tx) => {
+    const results: T[] = [];
+    for (const operation of operations) {
+      results.push(await operation(tx));
+    }
+    return results;
+  }, options);
 }

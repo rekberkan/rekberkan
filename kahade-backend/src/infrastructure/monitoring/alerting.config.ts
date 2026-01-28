@@ -38,7 +38,7 @@ export const alertRules: AlertRule[] = [
     duration: 300,
     severity: 'warning',
   },
-  
+
   // Latency alerts
   {
     name: 'HighLatency',
@@ -58,7 +58,7 @@ export const alertRules: AlertRule[] = [
     duration: 300,
     severity: 'warning',
   },
-  
+
   // Database alerts
   {
     name: 'DatabaseConnectionPoolExhausted',
@@ -78,7 +78,7 @@ export const alertRules: AlertRule[] = [
     duration: 300,
     severity: 'warning',
   },
-  
+
   // Cache alerts
   {
     name: 'LowCacheHitRate',
@@ -89,7 +89,7 @@ export const alertRules: AlertRule[] = [
     duration: 600,
     severity: 'warning',
   },
-  
+
   // Business alerts
   {
     name: 'HighDisputeRate',
@@ -109,7 +109,7 @@ export const alertRules: AlertRule[] = [
     duration: 1800,
     severity: 'warning',
   },
-  
+
   // Authentication alerts
   {
     name: 'HighLoginFailureRate',
@@ -135,32 +135,39 @@ export const alertRules: AlertRule[] = [
  * Prometheus alerting rules format
  */
 export function generatePrometheusAlertRules(): string {
-  const groups = [{
-    name: 'kahade-alerts',
-    rules: alertRules.map(rule => ({
-      alert: rule.name,
-      expr: `${rule.metric} ${getOperator(rule.condition)} ${rule.threshold}`,
-      for: `${rule.duration}s`,
-      labels: {
-        severity: rule.severity,
-        ...rule.labels,
-      },
-      annotations: {
-        summary: rule.description,
-        description: `${rule.name}: ${rule.description}`,
-      },
-    })),
-  }];
+  const groups = [
+    {
+      name: 'kahade-alerts',
+      rules: alertRules.map((rule) => ({
+        alert: rule.name,
+        expr: `${rule.metric} ${getOperator(rule.condition)} ${rule.threshold}`,
+        for: `${rule.duration}s`,
+        labels: {
+          severity: rule.severity,
+          ...rule.labels,
+        },
+        annotations: {
+          summary: rule.description,
+          description: `${rule.name}: ${rule.description}`,
+        },
+      })),
+    },
+  ];
 
   return `groups:\n${JSON.stringify(groups, null, 2)}`;
 }
 
 function getOperator(condition: AlertRule['condition']): string {
   switch (condition) {
-    case 'gt': return '>';
-    case 'lt': return '<';
-    case 'eq': return '==';
-    case 'gte': return '>=';
-    case 'lte': return '<=';
+    case 'gt':
+      return '>';
+    case 'lt':
+      return '<';
+    case 'eq':
+      return '==';
+    case 'gte':
+      return '>=';
+    case 'lte':
+      return '<=';
   }
 }

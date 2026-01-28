@@ -9,44 +9,44 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('logger', () => ({
   // Log level based on environment
   level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-  
+
   // Log file paths
   logFile: process.env.LOG_FILE || 'logs/application.log',
   errorLogFile: process.env.ERROR_LOG_FILE || 'logs/error.log',
-  
+
   // Log rotation settings
   rotation: {
     // Maximum size of each log file before rotation
     maxSize: process.env.LOG_MAX_SIZE || '20m', // 20 MB
-    
+
     // Maximum number of days to keep log files
     maxDays: parseInt(process.env.LOG_MAX_DAYS || '14', 10), // 14 days
-    
+
     // Maximum number of files to keep
     maxFiles: parseInt(process.env.LOG_MAX_FILES || '14', 10), // 14 files
-    
+
     // Date pattern for rotated files
     datePattern: 'YYYY-MM-DD',
-    
+
     // Compress rotated files
     compress: process.env.LOG_COMPRESS !== 'false', // true by default
-    
+
     // Frequency of rotation
     frequency: process.env.LOG_FREQUENCY || 'daily', // daily, hourly, etc.
   },
-  
+
   // Console output settings
   console: {
     enabled: process.env.LOG_CONSOLE !== 'false', // true by default
     colorize: process.env.NODE_ENV !== 'production',
   },
-  
+
   // JSON format for production (easier to parse by log aggregators)
   json: process.env.NODE_ENV === 'production',
-  
+
   // Include timestamp in logs
   timestamp: true,
-  
+
   // Sensitive data patterns to mask in logs
   maskPatterns: [
     // Passwords
@@ -71,9 +71,11 @@ export default registerAs('logger', () => ({
 import * as winston from 'winston';
 import * as DailyRotateFile from 'winston-daily-rotate-file';
 
-export function createWinstonTransports(config: ReturnType<typeof import('./logger.config').default>) {
+export function createWinstonTransports(
+  config: ReturnType<typeof import('./logger.config').default>,
+) {
   const transports: winston.transport[] = [];
-  
+
   // Console transport
   if (config.console?.enabled) {
     transports.push(
@@ -89,7 +91,7 @@ export function createWinstonTransports(config: ReturnType<typeof import('./logg
       }),
     );
   }
-  
+
   // File transport with rotation
   if (config.logFile) {
     transports.push(
@@ -106,7 +108,7 @@ export function createWinstonTransports(config: ReturnType<typeof import('./logg
       }),
     );
   }
-  
+
   // Error file transport
   if (config.errorLogFile) {
     transports.push(
@@ -124,6 +126,6 @@ export function createWinstonTransports(config: ReturnType<typeof import('./logg
       }),
     );
   }
-  
+
   return transports;
 }

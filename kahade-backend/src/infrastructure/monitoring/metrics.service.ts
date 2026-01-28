@@ -44,7 +44,7 @@ export class MetricsService implements OnModuleInit {
   private readonly gauges = new Map<string, number>();
   private readonly histograms = new Map<string, HistogramBuckets>();
   private readonly labels = new Map<string, Record<string, string>>();
-  
+
   // Default histogram buckets for response times (in ms)
   private readonly defaultBuckets = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 
@@ -63,17 +63,17 @@ export class MetricsService implements OnModuleInit {
     // HTTP metrics
     this.createCounter('http_requests_total', { method: '', path: '', status: '' });
     this.createHistogram('http_request_duration_ms', { method: '', path: '' });
-    
+
     // Database metrics
     this.createCounter('db_queries_total', { operation: '' });
     this.createHistogram('db_query_duration_ms', { operation: '' });
     this.createGauge('db_pool_connections_active', {});
     this.createGauge('db_pool_connections_idle', {});
-    
+
     // Cache metrics
     this.createCounter('cache_hits_total', {});
     this.createCounter('cache_misses_total', {});
-    
+
     // Business metrics
     this.createCounter('orders_created_total', { category: '' });
     this.createCounter('escrow_released_total', {});
@@ -81,12 +81,12 @@ export class MetricsService implements OnModuleInit {
     this.createCounter('disputes_opened_total', {});
     this.createGauge('active_escrows_count', {});
     this.createGauge('pending_withdrawals_count', {});
-    
+
     // Auth metrics
     this.createCounter('auth_login_success_total', {});
     this.createCounter('auth_login_failed_total', {});
     this.createCounter('auth_register_total', {});
-    
+
     // Error metrics
     this.createCounter('errors_total', { type: '', code: '' });
   }
@@ -173,15 +173,15 @@ export class MetricsService implements OnModuleInit {
   observeHistogram(name: string, value: number, labels: Record<string, string> = {}): void {
     const key = this.buildKey(name, labels);
     let histogram = this.histograms.get(key);
-    
+
     if (!histogram) {
       this.createHistogram(name, labels);
       histogram = this.histograms.get(key)!;
     }
-    
+
     histogram.sum += value;
     histogram.count += 1;
-    
+
     for (let i = 0; i < histogram.buckets.length; i++) {
       if (value <= histogram.buckets[i]) {
         histogram.values[i] += 1;
@@ -192,12 +192,7 @@ export class MetricsService implements OnModuleInit {
   /**
    * Record HTTP request metrics
    */
-  recordHttpRequest(
-    method: string,
-    path: string,
-    statusCode: number,
-    durationMs: number,
-  ): void {
+  recordHttpRequest(method: string, path: string, statusCode: number, durationMs: number): void {
     const labels = { method, path, status: statusCode.toString() };
     this.incrementCounter('http_requests_total', labels);
     this.observeHistogram('http_request_duration_ms', durationMs, { method, path });
@@ -254,19 +249,37 @@ export class MetricsService implements OnModuleInit {
     for (const [key, histogram] of this.histograms) {
       const [name] = key.split('{');
       const labels = this.labels.get(key) || {};
-      
+
       // Bucket values
       for (let i = 0; i < histogram.buckets.length; i++) {
         const bucketLabels = { ...labels, le: histogram.buckets[i].toString() };
-        lines.push(this.formatMetric(`${name}_bucket`, 'histogram', histogram.values[i], bucketLabels, timestamp));
+        lines.push(
+          this.formatMetric(
+            `${name}_bucket`,
+            'histogram',
+            histogram.values[i],
+            bucketLabels,
+            timestamp,
+          ),
+        );
       }
-      
+
       // +Inf bucket
-      lines.push(this.formatMetric(`${name}_bucket`, 'histogram', histogram.count, { ...labels, le: '+Inf' }, timestamp));
-      
+      lines.push(
+        this.formatMetric(
+          `${name}_bucket`,
+          'histogram',
+          histogram.count,
+          { ...labels, le: '+Inf' },
+          timestamp,
+        ),
+      );
+
       // Sum and count
       lines.push(this.formatMetric(`${name}_sum`, 'histogram', histogram.sum, labels, timestamp));
-      lines.push(this.formatMetric(`${name}_count`, 'histogram', histogram.count, labels, timestamp));
+      lines.push(
+        this.formatMetric(`${name}_count`, 'histogram', histogram.count, labels, timestamp),
+      );
     }
 
     return lines.join('\n');

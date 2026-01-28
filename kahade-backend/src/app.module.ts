@@ -66,10 +66,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
         paymentConfig,
         queueConfig,
       ],
-      envFilePath: [
-        `.env.${process.env.NODE_ENV || 'development'}`,
-        '.env',
-      ],
+      envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
     }),
 
     // Rate Limiting - Fix #23: Increased default from 10 to 100
@@ -77,10 +74,12 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        throttlers: [{
-          ttl: config.get<number>('app.rateLimit.ttl') || 60,
-          limit: config.get<number>('app.rateLimit.limit') || 100, // Fixed: Increased from 10 to 100
-        }],
+        throttlers: [
+          {
+            ttl: config.get<number>('app.rateLimit.ttl') || 60,
+            limit: config.get<number>('app.rateLimit.limit') || 100, // Fixed: Increased from 10 to 100
+          },
+        ],
       }),
     }),
 

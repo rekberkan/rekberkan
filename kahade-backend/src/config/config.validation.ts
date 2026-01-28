@@ -1,5 +1,15 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString, Min, Max, validateSync, IsBoolean, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  Max,
+  validateSync,
+  IsBoolean,
+  MinLength,
+} from 'class-validator';
 
 // ============================================================================
 // ENVIRONMENT CONFIGURATION VALIDATION
@@ -175,7 +185,7 @@ export function validate(config: Record<string, unknown>) {
   });
 
   if (errors.length > 0) {
-    const errorMessages = errors.map(error => {
+    const errorMessages = errors.map((error) => {
       const constraints = Object.values(error.constraints || {}).join(', ');
       return `${error.property}: ${constraints}`;
     });
@@ -213,11 +223,11 @@ export function validateProductionConfig(config: Record<string, unknown>): void 
     'COOKIE_SECRET',
   ];
 
-  const missingVars = requiredProductionVars.filter(varName => !config[varName]);
+  const missingVars = requiredProductionVars.filter((varName) => !config[varName]);
 
   if (missingVars.length > 0) {
     throw new Error(
-      `CRITICAL: Missing required production environment variables: ${missingVars.join(', ')}`
+      `CRITICAL: Missing required production environment variables: ${missingVars.join(', ')}`,
     );
   }
 
