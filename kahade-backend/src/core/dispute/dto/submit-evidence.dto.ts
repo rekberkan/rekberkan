@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, MinLength, MaxLength, IsNotEmpty, IsEnum, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  IsNotEmpty,
+  IsEnum,
+  IsUrl,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // ============================================================================
@@ -18,7 +26,7 @@ export enum EvidenceType {
 }
 
 export class SubmitEvidenceDto {
-  @ApiProperty({ 
+  @ApiProperty({
     enum: EvidenceType,
     description: 'Type of evidence being submitted',
     example: 'SCREENSHOT',
@@ -27,9 +35,10 @@ export class SubmitEvidenceDto {
   @IsNotEmpty({ message: 'Evidence type is required' })
   type: EvidenceType;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Description of the evidence (10-500 characters)',
-    example: 'Screenshot of the product listing showing different specifications than what was received.',
+    example:
+      'Screenshot of the product listing showing different specifications than what was received.',
     minLength: 10,
     maxLength: 500,
   })
@@ -40,7 +49,7 @@ export class SubmitEvidenceDto {
   @Transform(({ value }) => value?.trim())
   description: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'URL of the uploaded evidence file',
     example: 'https://storage.kahade.com/evidence/123/screenshot.png',
     required: false,

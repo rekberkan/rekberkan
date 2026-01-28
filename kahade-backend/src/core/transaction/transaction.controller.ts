@@ -1,17 +1,25 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Query, 
-  UseGuards, 
-  ParseIntPipe, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
   DefaultValuePipe,
   BadRequestException,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -54,10 +62,25 @@ export class TransactionController {
 
   @Get()
   @ApiOperation({ summary: 'Get all transactions for current user' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+  })
   @ApiQuery({ name: 'status', required: false, type: String, description: 'Filter by status' })
-  @ApiQuery({ name: 'role', required: false, type: String, description: 'Filter by role (buyer/seller)' })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    type: String,
+    description: 'Filter by role (buyer/seller)',
+  })
   async findAll(
     @CurrentUser('id') userId: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -87,10 +110,7 @@ export class TransactionController {
   @ApiParam({ name: 'id', description: 'Transaction ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Returns transaction' })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.transactionService.findOne(id, userId);
   }
 
@@ -105,10 +125,7 @@ export class TransactionController {
   @ApiResponse({ status: 200, description: 'Transaction accepted' })
   @ApiResponse({ status: 400, description: 'Cannot accept - invalid status' })
   @ApiResponse({ status: 403, description: 'Not authorized to accept' })
-  async accept(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async accept(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.transactionService.accept(id, userId);
   }
 
@@ -137,10 +154,7 @@ export class TransactionController {
   @ApiResponse({ status: 200, description: 'Payment successful' })
   @ApiResponse({ status: 400, description: 'Cannot pay - insufficient balance or invalid status' })
   @ApiResponse({ status: 403, description: 'Only buyer can pay' })
-  async pay(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async pay(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.transactionService.pay(id, userId);
   }
 
@@ -148,7 +162,14 @@ export class TransactionController {
   @Throttle({ default: { limit: 30, ttl: 3600000 } })
   @ApiOperation({ summary: 'Confirm delivery (seller)' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
-  @ApiBody({ schema: { properties: { proofUrl: { type: 'string', format: 'uri' }, notes: { type: 'string', maxLength: 500 } } } })
+  @ApiBody({
+    schema: {
+      properties: {
+        proofUrl: { type: 'string', format: 'uri' },
+        notes: { type: 'string', maxLength: 500 },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Delivery confirmed' })
   @ApiResponse({ status: 403, description: 'Only seller can confirm delivery' })
   async confirmDelivery(
@@ -174,10 +195,7 @@ export class TransactionController {
   @ApiParam({ name: 'id', description: 'Transaction ID' })
   @ApiResponse({ status: 200, description: 'Receipt confirmed, funds released to seller' })
   @ApiResponse({ status: 403, description: 'Only buyer can confirm receipt' })
-  async confirmReceipt(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async confirmReceipt(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.transactionService.confirmReceipt(id, userId);
   }
 
@@ -185,14 +203,14 @@ export class TransactionController {
   @Throttle({ default: { limit: 5, ttl: 3600000 } }) // Very strict limit for disputes
   @ApiOperation({ summary: 'Open dispute for transaction' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
-  @ApiBody({ 
-    schema: { 
-      properties: { 
+  @ApiBody({
+    schema: {
+      properties: {
         reason: { type: 'string', minLength: 10, maxLength: 100 },
         description: { type: 'string', minLength: 20, maxLength: 2000 },
       },
       required: ['reason', 'description'],
-    } 
+    },
   })
   @ApiResponse({ status: 200, description: 'Dispute opened' })
   @ApiResponse({ status: 400, description: 'Cannot dispute - invalid status' })
@@ -244,10 +262,7 @@ export class TransactionController {
   @ApiOperation({ summary: 'Get transaction timeline' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
   @ApiResponse({ status: 200, description: 'Returns transaction timeline' })
-  async getTimeline(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async getTimeline(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.transactionService.getTimeline(id, userId);
   }
 
@@ -255,10 +270,7 @@ export class TransactionController {
   @ApiOperation({ summary: 'Get transaction messages' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
   @ApiResponse({ status: 200, description: 'Returns transaction messages' })
-  async getMessages(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async getMessages(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.transactionService.getMessages(id, userId);
   }
 
@@ -266,7 +278,9 @@ export class TransactionController {
   @Throttle({ default: { limit: 60, ttl: 60000 } }) // 60 messages per minute
   @ApiOperation({ summary: 'Send message in transaction' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
-  @ApiBody({ schema: { properties: { message: { type: 'string', minLength: 1, maxLength: 1000 } } } })
+  @ApiBody({
+    schema: { properties: { message: { type: 'string', minLength: 1, maxLength: 1000 } } },
+  })
   @ApiResponse({ status: 201, description: 'Message sent' })
   async sendMessage(
     @Param('id') id: string,

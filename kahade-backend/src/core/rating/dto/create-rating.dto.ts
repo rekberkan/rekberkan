@@ -1,5 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString, IsOptional, Min, Max, MinLength, MaxLength, IsNotEmpty, IsUUID } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsOptional,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+  IsNotEmpty,
+  IsUUID,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // ============================================================================
@@ -7,7 +17,7 @@ import { Transform } from 'class-transformer';
 // ============================================================================
 
 export class CreateRatingDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Transaction/Order ID to rate',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
@@ -15,7 +25,7 @@ export class CreateRatingDto {
   @IsNotEmpty({ message: 'Order ID is required' })
   orderId: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Rating score (1-5)',
     minimum: 1,
     maximum: 5,
@@ -26,7 +36,7 @@ export class CreateRatingDto {
   @Max(5, { message: 'Maximum rating is 5' })
   score: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Optional review comment (10-500 characters)',
     example: 'Great seller! Fast delivery and item as described.',
     required: false,

@@ -1,9 +1,9 @@
 import {
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  UseGuards, 
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -11,7 +11,14 @@ import {
   Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PrismaService } from '@infrastructure/database/prisma.service';
@@ -53,7 +60,10 @@ export class KycController {
     return crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
-  private async saveFile(file: Express.Multer.File, userId: string): Promise<{ path: string; hash: string }> {
+  private async saveFile(
+    file: Express.Multer.File,
+    userId: string,
+  ): Promise<{ path: string; hash: string }> {
     const userDir = path.join(UPLOAD_DIR, 'kyc', userId);
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
@@ -106,16 +116,21 @@ export class KycController {
   }
 
   @Post('submit')
-  @UseInterceptors(FileInterceptor('document', {
-    storage: memoryStorage(),
-    limits: { fileSize: MAX_FILE_SIZE },
-    fileFilter: (req, file, callback) => {
-      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-        return callback(new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF'), false);
-      }
-      callback(null, true);
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor('document', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_FILE_SIZE },
+      fileFilter: (req, file, callback) => {
+        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
   @ApiOperation({ summary: 'Submit KYC document' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -137,7 +152,8 @@ export class KycController {
   async submitKyc(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: {
+    @Body()
+    body: {
       documentType: string;
       fullName: string;
       idNumber: string;
@@ -249,12 +265,9 @@ export class KycController {
   @Get('submissions/:id')
   @ApiOperation({ summary: 'Get KYC submission details' })
   @ApiResponse({ status: 200, description: 'Returns KYC submission details' })
-  async getSubmission(
-    @CurrentUser('id') userId: string,
-    @Param('id') submissionId: string,
-  ) {
+  async getSubmission(@CurrentUser('id') userId: string, @Param('id') submissionId: string) {
     const submission = await this.prisma.kYCSubmission.findFirst({
-      where: { 
+      where: {
         id: submissionId,
         userId, // Ensure user can only access their own submissions
       },

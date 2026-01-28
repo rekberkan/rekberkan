@@ -1,6 +1,25 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UploadKycDto } from './dto/upload-kyc.dto';
@@ -32,10 +51,7 @@ export class UserController {
   @Patch('profile')
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  async updateProfile(
-    @CurrentUser('id') userId: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
+  async updateProfile(@CurrentUser('id') userId: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(userId, updateUserDto);
   }
 
@@ -53,16 +69,21 @@ export class UserController {
   @ApiOperation({ summary: 'Upload KYC documents' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'KYC documents uploaded' })
-  @UseInterceptors(FileInterceptor('document', {
-    storage: memoryStorage(),
-    limits: { fileSize: MAX_FILE_SIZE },
-    fileFilter: (req, file, callback) => {
-      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-        return callback(new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF'), false);
-      }
-      callback(null, true);
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor('document', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_FILE_SIZE },
+      fileFilter: (req, file, callback) => {
+        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, PDF'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
   async uploadKYC(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
@@ -85,10 +106,7 @@ export class UserController {
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 200, description: 'Avatar updated successfully' })
   @UseInterceptors(FileInterceptor('avatar', { storage: memoryStorage() }))
-  async uploadAvatar(
-    @CurrentUser('id') userId: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async uploadAvatar(@CurrentUser('id') userId: string, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('Avatar file is required');
     }

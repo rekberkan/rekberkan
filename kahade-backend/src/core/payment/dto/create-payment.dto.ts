@@ -41,6 +41,15 @@ export class CreatePaymentDto {
   @Max(100000000, { message: 'Maximum top-up is Rp 100,000,000' })
   amountMinor: number;
 
+  @ApiPropertyOptional({
+    description: 'Currency code',
+    example: 'IDR',
+    default: 'IDR',
+  })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
   @ApiProperty({
     description: 'Payment method',
     enum: PaymentMethod,

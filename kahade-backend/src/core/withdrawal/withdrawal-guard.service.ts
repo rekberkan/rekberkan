@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { KYCStatus } from '@common/shims/prisma-types.shim';
+import { KYCStatus } from '@prisma/client';
 
 // ============================================================================
 // BANK-GRADE WITHDRAWAL GUARD SERVICE
@@ -24,7 +24,10 @@ export interface IWithdrawalLimitCheck {
 }
 
 // Default limits based on KYC status
-const DEFAULT_LIMITS: Record<KYCStatus, { dailyLimitMinor: bigint; perTxLimitMinor: bigint; monthlyLimitMinor: bigint }> = {
+const DEFAULT_LIMITS: Record<
+  KYCStatus,
+  { dailyLimitMinor: bigint; perTxLimitMinor: bigint; monthlyLimitMinor: bigint }
+> = {
   [KYCStatus.NONE]: {
     dailyLimitMinor: BigInt(5_000_000 * 100),
     perTxLimitMinor: BigInt(1_000_000 * 100),
@@ -58,10 +61,7 @@ export class WithdrawalGuardService {
   /**
    * Check if user can withdraw the requested amount
    */
-  async checkWithdrawalLimits(
-    userId: string,
-    amountMinor: bigint,
-  ): Promise<IWithdrawalLimitCheck> {
+  async checkWithdrawalLimits(userId: string, amountMinor: bigint): Promise<IWithdrawalLimitCheck> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { kycStatus: true },
@@ -75,7 +75,7 @@ export class WithdrawalGuardService {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const todayWithdrawals = await this.prisma.withdrawal.aggregate({
       where: {
         userId,
@@ -86,7 +86,7 @@ export class WithdrawalGuardService {
     });
 
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    
+
     const monthWithdrawals = await this.prisma.withdrawal.aggregate({
       where: {
         userId,
@@ -166,7 +166,10 @@ export class WithdrawalGuardService {
       };
     }
 
-    if (minutesSinceLastWithdrawal !== null && minutesSinceLastWithdrawal < DEFAULT_COOLING_PERIOD_MINUTES) {
+    if (
+      minutesSinceLastWithdrawal !== null &&
+      minutesSinceLastWithdrawal < DEFAULT_COOLING_PERIOD_MINUTES
+    ) {
       const minutesRemaining = DEFAULT_COOLING_PERIOD_MINUTES - minutesSinceLastWithdrawal;
       return {
         canWithdraw: false,

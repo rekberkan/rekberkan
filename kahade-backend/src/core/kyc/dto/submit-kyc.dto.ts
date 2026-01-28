@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsDateString, IsOptional, Matches, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  IsDateString,
+  IsOptional,
+  Matches,
+  IsEnum,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // ============================================================================
@@ -13,7 +22,7 @@ export enum KYCDocumentType {
 }
 
 export class SubmitKycDto {
-  @ApiProperty({ 
+  @ApiProperty({
     enum: KYCDocumentType,
     description: 'Type of identity document',
     example: 'KTP',
@@ -22,7 +31,7 @@ export class SubmitKycDto {
   @IsNotEmpty({ message: 'Document type is required' })
   documentType: KYCDocumentType;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Full legal name as shown on document',
     example: 'JOHN DOE',
     minLength: 3,
@@ -36,7 +45,7 @@ export class SubmitKycDto {
   @Transform(({ value }) => value?.toUpperCase().trim())
   fullName: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Identity number (NIK for KTP, 16 digits)',
     example: '3201010101010001',
   })
@@ -45,7 +54,7 @@ export class SubmitKycDto {
   @Matches(/^[0-9]{16}$/, { message: 'ID number must be exactly 16 digits (NIK format)' })
   idNumber: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date of birth (YYYY-MM-DD)',
     example: '1990-01-15',
   })
@@ -53,7 +62,7 @@ export class SubmitKycDto {
   @IsNotEmpty({ message: 'Date of birth is required' })
   dateOfBirth: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Address as shown on document',
     example: 'Jl. Sudirman No. 123, Jakarta Selatan',
     required: false,
@@ -65,7 +74,7 @@ export class SubmitKycDto {
   @Transform(({ value }) => value?.trim())
   address?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'URL of uploaded document image',
     example: 'https://storage.kahade.com/kyc/user123/ktp.jpg',
   })
@@ -74,7 +83,7 @@ export class SubmitKycDto {
   @MaxLength(500, { message: 'Document URL is too long' })
   documentUrl: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'URL of selfie with document',
     example: 'https://storage.kahade.com/kyc/user123/selfie.jpg',
     required: false,

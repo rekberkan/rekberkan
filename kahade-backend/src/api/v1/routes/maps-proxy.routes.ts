@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 
 /**
  * Google Maps API Proxy
- * 
+ *
  * SECURITY IMPROVEMENTS:
  * - Hides Google Maps API key from frontend
  * - Prevents API key extraction from client-side code
@@ -11,7 +11,7 @@ import { Router, Request, Response, NextFunction } from 'express';
  * - Input validation for all parameters
  * - SSRF protection with URL validation
  * - Response caching to reduce API costs
- * 
+ *
  * USAGE FROM FRONTEND:
  * Instead of: https://maps.googleapis.com/maps/api/js?key=YOUR_KEY
  * Use: /api/v1/maps/proxy/js?libraries=marker,places
@@ -30,7 +30,14 @@ const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100; // 100 requests per minute per IP
 
 // Allowed libraries for Google Maps
-const ALLOWED_LIBRARIES = ['marker', 'places', 'geometry', 'drawing', 'visualization', 'localContext'];
+const ALLOWED_LIBRARIES = [
+  'marker',
+  'places',
+  'geometry',
+  'drawing',
+  'visualization',
+  'localContext',
+];
 
 // Allowed languages
 const ALLOWED_LANGUAGES = ['en', 'id', 'zh', 'ja', 'ko', 'th', 'vi', 'ms'];
@@ -44,15 +51,15 @@ const ALLOWED_VERSIONS = ['weekly', 'quarterly', 'beta'];
 const rateLimiter = (req: Request, res: Response, next: NextFunction): void => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
-  
+
   const clientData = rateLimitMap.get(clientIp);
-  
+
   if (!clientData || now > clientData.resetAt) {
     rateLimitMap.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     next();
     return;
   }
-  
+
   if (clientData.count >= RATE_LIMIT_MAX_REQUESTS) {
     res.status(429).json({
       error: 'Too many requests',
@@ -60,7 +67,7 @@ const rateLimiter = (req: Request, res: Response, next: NextFunction): void => {
     });
     return;
   }
-  
+
   clientData.count++;
   next();
 };
@@ -80,18 +87,21 @@ const sanitizeInput = (input: unknown, maxLength: number = MAX_INPUT_LENGTH): st
  */
 const validateLibraries = (libraries: string): string | null => {
   if (!libraries) return '';
-  const libArray = libraries.split(',').map(l => l.trim().toLowerCase());
-  const validLibs = libArray.filter(l => ALLOWED_LIBRARIES.includes(l));
+  const libArray = libraries.split(',').map((l) => l.trim().toLowerCase());
+  const validLibs = libArray.filter((l) => ALLOWED_LIBRARIES.includes(l));
   return validLibs.join(',');
 };
 
 /**
  * Fetch with timeout
  */
-const fetchWithTimeout = async (url: string, timeoutMs: number = REQUEST_TIMEOUT_MS): Promise<globalThis.Response> => {
+const fetchWithTimeout = async (
+  url: string,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<globalThis.Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     const response = await fetch(url, { signal: controller.signal });
     return response;
@@ -109,7 +119,7 @@ router.get('/health', (_req: Request, res: Response) => {
 router.get('/js', rateLimiter, async (req: Request, res: Response) => {
   try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    
+
     if (!apiKey) {
       // Don't leak configuration details
       console.error('Google Maps API key not configured');
@@ -123,7 +133,7 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
     const rawLibraries = sanitizeInput(req.query.libraries);
     const rawVersion = sanitizeInput(req.query.v);
     const rawLanguage = sanitizeInput(req.query.language);
-    
+
     const libraries = rawLibraries ? validateLibraries(rawLibraries) : '';
     const version = rawVersion && ALLOWED_VERSIONS.includes(rawVersion) ? rawVersion : 'weekly';
     const language = rawLanguage && ALLOWED_LANGUAGES.includes(rawLanguage) ? rawLanguage : 'en';
@@ -133,7 +143,7 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
 
     // Fetch from Google Maps API with timeout
     const response = await fetchWithTimeout(mapsUrl);
-    
+
     if (!response.ok) {
       console.error(`Google Maps API error: ${response.status}`);
       res.status(502).json({
@@ -141,14 +151,14 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     const script = await response.text();
 
     // Set appropriate headers
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     res.setHeader('Cache-Control', `public, max-age=${CACHE_MAX_AGE_SECONDS}`);
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    
+
     res.send(script);
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
@@ -158,7 +168,7 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     console.error('Maps proxy error:', error);
     res.status(500).json({
       error: 'Internal server error',
@@ -170,7 +180,7 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
 router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
   try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    
+
     if (!apiKey) {
       console.error('Google Maps API key not configured');
       res.status(503).json({
@@ -180,7 +190,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
     }
 
     const address = sanitizeInput(req.query.address);
-    
+
     if (!address) {
       res.status(400).json({
         error: 'Valid address parameter is required',
@@ -192,7 +202,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
 
     const response = await fetchWithTimeout(geocodeUrl);
-    
+
     if (!response.ok) {
       console.error(`Geocoding API error: ${response.status}`);
       res.status(502).json({
@@ -200,7 +210,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     const data = await response.json();
 
     // Cache geocoding results
@@ -213,7 +223,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     console.error('Geocoding proxy error:', error);
     res.status(500).json({
       error: 'Internal server error',
@@ -225,7 +235,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
 router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Response) => {
   try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    
+
     if (!apiKey) {
       console.error('Google Maps API key not configured');
       res.status(503).json({
@@ -235,7 +245,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
     }
 
     const input = sanitizeInput(req.query.input);
-    
+
     if (!input || input.length < 2) {
       res.status(400).json({
         error: 'Valid input parameter is required (minimum 2 characters)',
@@ -247,7 +257,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
     const placesUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}`;
 
     const response = await fetchWithTimeout(placesUrl);
-    
+
     if (!response.ok) {
       console.error(`Places API error: ${response.status}`);
       res.status(502).json({
@@ -255,7 +265,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
       });
       return;
     }
-    
+
     const data = await response.json();
 
     // Short cache for autocomplete (results change frequently)
@@ -268,7 +278,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
       });
       return;
     }
-    
+
     console.error('Places proxy error:', error);
     res.status(500).json({
       error: 'Internal server error',

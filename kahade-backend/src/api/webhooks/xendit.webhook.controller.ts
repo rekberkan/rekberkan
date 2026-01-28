@@ -50,10 +50,7 @@ export class XenditWebhookController {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    this.webhookToken = this.configService.get<string>(
-      'XENDIT_WEBHOOK_VERIFICATION_TOKEN',
-      '',
-    );
+    this.webhookToken = this.configService.get<string>('XENDIT_WEBHOOK_VERIFICATION_TOKEN', '');
 
     if (!this.webhookToken) {
       this.logger.warn(
@@ -326,10 +323,7 @@ export class XenditWebhookController {
     }
 
     try {
-      return crypto.timingSafeEqual(
-        Buffer.from(callbackToken),
-        Buffer.from(this.webhookToken),
-      );
+      return crypto.timingSafeEqual(Buffer.from(callbackToken), Buffer.from(this.webhookToken));
     } catch (error) {
       this.logger.error(`Callback token comparison error: ${error.message}`);
       return false;
@@ -339,25 +333,15 @@ export class XenditWebhookController {
   /**
    * BANK-GRADE: Verify HMAC signature (for some Xendit endpoints)
    */
-  private verifyHmacSignature(
-    payload: string,
-    signature: string,
-    secret: string,
-  ): boolean {
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(payload)
-      .digest('hex');
+  private verifyHmacSignature(payload: string, signature: string, secret: string): boolean {
+    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
 
     if (signature.length !== expectedSignature.length) {
       return false;
     }
 
     try {
-      return crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expectedSignature),
-      );
+      return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
     } catch (error) {
       this.logger.error(`HMAC comparison error: ${error.message}`);
       return false;
@@ -394,20 +378,20 @@ export class XenditWebhookController {
       });
 
       if (!paymentByExternal) {
-        throw new BadRequestException(
-          `Payment not found for invoice ${payload.id}`,
-        );
+        throw new BadRequestException(`Payment not found for invoice ${payload.id}`);
       }
     }
 
-    const targetPayment = payment ?? (await this.prisma.payment.findFirst({
-      where: {
-        paymentDetails: {
-          path: ['external_id'],
-          equals: external_id,
+    const targetPayment =
+      payment ??
+      (await this.prisma.payment.findFirst({
+        where: {
+          paymentDetails: {
+            path: ['external_id'],
+            equals: external_id,
+          },
         },
-      },
-    }));
+      }));
 
     if (!targetPayment) {
       throw new BadRequestException('Payment not found');
@@ -457,18 +441,13 @@ export class XenditWebhookController {
       }
     });
 
-    this.logger.log(
-      `Processed invoice callback for payment ${targetPayment.id}: ${status}`,
-    );
+    this.logger.log(`Processed invoice callback for payment ${targetPayment.id}: ${status}`);
   }
 
   /**
    * Process disbursement callback (withdrawal completed)
    */
-  private async processDisbursementCallback(
-    payload: any,
-    webhookEventId: string,
-  ): Promise<void> {
+  private async processDisbursementCallback(payload: any, webhookEventId: string): Promise<void> {
     const { id, external_id, status, amount } = payload;
 
     // Find withdrawal by provider disbursement ID
@@ -517,18 +496,13 @@ export class XenditWebhookController {
       }
     });
 
-    this.logger.log(
-      `Processed disbursement callback for withdrawal ${withdrawal.id}: ${status}`,
-    );
+    this.logger.log(`Processed disbursement callback for withdrawal ${withdrawal.id}: ${status}`);
   }
 
   /**
    * Process VA callback
    */
-  private async processVACallback(
-    payload: any,
-    webhookEventId: string,
-  ): Promise<void> {
+  private async processVACallback(payload: any, webhookEventId: string): Promise<void> {
     // Similar to invoice callback
     await this.processInvoiceCallback(payload, webhookEventId);
   }
@@ -536,10 +510,7 @@ export class XenditWebhookController {
   /**
    * Handle completed payment (trigger deposit/order flow)
    */
-  private async handlePaymentCompleted(
-    paymentId: string,
-    tx: any,
-  ): Promise<void> {
+  private async handlePaymentCompleted(paymentId: string, tx: any): Promise<void> {
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
       include: { deposit: true, order: true },

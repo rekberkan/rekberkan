@@ -60,10 +60,7 @@ export class OrderController {
   @Get()
   @ApiOperation({ summary: 'Get user orders with filters' })
   @ApiResponse({ status: 200, description: 'Returns paginated orders' })
-  async getOrders(
-    @CurrentUser('id') userId: string,
-    @Query() filterDto: OrderFilterDto,
-  ) {
+  async getOrders(@CurrentUser('id') userId: string, @Query() filterDto: OrderFilterDto) {
     return this.orderService.getOrders(userId, filterDto);
   }
 
@@ -133,10 +130,7 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Order accepted successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired invite token' })
   @ApiResponse({ status: 409, description: 'Order already accepted' })
-  async acceptOrder(
-    @CurrentUser('id') userId: string,
-    @Body() acceptOrderDto: AcceptOrderDto,
-  ) {
+  async acceptOrder(@CurrentUser('id') userId: string, @Body() acceptOrderDto: AcceptOrderDto) {
     return this.orderService.acceptOrder(userId, acceptOrderDto);
   }
 

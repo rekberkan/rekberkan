@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { Wallet } from '@common/shims/prisma-types.shim';
+import { Wallet } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { TopUpDto, mapPaymentMethod } from './dto/topup.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
@@ -172,22 +172,28 @@ export class WalletService {
     }
 
     const [deposits, withdrawals, depositCount, withdrawalCount] = await Promise.all([
-      type !== 'withdrawal' ? (this.prisma as any).deposit.findMany({
-        where: depositsWhere,
-        orderBy: { createdAt: 'desc' },
-        include: { payment: true },
-        take: limit,
-        skip: type === 'deposit' ? skip : 0,
-      }) : [],
-      type !== 'deposit' ? (this.prisma as any).withdrawal.findMany({
-        where: { wallet: { userId } },
-        orderBy: { requestedAt: 'desc' },
-        include: { bankAccount: true },
-        take: limit,
-        skip: type === 'withdrawal' ? skip : 0,
-      }) : [],
+      type !== 'withdrawal'
+        ? (this.prisma as any).deposit.findMany({
+            where: depositsWhere,
+            orderBy: { createdAt: 'desc' },
+            include: { payment: true },
+            take: limit,
+            skip: type === 'deposit' ? skip : 0,
+          })
+        : [],
+      type !== 'deposit'
+        ? (this.prisma as any).withdrawal.findMany({
+            where: { wallet: { userId } },
+            orderBy: { requestedAt: 'desc' },
+            include: { bankAccount: true },
+            take: limit,
+            skip: type === 'withdrawal' ? skip : 0,
+          })
+        : [],
       type !== 'withdrawal' ? (this.prisma as any).deposit.count({ where: depositsWhere }) : 0,
-      type !== 'deposit' ? (this.prisma as any).withdrawal.count({ where: { wallet: { userId } } }) : 0,
+      type !== 'deposit'
+        ? (this.prisma as any).withdrawal.count({ where: { wallet: { userId } } })
+        : 0,
     ]);
 
     // Combine and sort transactions
@@ -227,7 +233,10 @@ export class WalletService {
   /**
    * Top up wallet balance
    */
-  async topUp(userId: string, topUpDto: TopUpDto): Promise<{
+  async topUp(
+    userId: string,
+    topUpDto: TopUpDto,
+  ): Promise<{
     id: string;
     amount: number;
     method: string;
@@ -236,7 +245,7 @@ export class WalletService {
     expiresAt: Date;
   }> {
     const { amount, method: rawMethod } = topUpDto;
-    
+
     // Map generic methods to specific ones
     const method = mapPaymentMethod(rawMethod);
 
@@ -261,7 +270,7 @@ export class WalletService {
     const amountMinor = BigInt(Math.round(amount * 100));
     const paymentMethod = method.startsWith('va_')
       ? 'VIRTUAL_ACCOUNT'
-      : (method.startsWith('ewallet_') || method === 'qris')
+      : method.startsWith('ewallet_') || method === 'qris'
         ? 'EWALLET'
         : null;
 
@@ -314,7 +323,10 @@ export class WalletService {
    * Withdraw from wallet
    * Supports both saved bank account (bankAccountId) and direct bank details
    */
-  async withdraw(userId: string, withdrawDto: WithdrawDto): Promise<{
+  async withdraw(
+    userId: string,
+    withdrawDto: WithdrawDto,
+  ): Promise<{
     id: string;
     amount: number;
     netAmount: number;
@@ -367,10 +379,10 @@ export class WalletService {
       finalBankAccountId = bankAccountId;
     } else if (bankCode && accountNumber && accountName) {
       // Create or find bank account with provided details
-      const bankInfo = this.SUPPORTED_BANKS.find(b => b.code === bankCode);
+      const bankInfo = this.SUPPORTED_BANKS.find((b) => b.code === bankCode);
       const bankName = bankInfo?.name || bankCode;
       const accountNumberLast4 = accountNumber.slice(-4);
-      
+
       const existingAccount = await this.prisma.bankAccount.findFirst({
         where: {
           userId,
@@ -387,7 +399,7 @@ export class WalletService {
         // Create new bank account with encrypted data
         // Simple encryption for demo - in production use proper KMS
         const encryptSimple = (text: string) => Buffer.from(text).toString('base64');
-        
+
         bankAccount = await this.prisma.bankAccount.create({
           data: {
             userId,
@@ -403,7 +415,9 @@ export class WalletService {
         finalBankAccountId = bankAccount.id;
       }
     } else {
-      throw new BadRequestException('Either bankAccountId or bank details (bankCode, accountNumber, accountName) are required');
+      throw new BadRequestException(
+        'Either bankAccountId or bank details (bankCode, accountNumber, accountName) are required',
+      );
     }
 
     // Create withdrawal record and lock balance in transaction
@@ -777,10 +791,15 @@ export class WalletService {
   }
 
   private generateVANumber(method: string): string {
-    const prefix = method.includes('bca') ? '1234' : 
-                   method.includes('bni') ? '8808' :
-                   method.includes('mandiri') ? '8908' :
-                   method.includes('bri') ? '2626' : '9999';
+    const prefix = method.includes('bca')
+      ? '1234'
+      : method.includes('bni')
+        ? '8808'
+        : method.includes('mandiri')
+          ? '8908'
+          : method.includes('bri')
+            ? '2626'
+            : '9999';
     const random = Math.random().toString().substring(2, 14);
     return `${prefix}${random}`;
   }
@@ -878,10 +897,10 @@ export class WalletService {
         netAmount: Number(w.amountMinor) / 100,
         bankAccount: w.bankAccount
           ? {
-            id: w.bankAccount.id,
-            bankName: w.bankAccount.bankName,
-            accountNumberLast4: w.bankAccount.accountNumberLast4,
-          }
+              id: w.bankAccount.id,
+              bankName: w.bankAccount.bankName,
+              accountNumberLast4: w.bankAccount.accountNumberLast4,
+            }
           : null,
         status: w.status,
         requestedAt: w.requestedAt,
@@ -897,7 +916,10 @@ export class WalletService {
   /**
    * Cancel pending withdrawal
    */
-  async cancelPendingWithdrawal(userId: string, withdrawalId: string): Promise<{ success: boolean; message: string }> {
+  async cancelPendingWithdrawal(
+    userId: string,
+    withdrawalId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const wallet = await this.prisma.wallet.findUnique({
       where: { userId },
     });

@@ -3,7 +3,7 @@ import { UserRepository, ICreateUser, IUpdateUser } from './user.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util';
 import { IUserResponse, KYCStatus } from '@common/interfaces/user.interface';
-import { User } from '@common/shims/prisma-types.shim';
+import { User } from '@prisma/client';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { UploadKycDto } from './dto/upload-kyc.dto';
 import * as fs from 'fs';
@@ -103,7 +103,11 @@ export class UserService {
   // PASSWORD MANAGEMENT
   // ============================================================================
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ message: string }> {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.findById(userId);
 
     // Verify current password
@@ -136,11 +140,7 @@ export class UserService {
     });
   }
 
-  async setPasswordResetToken(
-    userId: string,
-    tokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
+  async setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
     await this.userRepository.update(userId, {
       passwordResetToken: tokenHash,
       passwordResetExpires: expiresAt,
@@ -333,9 +333,10 @@ export class UserService {
     });
 
     const totalRatings = ratings.length;
-    const averageRating = totalRatings > 0
-      ? ratings.reduce((sum: number, r: any) => sum + r.score, 0) / totalRatings
-      : 0;
+    const averageRating =
+      totalRatings > 0
+        ? ratings.reduce((sum: number, r: any) => sum + r.score, 0) / totalRatings
+        : 0;
 
     // Calculate breakdown
     const breakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -362,11 +363,7 @@ export class UserService {
   // ACCOUNT STATUS MANAGEMENT
   // ============================================================================
 
-  async suspendUser(
-    userId: string,
-    reason: string,
-    suspendedUntil?: Date,
-  ): Promise<void> {
+  async suspendUser(userId: string, reason: string, suspendedUntil?: Date): Promise<void> {
     await this.userRepository.update(userId, {
       suspendedAt: new Date(),
       suspendedUntil: suspendedUntil || null,
@@ -387,14 +384,14 @@ export class UserService {
     if (!user.suspendedAt) {
       return false;
     }
-    
+
     // Check if suspension has expired
     if (user.suspendedUntil && new Date(user.suspendedUntil) < new Date()) {
       // Auto-unsuspend
       await this.unsuspendUser(userId);
       return false;
     }
-    
+
     return true;
   }
 
@@ -405,12 +402,12 @@ export class UserService {
   async incrementFailedLogin(userId: string): Promise<number> {
     const user = await this.findById(userId);
     const newCount = (user.failedLoginCount || 0) + 1;
-    
+
     await this.userRepository.update(userId, {
       failedLoginCount: newCount,
       lastFailedLoginAt: new Date(),
     });
-    
+
     return newCount;
   }
 
@@ -426,15 +423,15 @@ export class UserService {
   // ============================================================================
 
   sanitizeUser(user: any): IUserResponse {
-    const { 
-      passwordHash, 
-      passwordResetToken, 
-      passwordResetExpires, 
-      totpSecretEnc, 
+    const {
+      passwordHash,
+      passwordResetToken,
+      passwordResetExpires,
+      totpSecretEnc,
       backupCodesHash,
-      ...sanitized 
+      ...sanitized
     } = user;
-    
+
     return {
       ...sanitized,
       kycStatus: user.kycStatus as KYCStatus,

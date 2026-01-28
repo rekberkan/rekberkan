@@ -5,9 +5,9 @@ import * as QRCode from 'qrcode';
 import { CryptoUtil, HashUtil } from '@common/utils/crypto.util';
 
 export interface IMFASetup {
-  secret: string;           // Encrypted secret to store in DB
-  qrCodeDataURL: string;    // QR code for user to scan
-  backupCodes: string[];    // Hashed backup codes
+  secret: string; // Encrypted secret to store in DB
+  qrCodeDataURL: string; // QR code for user to scan
+  backupCodes: string[]; // Hashed backup codes
   backupCodesPlain: string[]; // Plain backup codes (show once)
 }
 
@@ -17,7 +17,10 @@ export class MFAService {
   private readonly encryptionKey: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.encryptionKey = this.configService.get<string>('MFA_ENCRYPTION_KEY', 'default-key-change-in-production');
+    this.encryptionKey = this.configService.get<string>(
+      'MFA_ENCRYPTION_KEY',
+      'default-key-change-in-production',
+    );
   }
 
   /**
@@ -36,9 +39,7 @@ export class MFAService {
     const qrCodeDataURL = await this.generateQRCodeDataURL(otpauthUrl);
 
     // Generate 10 backup codes
-    const backupCodesPlain = Array.from({ length: 10 }, () =>
-      this.generateBackupCode(),
-    );
+    const backupCodesPlain = Array.from({ length: 10 }, () => this.generateBackupCode());
 
     // Hash backup codes for storage
     const backupCodesHashed = await Promise.all(
@@ -59,18 +60,14 @@ export class MFAService {
   /**
    * Verify TOTP token
    */
-  async verifyTOTP(
-    encryptedSecret: string,
-    token: string,
-    window = 1,
-  ): Promise<boolean> {
+  async verifyTOTP(encryptedSecret: string, token: string, window = 1): Promise<boolean> {
     try {
       // Decrypt secret
       const secret = CryptoUtil.decrypt(encryptedSecret, this.encryptionKey);
 
       // Verify token using TOTP algorithm
       const currentTime = Math.floor(Date.now() / 1000 / 30);
-      
+
       for (let i = -window; i <= window; i++) {
         const expectedToken = this.generateTOTP(secret, currentTime + i);
         if (CryptoUtil.timingSafeEqual(expectedToken, token)) {
@@ -116,12 +113,12 @@ export class MFAService {
 
     // Dynamic truncation
     const offset = hash[hash.length - 1] & 0xf;
-    const code = (
-      ((hash[offset] & 0x7f) << 24) |
-      ((hash[offset + 1] & 0xff) << 16) |
-      ((hash[offset + 2] & 0xff) << 8) |
-      (hash[offset + 3] & 0xff)
-    ) % 1000000;
+    const code =
+      (((hash[offset] & 0x7f) << 24) |
+        ((hash[offset + 1] & 0xff) << 16) |
+        ((hash[offset + 2] & 0xff) << 8) |
+        (hash[offset + 3] & 0xff)) %
+      1000000;
 
     return code.toString().padStart(6, '0');
   }
@@ -166,9 +163,7 @@ export class MFAService {
     backupCodes: string[];
     backupCodesPlain: string[];
   }> {
-    const backupCodesPlain = Array.from({ length: 10 }, () =>
-      this.generateBackupCode(),
-    );
+    const backupCodesPlain = Array.from({ length: 10 }, () => this.generateBackupCode());
 
     const backupCodesHashed = await Promise.all(
       backupCodesPlain.map((code) => HashUtil.hash(code)),

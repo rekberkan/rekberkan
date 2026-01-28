@@ -1,24 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
-import { Payment, PaymentStatus, PaymentMethod, Currency } from '@common/shims/prisma-types.shim';
+import {
+  Prisma,
+  Payment,
+  PaymentStatus,
+  PaymentMethod,
+  Currency,
+  PaymentType,
+  PaymentProvider,
+} from '@prisma/client';
 
 export interface CreatePaymentData {
   userId: string;
   amountMinor: bigint;
-  feeMinor: bigint;
-  method: PaymentMethod;
+  paymentType: PaymentType;
+  paymentMethod?: PaymentMethod;
   currency?: Currency;
-  externalId?: string;
-  paymentUrl?: string;
+  provider?: PaymentProvider;
+  providerInvoiceId?: string;
+  orderId?: string;
   expiresAt?: Date;
-  metadata?: Record<string, any>;
+  paymentDetails?: Record<string, any>;
 }
 
 export interface PaymentFilterOptions {
   userId: string;
   status?: PaymentStatus;
-  method?: PaymentMethod;
+  paymentMethod?: PaymentMethod;
   dateFrom?: Date;
   dateTo?: Date;
   page: number;
@@ -42,16 +50,6 @@ export class PaymentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Generate unique payment reference
-   */
-  private generatePaymentReference(): string {
-    const date = new Date();
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const random = Math.random().toString(36).substring(2, 10).toUpperCase();
-    return `PAY-${dateStr}-${random}`;
-  }
-
-  /**
    * Create a new payment
    */
   async create(data: CreatePaymentData, tx?: Prisma.TransactionClient): Promise<Payment> {
@@ -59,18 +57,17 @@ export class PaymentRepository {
 
     const payment = await prisma.payment.create({
       data: {
-        reference: this.generatePaymentReference(),
         userId: data.userId,
         amountMinor: data.amountMinor,
-        feeMinor: data.feeMinor,
-        totalMinor: data.amountMinor + data.feeMinor,
         currency: data.currency || Currency.IDR,
-        method: data.method,
+        paymentType: data.paymentType,
+        paymentMethod: data.paymentMethod,
+        provider: data.provider || PaymentProvider.XENDIT,
+        providerInvoiceId: data.providerInvoiceId,
         status: PaymentStatus.PENDING,
-        externalId: data.externalId,
-        paymentUrl: data.paymentUrl,
+        orderId: data.orderId,
         expiresAt: data.expiresAt,
-        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        paymentDetails: data.paymentDetails ?? undefined,
       },
       include: {
         user: {
@@ -83,7 +80,7 @@ export class PaymentRepository {
       },
     });
 
-    this.logger.log(`Created payment ${payment.reference} for user ${data.userId}`);
+    this.logger.log(`Created payment ${payment.id} for user ${data.userId}`);
     return payment;
   }
 
@@ -108,29 +105,11 @@ export class PaymentRepository {
   }
 
   /**
-   * Find payment by reference
+   * Find payment by provider invoice ID
    */
-  async findByReference(reference: string): Promise<Payment | null> {
+  async findByProviderInvoiceId(providerInvoiceId: string): Promise<Payment | null> {
     return this.prisma.payment.findUnique({
-      where: { reference },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-      },
-    });
-  }
-
-  /**
-   * Find payment by external ID
-   */
-  async findByExternalId(externalId: string): Promise<Payment | null> {
-    return this.prisma.payment.findFirst({
-      where: { externalId },
+      where: { providerInvoiceId },
       include: {
         user: {
           select: {
@@ -147,7 +126,8 @@ export class PaymentRepository {
    * Find payments with filters and pagination
    */
   async findMany(options: PaymentFilterOptions): Promise<PaginatedPayments> {
-    const { userId, status, method, dateFrom, dateTo, page, limit, sortBy, sortOrder } = options;
+    const { userId, status, paymentMethod, dateFrom, dateTo, page, limit, sortBy, sortOrder } =
+      options;
 
     const where: Prisma.PaymentWhereInput = {
       userId,
@@ -157,8 +137,8 @@ export class PaymentRepository {
       where.status = status;
     }
 
-    if (method) {
-      where.method = method;
+    if (paymentMethod) {
+      where.paymentMethod = paymentMethod;
     }
 
     if (dateFrom || dateTo) {
@@ -198,23 +178,11 @@ export class PaymentRepository {
 
     const updateData: Prisma.PaymentUpdateInput = {
       status,
-      ...additionalData,
     };
 
     // Set timestamp based on status
-    switch (status) {
-      case PaymentStatus.COMPLETED:
-        updateData.paidAt = new Date();
-        break;
-      case PaymentStatus.FAILED:
-        updateData.failedAt = new Date();
-        break;
-      case PaymentStatus.CANCELLED:
-        updateData.cancelledAt = new Date();
-        break;
-      case PaymentStatus.EXPIRED:
-        updateData.expiredAt = new Date();
-        break;
+    if (status === 'SUCCESS') {
+      updateData.paidAt = new Date();
     }
 
     return prisma.payment.update({
@@ -257,17 +225,15 @@ export class PaymentRepository {
     totalCompleted: number;
     totalPending: number;
     totalAmountPaid: bigint;
-    totalFeesPaid: bigint;
   }> {
     const [totalPayments, totalCompleted, totalPending, completedSum] = await Promise.all([
       this.prisma.payment.count({ where: { userId } }),
-      this.prisma.payment.count({ where: { userId, status: PaymentStatus.COMPLETED } }),
+      this.prisma.payment.count({ where: { userId, status: PaymentStatus.SUCCESS } }),
       this.prisma.payment.count({ where: { userId, status: PaymentStatus.PENDING } }),
       this.prisma.payment.aggregate({
-        where: { userId, status: PaymentStatus.COMPLETED },
+        where: { userId, status: PaymentStatus.SUCCESS },
         _sum: {
           amountMinor: true,
-          feeMinor: true,
         },
       }),
     ]);
@@ -276,8 +242,7 @@ export class PaymentRepository {
       totalPayments,
       totalCompleted,
       totalPending,
-      totalAmountPaid: completedSum._sum.amountMinor || 0n,
-      totalFeesPaid: completedSum._sum.feeMinor || 0n,
+      totalAmountPaid: completedSum._sum?.amountMinor || 0n,
     };
   }
 }

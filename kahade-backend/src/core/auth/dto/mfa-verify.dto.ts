@@ -6,7 +6,7 @@ import { IsString, IsNotEmpty, Length, Matches, IsOptional } from 'class-validat
 // ============================================================================
 
 export class MfaVerifyDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'TOTP code from authenticator app',
     example: '123456',
   })
@@ -16,7 +16,7 @@ export class MfaVerifyDto {
   @Matches(/^[0-9]{6}$/, { message: 'MFA code must contain only digits' })
   code: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Whether this is a backup code instead of TOTP',
     required: false,
     default: false,
@@ -26,7 +26,7 @@ export class MfaVerifyDto {
 }
 
 export class MfaDisableDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current password to confirm MFA disable',
     example: 'CurrentP@ss123!',
   })
@@ -34,7 +34,7 @@ export class MfaDisableDto {
   @IsNotEmpty({ message: 'Password is required to disable MFA' })
   password: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'TOTP code from authenticator app',
     example: '123456',
   })

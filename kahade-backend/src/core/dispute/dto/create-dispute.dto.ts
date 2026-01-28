@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsOptional, MinLength, MaxLength, IsNotEmpty, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  IsNotEmpty,
+  IsEnum,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // ============================================================================
@@ -17,7 +25,7 @@ export enum DisputeReason {
 }
 
 export class CreateDisputeDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Order/Transaction ID (UUID)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
@@ -25,7 +33,7 @@ export class CreateDisputeDto {
   @IsNotEmpty({ message: 'Order ID is required' })
   orderId: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Reason for dispute',
     enum: DisputeReason,
     example: 'PRODUCT_NOT_AS_DESCRIBED',
@@ -34,9 +42,10 @@ export class CreateDisputeDto {
   @IsNotEmpty({ message: 'Reason is required' })
   reason: DisputeReason;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Detailed description of the dispute (20-2000 characters)',
-    example: 'The product received is completely different from the description. I ordered a blue shirt but received a red one.',
+    example:
+      'The product received is completely different from the description. I ordered a blue shirt but received a red one.',
     minLength: 20,
     maxLength: 2000,
   })

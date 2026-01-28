@@ -6,7 +6,7 @@ import { IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
 // ============================================================================
 
 export class RefreshTokenDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'JWT refresh token',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })

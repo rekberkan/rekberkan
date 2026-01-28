@@ -1,4 +1,15 @@
-import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional, Min, Max, MinLength, MaxLength, IsInt } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+  IsInt,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 
@@ -38,7 +49,8 @@ export class CreateOrderDto {
 
   @ApiProperty({
     description: 'Detailed description of the order',
-    example: 'Brand new iPhone 15 Pro Max, Natural Titanium color, 256GB storage. Includes original box and accessories.',
+    example:
+      'Brand new iPhone 15 Pro Max, Natural Titanium color, 256GB storage. Includes original box and accessories.',
     minLength: 20,
     maxLength: 5000,
   })

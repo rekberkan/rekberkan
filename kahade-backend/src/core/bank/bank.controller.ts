@@ -45,7 +45,7 @@ export class BankController {
   async getBankAccounts(@CurrentUser('id') userId: string) {
     const accounts = await this.bankRepository.findByUserId(userId);
     return {
-      accounts: accounts.map(acc => ({
+      accounts: accounts.map((acc) => ({
         id: acc.id,
         bankName: acc.bankName,
         accountNumber: `****${acc.accountNumberLast4}`,
@@ -64,10 +64,7 @@ export class BankController {
   @ApiOperation({ summary: 'Get bank account by ID' })
   @ApiResponse({ status: 200, description: 'Returns bank account details' })
   @ApiResponse({ status: 404, description: 'Bank account not found' })
-  async getBankAccount(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-  ) {
+  async getBankAccount(@CurrentUser('id') userId: string, @Param('id') id: string) {
     const account = await this.bankRepository.findById(id, userId);
     if (!account) {
       throw new NotFoundException('Bank account not found');
@@ -89,10 +86,7 @@ export class BankController {
   @ApiOperation({ summary: 'Add new bank account' })
   @ApiResponse({ status: 201, description: 'Bank account added successfully' })
   @ApiResponse({ status: 400, description: 'Invalid bank code or duplicate account' })
-  async addBankAccount(
-    @CurrentUser('id') userId: string,
-    @Body() dto: AddBankAccountDto,
-  ) {
+  async addBankAccount(@CurrentUser('id') userId: string, @Body() dto: AddBankAccountDto) {
     // Validate bank code
     const bank = getBankByCode(dto.bankCode);
     if (!bank) {
@@ -102,7 +96,7 @@ export class BankController {
     // Check for duplicate by last 4 digits (simplified check)
     const existingAccounts = await this.bankRepository.findByUserId(userId);
     const duplicate = existingAccounts.find(
-      acc => acc.bankName === bank.name && acc.accountNumberLast4 === dto.accountNumber.slice(-4)
+      (acc) => acc.bankName === bank.name && acc.accountNumberLast4 === dto.accountNumber.slice(-4),
     );
     if (duplicate) {
       throw new BadRequestException('Bank account already exists');
@@ -132,10 +126,7 @@ export class BankController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Set bank account as default' })
   @ApiResponse({ status: 200, description: 'Bank account set as default' })
-  async setAsDefault(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-  ) {
+  async setAsDefault(@CurrentUser('id') userId: string, @Param('id') id: string) {
     const account = await this.bankRepository.findById(id, userId);
     if (!account) {
       throw new NotFoundException('Bank account not found');
@@ -152,10 +143,7 @@ export class BankController {
   @ApiOperation({ summary: 'Delete bank account' })
   @ApiResponse({ status: 200, description: 'Bank account deleted' })
   @ApiResponse({ status: 404, description: 'Bank account not found' })
-  async deleteBankAccount(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-  ) {
+  async deleteBankAccount(@CurrentUser('id') userId: string, @Param('id') id: string) {
     const account = await this.bankRepository.findById(id, userId);
     if (!account) {
       throw new NotFoundException('Bank account not found');

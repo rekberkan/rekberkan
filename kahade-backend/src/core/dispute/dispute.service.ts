@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { DisputeRepository } from './dispute.repository';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util';
-import { Dispute, DisputeStatus, DisputeDecision, OrderStatus } from '@common/shims/prisma-types.shim';
+import { Dispute, DisputeStatus, DisputeDecision, OrderStatus } from '@prisma/client';
 
 // ============================================================================
 // BANK-GRADE DISPUTE SERVICE
@@ -42,7 +48,7 @@ export class DisputeService {
     const order = await this.prisma.order.findUnique({
       where: { id: dto.orderId },
     });
-    
+
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -126,7 +132,7 @@ export class DisputeService {
 
   async findOne(id: string, userId?: string): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -136,7 +142,7 @@ export class DisputeService {
       const order = await this.prisma.order.findUnique({
         where: { id: dispute.orderId },
       });
-      
+
       if (
         order &&
         dispute.openedBy !== userId &&
@@ -152,7 +158,7 @@ export class DisputeService {
 
   async respond(id: string, userId: string, response: string): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -170,7 +176,7 @@ export class DisputeService {
       throw new NotFoundException('Order not found');
     }
 
-    const isCounterparty = 
+    const isCounterparty =
       (order.initiatorId === dispute.openedBy && order.counterpartyId === userId) ||
       (order.counterpartyId === dispute.openedBy && order.initiatorId === userId);
 
@@ -205,7 +211,7 @@ export class DisputeService {
 
   async escalate(id: string, adminId: string, dto: EscalateDisputeDto): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -244,7 +250,7 @@ export class DisputeService {
 
   async assignArbitrator(id: string, adminId: string, arbitratorId: string): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -278,7 +284,7 @@ export class DisputeService {
 
   async resolve(id: string, adminId: string, dto: ResolveDisputeDto): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -355,7 +361,7 @@ export class DisputeService {
 
   async appeal(id: string, userId: string, reason: string): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
@@ -419,7 +425,7 @@ export class DisputeService {
     description: string,
   ): Promise<void> {
     const dispute = await this.disputeRepository.findById(disputeId);
-    
+
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }

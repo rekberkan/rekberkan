@@ -19,18 +19,18 @@ interface TokenMetadata {
 export class TokenBlacklistService {
   private readonly logger = new Logger(TokenBlacklistService.name);
   private redis: Redis | null = null;
-  
+
   // In-memory fallback storage
   private blacklistSet = new Map<string, { reason: string; expiresAt: number }>();
   private refreshTokens = new Map<string, TokenMetadata>();
-  
+
   // Cleanup interval for memory storage
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(private readonly configService: ConfigService) {
     const redisHost = this.configService.get<string>('redis.host');
     const redisPort = this.configService.get<number>('redis.port');
-    
+
     if (redisHost && redisPort) {
       this.redis = new Redis({
         host: redisHost,
@@ -87,21 +87,25 @@ export class TokenBlacklistService {
     if (entry && entry.expiresAt > Date.now()) {
       return true;
     }
-    
+
     // Clean up expired entry
     if (entry) {
       this.blacklistSet.delete(tokenHash);
     }
-    
+
     return false;
   }
 
   /**
    * BANK-GRADE: Blacklist a token
    */
-  async blacklistToken(token: string, expiresInSeconds: number, reason: string = 'logout'): Promise<void> {
+  async blacklistToken(
+    token: string,
+    expiresInSeconds: number,
+    reason: string = 'logout',
+  ): Promise<void> {
     const tokenHash = this.hashToken(token);
-    const expiresAt = Date.now() + (expiresInSeconds * 1000);
+    const expiresAt = Date.now() + expiresInSeconds * 1000;
 
     if (this.redis) {
       try {
@@ -132,7 +136,7 @@ export class TokenBlacklistService {
    */
   async storeRefreshToken(userId: string, token: string, expiresInSeconds: number): Promise<void> {
     const tokenHash = this.hashToken(token);
-    const expiresAt = Date.now() + (expiresInSeconds * 1000);
+    const expiresAt = Date.now() + expiresInSeconds * 1000;
 
     if (this.redis) {
       try {
@@ -142,11 +146,11 @@ export class TokenBlacklistService {
           createdAt: Date.now(),
         });
         await this.redis.set(`refresh:${tokenHash}`, data, 'EX', expiresInSeconds);
-        
+
         // Also add to user's token set for bulk revocation
         await this.redis.sadd(`user_tokens:${userId}`, tokenHash);
         await this.redis.expire(`user_tokens:${userId}`, expiresInSeconds);
-        
+
         return;
       } catch (error) {
         this.logger.error(`Redis error storing refresh token: ${error.message}`);
@@ -203,7 +207,7 @@ export class TokenBlacklistService {
           // Remove from user's token set
           await this.redis.srem(`user_tokens:${parsed.userId}`, tokenHash);
         }
-        
+
         // Delete the token
         await this.redis.del(`refresh:${tokenHash}`);
         return;
@@ -254,7 +258,7 @@ export class TokenBlacklistService {
       try {
         // Get all tokens for user
         const tokenHashes = await this.redis.smembers(`user_tokens:${userId}`);
-        
+
         if (tokenHashes.length > 0) {
           // Delete all tokens
           const pipeline = this.redis.pipeline();
@@ -263,10 +267,10 @@ export class TokenBlacklistService {
           }
           pipeline.del(`user_tokens:${userId}`);
           await pipeline.exec();
-          
+
           revokedCount = tokenHashes.length;
         }
-        
+
         return revokedCount;
       } catch (error) {
         this.logger.error(`Redis error revoking all user tokens: ${error.message}`);
@@ -301,9 +305,12 @@ export class TokenBlacklistService {
    */
   private startCleanupInterval(): void {
     // Clean up every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredEntries();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupExpiredEntries();
+      },
+      5 * 60 * 1000,
+    );
   }
 
   /**

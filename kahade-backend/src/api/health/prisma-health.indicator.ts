@@ -16,19 +16,19 @@ export class PrismaHealthIndicator extends HealthIndicator {
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
     const startTime = Date.now();
-    
+
     try {
       // Execute a simple query to check database connectivity
       await this.prisma.$queryRaw`SELECT 1`;
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return this.getStatus(key, true, {
         responseTime: `${responseTime}ms`,
       });
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      
+
       throw new HealthCheckError(
         'Database check failed',
         this.getStatus(key, false, {

@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nest
 import { NotificationRepository, ICreateNotification } from './notification.repository';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util';
-import { Notification, NotificationType } from '@common/shims/prisma-types.shim';
+import { Notification } from '@prisma/client';
+import { NotificationType } from './dto/create-notification.dto';
 
 interface FindAllParams extends PaginationParams {
   read?: boolean;
@@ -42,7 +43,12 @@ export class NotificationService {
     const { page = 1, limit = 10, read } = params;
     const skip = PaginationUtil.getSkip(page, limit);
 
-    const { notifications, total } = await this.notificationRepository.findByUser(userId, skip, limit, read);
+    const { notifications, total } = await this.notificationRepository.findByUser(
+      userId,
+      skip,
+      limit,
+      read,
+    );
 
     return PaginationUtil.paginate(notifications, total, page, limit);
   }
@@ -57,7 +63,7 @@ export class NotificationService {
 
   async markAsRead(id: string, userId: string): Promise<Notification> {
     const notification = await this.notificationRepository.findById(id);
-    
+
     if (!notification) {
       throw new NotFoundException('Notification not found');
     }
@@ -77,7 +83,7 @@ export class NotificationService {
 
   async delete(id: string, userId: string): Promise<void> {
     const notification = await this.notificationRepository.findById(id);
-    
+
     if (!notification) {
       throw new NotFoundException('Notification not found');
     }
@@ -120,10 +126,95 @@ export class NotificationService {
     );
   }
 
+  // Send order invite notification
+  async sendOrderInvite(
+    userId: string,
+    orderId: string,
+    orderTitle: string,
+    inviterName: string,
+  ): Promise<Notification> {
+    return this.createForUser(
+      userId,
+      'ORDER' as any,
+      'New Order Invitation',
+      `${inviterName} has invited you to join order "${orderTitle}".`,
+      { orderId, inviterName },
+    );
+  }
+
+  // Send order accepted notification
+  async sendOrderAccepted(
+    userId: string,
+    orderId: string,
+    orderTitle: string,
+    accepterName: string,
+  ): Promise<Notification> {
+    return this.createForUser(
+      userId,
+      'ORDER' as any,
+      'Order Accepted',
+      `${accepterName} has accepted your order "${orderTitle}".`,
+      { orderId, accepterName },
+    );
+  }
+
+  // Send payment received notification
+  async sendPaymentReceived(
+    userId: string,
+    orderId: string,
+    orderTitle: string,
+    amount: bigint,
+  ): Promise<Notification> {
+    return this.createForUser(
+      userId,
+      'PAYMENT' as any,
+      'Payment Received',
+      `Payment of Rp ${Number(amount).toLocaleString('id-ID')} for "${orderTitle}" has been received.`,
+      { orderId, amount: amount.toString() },
+    );
+  }
+
+  // Send escrow released notification
+  async sendEscrowReleased(
+    userId: string,
+    orderId: string,
+    orderTitle: string,
+    amount: bigint,
+  ): Promise<Notification> {
+    return this.createForUser(
+      userId,
+      'ESCROW' as any,
+      'Escrow Released',
+      `Escrow of Rp ${Number(amount).toLocaleString('id-ID')} for "${orderTitle}" has been released.`,
+      { orderId, amount: amount.toString() },
+    );
+  }
+
+  // Send order cancelled notification
+  async sendOrderCancelled(
+    userId: string,
+    orderId: string,
+    orderTitle: string,
+    reason?: string,
+  ): Promise<Notification> {
+    return this.createForUser(
+      userId,
+      'ORDER' as any,
+      'Order Cancelled',
+      `Order "${orderTitle}" has been cancelled.${reason ? ` Reason: ${reason}` : ''}`,
+      { orderId, reason },
+    );
+  }
+
   // Send notification for wallet events
   async sendWalletNotification(
     userId: string,
-    event: 'topup_success' | 'topup_failed' | 'withdrawal_pending' | 'withdrawal_completed' | 'withdrawal_rejected',
+    event:
+      | 'topup_success'
+      | 'topup_failed'
+      | 'withdrawal_pending'
+      | 'withdrawal_completed'
+      | 'withdrawal_rejected',
     amount: number,
   ): Promise<Notification> {
     const titles: Record<string, string> = {

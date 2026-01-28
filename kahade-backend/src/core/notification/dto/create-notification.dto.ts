@@ -1,6 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsUUID, IsEnum, IsOptional } from 'class-validator';
-import { NotificationType } from '@common/shims/prisma-types.shim';
+
+// Define NotificationType locally since it's stored as string in database
+export enum NotificationType {
+  TRANSACTION = 'TRANSACTION',
+  ORDER = 'ORDER',
+  PAYMENT = 'PAYMENT',
+  ESCROW = 'ESCROW',
+  WALLET = 'WALLET',
+  DISPUTE = 'DISPUTE',
+  SYSTEM = 'SYSTEM',
+}
 
 export class CreateNotificationDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })

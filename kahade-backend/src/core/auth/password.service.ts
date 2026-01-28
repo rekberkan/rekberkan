@@ -9,8 +9,8 @@ export interface IPasswordPolicy {
   requireNumbers: boolean;
   requireSpecialChars: boolean;
   minStrengthScore: number; // 0-4 (strength score)
-  rotationDays: number;      // Days until password must be changed
-  preventReuse: number;      // Number of previous passwords to check
+  rotationDays: number; // Days until password must be changed
+  preventReuse: number; // Number of previous passwords to check
 }
 
 const DEFAULT_POLICY: IPasswordPolicy = {
@@ -31,7 +31,10 @@ export class PasswordService {
   /**
    * Validate password against policy
    */
-  validatePassword(password: string, userInputs: string[] = []): {
+  validatePassword(
+    password: string,
+    userInputs: string[] = [],
+  ): {
     valid: boolean;
     errors: string[];
     score: number;
@@ -93,14 +96,14 @@ export class PasswordService {
     const hasUpper = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
+
     const varietyCount = [hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
     if (varietyCount >= 3) score++;
     if (varietyCount === 4) score++;
 
     // Check for common patterns (reduce score)
     const commonPatterns = ['123456', 'password', 'qwerty', 'abc123', '111111'];
-    if (commonPatterns.some(p => password.toLowerCase().includes(p))) {
+    if (commonPatterns.some((p) => password.toLowerCase().includes(p))) {
       score = Math.max(0, score - 2);
     }
 
@@ -120,8 +123,7 @@ export class PasswordService {
   needsRotation(passwordUpdatedAt: Date | null): boolean {
     if (!passwordUpdatedAt) return true;
 
-    const daysSinceUpdate =
-      (Date.now() - passwordUpdatedAt.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUpdate = (Date.now() - passwordUpdatedAt.getTime()) / (1000 * 60 * 60 * 24);
 
     return daysSinceUpdate >= this.policy.rotationDays;
   }
@@ -133,9 +135,7 @@ export class PasswordService {
     newPassword: string,
     previousPasswordHashes: string[],
   ): Promise<boolean> {
-    const recentHashes = previousPasswordHashes.slice(
-      -this.policy.preventReuse,
-    );
+    const recentHashes = previousPasswordHashes.slice(-this.policy.preventReuse);
 
     for (const hash of recentHashes) {
       const isReused = await HashUtil.verify(newPassword, hash);

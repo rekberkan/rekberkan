@@ -96,10 +96,7 @@ export class PromoController {
   @Roles('ADMIN')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Assign promo to user (Admin)' })
-  async assignPromoToUser(
-    @Param('id') promoId: string,
-    @Body('userId') userId: string,
-  ) {
+  async assignPromoToUser(@Param('id') promoId: string, @Body('userId') userId: string) {
     return this.promoService.assignPromoToUser(promoId, userId);
   }
 

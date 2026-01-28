@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { Withdrawal, WithdrawalStatus, KYCStatus } from '@common/shims/prisma-types.shim';
+import { Withdrawal, WithdrawalStatus, KYCStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../wallet/wallet.service';
 import { LedgerService } from '../ledger/ledger.service';
@@ -232,20 +232,15 @@ export class WithdrawalService {
           bankAccountId,
           amountMinor,
           idempotencyKey,
-          status: isFlagged || requiresApproval
-            ? WithdrawalStatus.PENDING
-            : WithdrawalStatus.PENDING,
+          status:
+            isFlagged || requiresApproval ? WithdrawalStatus.PENDING : WithdrawalStatus.PENDING,
           requiresMultipleApprovals: amountMinor >= limits.requiresApprovalThreshold * 2n,
           requiredApprovals: amountMinor >= limits.requiresApprovalThreshold * 2n ? 2 : 1,
           velocityScore: velocityData.score,
           isFlaggedBySystem: isFlagged,
           flagReason: isFlagged ? velocityData.flagReason : null,
-          coolingPeriodEndsAt: new Date(
-            Date.now() + limits.coolingPeriodMinutes * 60 * 1000,
-          ),
-          canProcessAfter: new Date(
-            Date.now() + limits.coolingPeriodMinutes * 60 * 1000,
-          ),
+          coolingPeriodEndsAt: new Date(Date.now() + limits.coolingPeriodMinutes * 60 * 1000),
+          canProcessAfter: new Date(Date.now() + limits.coolingPeriodMinutes * 60 * 1000),
         },
       });
 
@@ -282,7 +277,9 @@ export class WithdrawalService {
       where: {
         userId,
         requestedAt: { gte: startOfDay },
-        status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED] },
+        status: {
+          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+        },
       },
       _sum: { amountMinor: true },
       _count: true,
@@ -293,7 +290,9 @@ export class WithdrawalService {
       where: {
         userId,
         requestedAt: { gte: startOfMonth },
-        status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED] },
+        status: {
+          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+        },
       },
       _sum: { amountMinor: true },
     });
@@ -344,12 +343,10 @@ export class WithdrawalService {
 
     if (lastWithdrawal) {
       const minutesSinceLast = Math.floor(
-        (now.getTime() - lastWithdrawal.requestedAt.getTime()) / 60000
+        (now.getTime() - lastWithdrawal.requestedAt.getTime()) / 60000,
       );
       if (minutesSinceLast < limits.coolingPeriodMinutes) {
-        throw new WithdrawalCoolingPeriodError(
-          limits.coolingPeriodMinutes - minutesSinceLast,
-        );
+        throw new WithdrawalCoolingPeriodError(limits.coolingPeriodMinutes - minutesSinceLast);
       }
     }
   }
@@ -377,7 +374,9 @@ export class WithdrawalService {
       where: {
         userId,
         requestedAt: { gte: startOfDay },
-        status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED] },
+        status: {
+          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+        },
       },
       _sum: { amountMinor: true },
       _count: true,
@@ -388,7 +387,9 @@ export class WithdrawalService {
       where: {
         userId,
         requestedAt: { gte: startOfMonth },
-        status: { in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED] },
+        status: {
+          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+        },
       },
       _sum: { amountMinor: true },
     });
@@ -407,7 +408,7 @@ export class WithdrawalService {
     let nextWithdrawalAllowedAt: Date | null = null;
     if (lastWithdrawal) {
       const nextAllowed = new Date(
-        lastWithdrawal.requestedAt.getTime() + limits.coolingPeriodMinutes * 60 * 1000
+        lastWithdrawal.requestedAt.getTime() + limits.coolingPeriodMinutes * 60 * 1000,
       );
       if (nextAllowed > now) {
         nextWithdrawalAllowedAt = nextAllowed;
@@ -547,9 +548,7 @@ export class WithdrawalService {
     }
 
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
-      throw new BadRequestException(
-        `Cannot approve withdrawal in ${withdrawal.status} status`,
-      );
+      throw new BadRequestException(`Cannot approve withdrawal in ${withdrawal.status} status`);
     }
 
     // Check if multiple approvals required
@@ -557,9 +556,8 @@ export class WithdrawalService {
       where: { withdrawalId },
     });
 
-    const needsMoreApprovals = 
-      withdrawal.requiresMultipleApprovals &&
-      currentApprovals + 1 < withdrawal.requiredApprovals;
+    const needsMoreApprovals =
+      withdrawal.requiresMultipleApprovals && currentApprovals + 1 < withdrawal.requiredApprovals;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Create approval record
@@ -575,9 +573,7 @@ export class WithdrawalService {
       const updatedWithdrawal = await tx.withdrawal.update({
         where: { id: withdrawalId },
         data: {
-          status: needsMoreApprovals
-            ? WithdrawalStatus.PENDING
-            : WithdrawalStatus.APPROVED,
+          status: needsMoreApprovals ? WithdrawalStatus.PENDING : WithdrawalStatus.APPROVED,
           approvedBy: needsMoreApprovals ? undefined : approverId,
           approvedAt: needsMoreApprovals ? undefined : new Date(),
           adminNotes: notes,
@@ -613,9 +609,7 @@ export class WithdrawalService {
     }
 
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
-      throw new BadRequestException(
-        `Cannot reject withdrawal in ${withdrawal.status} status`,
-      );
+      throw new BadRequestException(`Cannot reject withdrawal in ${withdrawal.status} status`);
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -647,10 +641,7 @@ export class WithdrawalService {
   /**
    * Complete withdrawal (after bank transfer)
    */
-  async completeWithdrawal(
-    withdrawalId: string,
-    bankReference?: string,
-  ): Promise<Withdrawal> {
+  async completeWithdrawal(withdrawalId: string, bankReference?: string): Promise<Withdrawal> {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id: withdrawalId },
     });
@@ -660,9 +651,7 @@ export class WithdrawalService {
     }
 
     if (withdrawal.status !== WithdrawalStatus.APPROVED) {
-      throw new BadRequestException(
-        `Cannot complete withdrawal in ${withdrawal.status} status`,
-      );
+      throw new BadRequestException(`Cannot complete withdrawal in ${withdrawal.status} status`);
     }
 
     const result = await this.prisma.$transaction(async (tx) => {

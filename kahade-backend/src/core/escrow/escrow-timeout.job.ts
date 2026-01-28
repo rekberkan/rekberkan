@@ -112,9 +112,7 @@ export class EscrowTimeoutJob {
         idempotencyKey: `timeout_release_${escrow.id}_${Date.now()}`,
       });
 
-      this.logger.log(
-        `Auto-released escrow ${escrow.id} to seller due to timeout`,
-      );
+      this.logger.log(`Auto-released escrow ${escrow.id} to seller due to timeout`);
     }
     // If order is still pending payment, refund to buyer
     else if (['PENDING_ACCEPT', 'ACCEPTED', 'WAITING_COUNTERPARTY'].includes(order.status)) {
@@ -125,9 +123,7 @@ export class EscrowTimeoutJob {
         idempotencyKey: `timeout_refund_${escrow.id}_${Date.now()}`,
       });
 
-      this.logger.log(
-        `Auto-refunded escrow ${escrow.id} to buyer due to timeout`,
-      );
+      this.logger.log(`Auto-refunded escrow ${escrow.id} to buyer due to timeout`);
     }
   }
 

@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsDateString, IsOptional, Matches, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  IsDateString,
+  IsOptional,
+  Matches,
+  IsEnum,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export enum KYCDocumentType {

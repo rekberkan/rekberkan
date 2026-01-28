@@ -44,10 +44,7 @@ export class BankRepository {
         deletedAt: null,
         isActive: true,
       },
-      orderBy: [
-        { isDefault: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -105,13 +102,17 @@ export class BankRepository {
     });
   }
 
-  async update(id: string, userId: string, data: Partial<{
-    accountHolderName: string;
-    isActive: boolean;
-    isVerified: boolean;
-  }>) {
+  async update(
+    id: string,
+    userId: string,
+    data: Partial<{
+      accountHolderName: string;
+      isActive: boolean;
+      isVerified: boolean;
+    }>,
+  ) {
     const updateData: Record<string, any> = {};
-    
+
     if (data.accountHolderName) {
       updateData.accountNameEnc = this.encrypt(data.accountHolderName);
     }
@@ -141,7 +142,7 @@ export class BankRepository {
       where: { userId, deletedAt: null },
       data: { isDefault: false },
     });
-    
+
     // Then set the selected one as default
     return this.prisma.bankAccount.updateMany({
       where: { id, userId, deletedAt: null },
