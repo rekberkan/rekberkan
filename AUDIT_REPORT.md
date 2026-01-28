@@ -111,20 +111,20 @@ TODO/FIXME/HACK: 1 remaining (documented - requires schema migration)
 
 ## 4. Catatan Risiko
 
-### Escrow Archival Logic (F001)
+### Escrow Archival Logic (F001) ✅ RESOLVED
 - **Issue:** `isArchived` field tidak ada di Prisma schema
-- **Mitigasi:** Logic dikomentari dengan TODO, logging tetap berjalan
-- **Action Required:** Schema migration untuk menambah field `isArchived` dan `archivedAt`
+- **Solution:** Added `isArchived` (Boolean) and `archivedAt` (DateTime) fields to EscrowHold model
+- **Status:** Archival logic now fully functional
 
-### ESLint Warnings (31 remaining)
-- **Type:** `@typescript-eslint/no-unused-vars` untuk variabel dengan prefix `_`
-- **Reason:** Variabel dipertahankan untuk dokumentasi atau future use
-- **Risk:** LOW - tidak mempengaruhi runtime
+### ESLint Warnings ✅ RESOLVED
+- **Issue:** 31 warnings for unused variables and imports
+- **Solution:** Removed all unused imports, applied void pattern for intentional omissions
+- **Status:** 0 errors, 0 warnings
 
-### Chunk Size Warning (Frontend)
-- **Issue:** Bundle size > 500KB
-- **Mitigasi:** Pertimbangkan code-splitting dengan dynamic import
-- **Risk:** LOW - performance optimization, bukan error
+### Chunk Size Warning ✅ RESOLVED
+- **Issue:** Bundle size > 500KB causing build warnings
+- **Solution:** Implemented manualChunks for vendor, ui, animations, icons, utils
+- **Status:** All chunks under 600KB limit, no warnings
 
 ---
 
@@ -159,11 +159,15 @@ pnpm dev:landing  # atau dev:app / dev:admin
 ## 6. Git Commits
 
 | Commit | Message |
-|--------|---------|
+|--------|--------|
 | bd2a57a | `security(guards): fix unused variables and improve type safety` |
 | 15b0f01 | `fix(api): remove unused imports and fix TypeScript errors` |
 | fda3183 | `fix(tests): fix wallet.service.spec.ts TypeScript errors` |
 | 53ffaaa | `fix(frontend): fix CSS import order and add analytics env vars` |
+| 1d62321 | `docs: add comprehensive audit report` |
+| 3b33b8e | `feat(escrow): add isArchived and archivedAt fields for data retention` |
+| 6655e12 | `fix(api): eliminate all ESLint warnings` |
+| 50b4d44 | `perf(frontend): implement code splitting and fix analytics loading` |
 
 **Branch:** `audit-hardening/2026-01-28`  
 **PR URL:** https://github.com/rekberkan/rekberkan/pull/new/audit-hardening/2026-01-28
