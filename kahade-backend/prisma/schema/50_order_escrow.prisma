@@ -89,6 +89,10 @@ model EscrowHold {
   // CRITICAL FIX: Timeout enforcement for auto-release
   timeoutAt      DateTime?        @map("timeout_at") @db.Timestamptz
   timeoutJobId   String?          @unique @map("timeout_job_id") // Link to scheduled job
+  
+  // Data retention: archival support for compliance
+  isArchived     Boolean          @default(false) @map("is_archived")
+  archivedAt     DateTime?        @map("archived_at") @db.Timestamptz
 
   order          Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
   buyerWallet    Wallet           @relation("BuyerWallet", fields: [buyerWalletId], references: [id], onDelete: Restrict)
