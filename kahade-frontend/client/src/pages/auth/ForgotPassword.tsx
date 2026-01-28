@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { authApi } from '@/lib/api';
 
 export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,14 +20,63 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      await authApi.forgotPassword(email);
+      setIsSubmitted(true);
+      toast.success('Email sent!', {
+        description: 'Please check your inbox for the reset link.'
+      });
+    } catch (error: any) {
+      // Always show success message to prevent email enumeration attacks
+      // But log the actual error for debugging
+      console.error('Forgot password error:', error);
+      
+      // Check if it's a rate limit error
+      if (error.response?.status === 429) {
+        toast.error('Too many requests', {
+          description: 'Please wait a few minutes before trying again.'
+        });
+      } else {
+        // For security, always show success even if email doesn't exist
+        setIsSubmitted(true);
+        toast.success('Email sent!', {
+          description: 'If an account exists with this email, you will receive a reset link.'
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsLoading(true);
     
-    setIsLoading(false);
-    setIsSubmitted(true);
-    toast.success('Email sent!');
+    try {
+      await authApi.forgotPassword(email);
+      toast.success('Email resent!', {
+        description: 'Please check your inbox for the reset link.'
+      });
+    } catch (error: any) {
+      if (error.response?.status === 429) {
+        toast.error('Too many requests', {
+          description: 'Please wait a few minutes before trying again.'
+        });
+      } else {
+        toast.success('Email resent!', {
+          description: 'If an account exists with this email, you will receive a reset link.'
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -104,9 +154,17 @@ export default function ForgotPassword() {
               </p>
               <Button 
                 className="btn-secondary w-full"
-                onClick={() => setIsSubmitted(false)}
+                onClick={handleResend}
+                disabled={isLoading}
               >
-                Resend Email
+                {isLoading ? (
+                  <>
+                    <Spinner className="mr-2 w-4 h-4 animate-spin" weight="bold" />
+                    Sending...
+                  </>
+                ) : (
+                  'Resend Email'
+                )}
               </Button>
             </div>
           )}

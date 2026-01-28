@@ -14,12 +14,107 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Error code to user-friendly message mapping
+const getErrorMessage = (error: any): { title: string; description: string } => {
+  const code = error.response?.data?.code || error.code;
+  const message = error.response?.data?.message || error.message;
+  const status = error.response?.status;
+
+  // Handle specific error codes
+  switch (code) {
+    case 'ACCOUNT_LOCKED':
+      const lockedUntil = error.response?.data?.lockedUntil;
+      const remainingMinutes = error.response?.data?.remainingMinutes;
+      return {
+        title: 'Account Locked',
+        description: remainingMinutes 
+          ? `Too many failed login attempts. Please try again in ${remainingMinutes} minutes.`
+          : 'Your account has been temporarily locked due to too many failed login attempts.'
+      };
+    
+    case 'ACCOUNT_SUSPENDED':
+      const suspendReason = error.response?.data?.suspendReason;
+      return {
+        title: 'Account Suspended',
+        description: suspendReason 
+          ? `Your account has been suspended: ${suspendReason}. Please contact support.`
+          : 'Your account has been suspended. Please contact support for assistance.'
+      };
+    
+    case 'MFA_TOKEN_REQUIRED':
+      return {
+        title: 'MFA Required',
+        description: 'Please enter your two-factor authentication code to continue.'
+      };
+    
+    case 'MFA_INVALID':
+      return {
+        title: 'Invalid MFA Code',
+        description: 'The two-factor authentication code you entered is incorrect. Please try again.'
+      };
+    
+    case 'EMAIL_NOT_VERIFIED':
+      return {
+        title: 'Email Not Verified',
+        description: 'Please verify your email address before logging in. Check your inbox for the verification link.'
+      };
+    
+    default:
+      break;
+  }
+
+  // Handle HTTP status codes
+  switch (status) {
+    case 401:
+      return {
+        title: 'Invalid Credentials',
+        description: 'The email or password you entered is incorrect. Please check and try again.'
+      };
+    
+    case 403:
+      return {
+        title: 'Access Denied',
+        description: message || 'You do not have permission to access this account.'
+      };
+    
+    case 429:
+      return {
+        title: 'Too Many Requests',
+        description: 'You have made too many login attempts. Please wait a few minutes before trying again.'
+      };
+    
+    case 500:
+    case 502:
+    case 503:
+      return {
+        title: 'Server Error',
+        description: 'We are experiencing technical difficulties. Please try again later.'
+      };
+    
+    default:
+      // Network error
+      if (error.code === 'ERR_NETWORK' || !error.response) {
+        return {
+          title: 'Connection Error',
+          description: 'Unable to connect to the server. Please check your internet connection and try again.'
+        };
+      }
+      
+      return {
+        title: 'Login Failed',
+        description: message || 'An unexpected error occurred. Please try again.'
+      };
+  }
+};
+
 export default function Login() {
   const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showMfaInput, setShowMfaInput] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    mfaCode: '',
     remember: false
   });
 
@@ -27,16 +122,27 @@ export default function Login() {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      toast.error('Please fill in all fields');
+      toast.error('Missing Information', { 
+        description: 'Please enter both email and password to continue.' 
+      });
       return;
     }
 
     try {
       await login(formData.email, formData.password);
-      toast.success('Login successful!');
+      toast.success('Welcome back!', {
+        description: 'You have successfully logged in.'
+      });
     } catch (error: any) {
-      const message = error.message || 'Invalid email or password.';
-      toast.error('Login failed', { description: message });
+      const { title, description } = getErrorMessage(error);
+      
+      // Check if MFA is required
+      if (error.response?.data?.code === 'MFA_TOKEN_REQUIRED') {
+        setShowMfaInput(true);
+        toast.info(title, { description });
+      } else {
+        toast.error(title, { description });
+      }
     }
   };
 
@@ -103,6 +209,29 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
+            {/* MFA Input - shown when required */}
+            {showMfaInput && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-2"
+              >
+                <Label htmlFor="mfaCode" className="text-black">Two-Factor Authentication Code</Label>
+                <Input
+                  id="mfaCode"
+                  type="text"
+                  value={formData.mfaCode}
+                  onChange={(e) => setFormData({ ...formData, mfaCode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  className="bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 text-center text-lg tracking-widest"
+                />
+                <p className="text-xs text-[#6B7280]">
+                  Enter the code from your authenticator app
+                </p>
+              </motion.div>
+            )}
             
             <div className="flex items-center gap-2">
               <Checkbox

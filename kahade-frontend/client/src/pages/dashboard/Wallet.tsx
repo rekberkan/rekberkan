@@ -57,10 +57,11 @@ interface BankInfo {
 }
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('id-ID', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(amount);
 };
 
@@ -113,8 +114,13 @@ export default function Wallet() {
   };
 
   const handleTopUp = async () => {
-    if (!topUpAmount || parseInt(topUpAmount) < 10) {
-      toast.error('Minimum top up is $10');
+    const amount = parseInt(topUpAmount);
+    if (!topUpAmount || amount < 10000) {
+      toast.error('Minimum top up is Rp 10,000');
+      return;
+    }
+    if (amount > 100000000) {
+      toast.error('Maximum top up is Rp 100,000,000');
       return;
     }
 
@@ -144,8 +150,13 @@ export default function Wallet() {
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || parseInt(withdrawAmount) < 50) {
-      toast.error('Minimum withdrawal is $50');
+    const amount = parseInt(withdrawAmount);
+    if (!withdrawAmount || amount < 50000) {
+      toast.error('Minimum withdrawal is Rp 50,000');
+      return;
+    }
+    if (amount > 50000000) {
+      toast.error('Maximum withdrawal is Rp 50,000,000');
       return;
     }
 
@@ -185,7 +196,7 @@ export default function Wallet() {
     }
   };
 
-  const quickAmounts = [100, 250, 500, 1000];
+  const quickAmounts = [50000, 100000, 250000, 500000];
 
   const filterTransactions = (type?: string) => {
     if (!type || type === 'all') return transactions;
@@ -250,7 +261,7 @@ export default function Wallet() {
                         value={topUpAmount}
                         onChange={(e) => setTopUpAmount(e.target.value)}
                         placeholder="Enter amount"
-                        min="10"
+                        min="10000"
                       />
                       <div className="flex gap-2 flex-wrap">
                         {quickAmounts.map((amount) => (
@@ -329,7 +340,7 @@ export default function Wallet() {
                         value={withdrawAmount}
                         onChange={(e) => setWithdrawAmount(e.target.value)}
                         placeholder="Enter amount"
-                        min="50"
+                        min="50000"
                       />
                       <p className="text-xs text-muted-foreground">
                         Available balance: {formatCurrency(balance?.available || 0)}

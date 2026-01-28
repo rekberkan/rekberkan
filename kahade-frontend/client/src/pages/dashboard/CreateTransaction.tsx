@@ -87,8 +87,12 @@ export default function CreateTransaction() {
         }
         return true;
       case 3:
-        if (!formData.amount || parseFloat(formData.amount) < 10) {
-          toast.error('Minimum transaction price is $10');
+        if (!formData.amount || parseFloat(formData.amount) < 10000) {
+          toast.error('Minimum transaction price is Rp 10,000');
+          return false;
+        }
+        if (parseFloat(formData.amount) > 1000000000) {
+          toast.error('Maximum transaction price is Rp 1,000,000,000');
           return false;
         }
         return true;
@@ -143,11 +147,12 @@ export default function CreateTransaction() {
 
   const formatCurrency = (value: string | number) => {
     const num = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(num)) return '$0';
-    return new Intl.NumberFormat('en-US', {
+    if (isNaN(num)) return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(num);
   };
 
@@ -315,7 +320,7 @@ export default function CreateTransaction() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="amount">Transaction Price (USD) *</Label>
+                <Label htmlFor="amount">Transaction Price (IDR) *</Label>
                 <Input
                   id="amount"
                   type="number"

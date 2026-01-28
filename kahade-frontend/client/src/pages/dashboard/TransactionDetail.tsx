@@ -66,10 +66,11 @@ const statusConfig: Record<string, { label: string; color: string; bgColor: stri
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('id-ID', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(amount);
 };
 

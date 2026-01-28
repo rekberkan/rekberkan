@@ -160,7 +160,7 @@ export default function AdminSettings() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="minTransaction">Minimum Transaction (USD)</Label>
+              <Label htmlFor="minTransaction">Minimum Transaction (IDR)</Label>
               <Input
                 id="minTransaction"
                 type="number"
@@ -172,7 +172,7 @@ export default function AdminSettings() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="maxTransaction">Maximum Transaction (USD)</Label>
+              <Label htmlFor="maxTransaction">Maximum Transaction (IDR)</Label>
               <Input
                 id="maxTransaction"
                 type="number"
