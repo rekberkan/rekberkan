@@ -4,7 +4,7 @@
  * Features:
  * - Overview with KPIs
  * - Charts placeholders
- * - Activity feed
+ * - Lightning feed
  * - Quick actions
  * - Phosphor Icons only
  */
@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 import {
   Wallet, ArrowUpRight, ArrowDownRight, Clock, CheckCircle,
   Warning, Plus, ArrowRight, ChartLineUp, ShieldCheck, Spinner,
-  CreditCard, Receipt, Activity
+  CreditCard, Receipt, Lightning
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -217,7 +217,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
         
-        {/* Activity Feed & Recent Transactions */}
+        {/* Lightning Feed & Recent Transactions */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Recent Transactions */}
           <motion.div
@@ -279,7 +279,7 @@ export default function Dashboard() {
             )}
           </motion.div>
           
-          {/* Activity Feed */}
+          {/* Lightning Feed */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -287,8 +287,8 @@ export default function Dashboard() {
             className="glass-card p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Activity Feed</h2>
-              <Activity className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Lightning Feed</h2>
+              <Lightning className="w-5 h-5 text-muted-foreground" />
             </div>
             
             <div className="space-y-4">
