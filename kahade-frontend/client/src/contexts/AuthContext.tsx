@@ -3,6 +3,14 @@ import { authApi } from '@/lib/api';
 import { APP_URLS, getAppMode, navigateToApp, navigateToAdmin, canAccessAdmin } from '@/config/app.config';
 import { SecureStorage } from '@/lib/secure-storage';
 
+/**
+ * SECURITY IMPROVEMENT:
+ * - User data is now stored in sessionStorage (cleared when browser closes)
+ * - Tokens are managed via httpOnly cookies (set by backend)
+ * - localStorage is no longer used for sensitive data
+ * - CSRF token is stored in sessionStorage via SecureStorage
+ */
+
 interface User {
   id: string;
   username: string;
@@ -37,6 +45,9 @@ interface RegisterData {
   phone?: string;
 }
 
+// Storage keys - using sessionStorage for security
+const USER_STORAGE_KEY = 'kahade_user_cache';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -61,46 +72,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  /**
+   * Store user data in sessionStorage (more secure than localStorage)
+   * Session storage is cleared when browser/tab is closed
+   */
+  const storeUserData = (userData: User) => {
+    try {
+      sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+    } catch {
+      // Silently fail if storage is not available
+    }
+  };
+
+  /**
+   * Get cached user data from sessionStorage
+   */
+  const getCachedUser = (): User | null => {
+    try {
+      const cached = sessionStorage.getItem(USER_STORAGE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  /**
+   * Clear all user data from storage
+   */
+  const clearUserData = () => {
+    sessionStorage.removeItem(USER_STORAGE_KEY);
+    SecureStorage.clearAll();
+    
+    // Also clear any legacy localStorage data (migration cleanup)
+    try {
+      localStorage.removeItem('kahade_token');
+      localStorage.removeItem('kahade_user');
+      localStorage.removeItem('kahade_refresh_token');
+    } catch {
+      // Ignore errors during cleanup
+    }
+  };
+
   const fetchCurrentUser = async () => {
     try {
       const response = await authApi.me();
       const userData = response.data.user || response.data;
       const mappedUser = mapUserData(userData);
       setUser(mappedUser);
-      localStorage.setItem('kahade_user', JSON.stringify(mappedUser));
+      storeUserData(mappedUser);
       return mappedUser;
-    } catch (error) {
-      localStorage.removeItem('kahade_token');
-      localStorage.removeItem('kahade_user');
-      localStorage.removeItem('kahade_refresh_token');
+    } catch {
+      clearUserData();
       setUser(null);
-      throw error;
+      throw new Error('Failed to fetch user data');
     }
   };
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('kahade_token');
-      
-      // Also check for cached user data for faster initial render
-      const cachedUser = localStorage.getItem('kahade_user');
+      // Check for cached user data for faster initial render
+      const cachedUser = getCachedUser();
       if (cachedUser) {
-        try {
-          setUser(JSON.parse(cachedUser));
-        } catch (e) {
-          localStorage.removeItem('kahade_user');
-        }
+        setUser(cachedUser);
       }
       
-      if (token) {
-        try {
-          await fetchCurrentUser();
-        } catch (error) {
-          console.error('Auth check failed:', error);
-        }
+      // Always verify with server (cookies are sent automatically)
+      try {
+        await fetchCurrentUser();
+      } catch {
+        // User is not authenticated or session expired
+        clearUserData();
+        setUser(null);
       }
+      
       setIsLoading(false);
     };
+    
+    // Migrate from localStorage if needed (one-time cleanup)
+    SecureStorage.migrateFromLocalStorage();
     
     checkAuth();
   }, []);
@@ -109,19 +158,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authApi.login({ email, password });
-      const { accessToken, token, refreshToken, user: userData } = response.data;
+      const { user: userData } = response.data;
       
-      const authToken = accessToken || token;
-      localStorage.setItem('kahade_token', authToken);
-      if (refreshToken) {
-        localStorage.setItem('kahade_refresh_token', refreshToken);
-      }
+      // Note: Tokens are now set as httpOnly cookies by the backend
+      // We only store non-sensitive user data in sessionStorage
       
       let mappedUser: User;
       if (userData) {
         mappedUser = mapUserData(userData, email.split('@')[0]);
         setUser(mappedUser);
-        localStorage.setItem('kahade_user', JSON.stringify(mappedUser));
+        storeUserData(mappedUser);
       } else {
         mappedUser = await fetchCurrentUser();
       }
@@ -139,9 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return mappedUser;
     } catch (error: any) {
-      localStorage.removeItem('kahade_token');
-      localStorage.removeItem('kahade_user');
-      localStorage.removeItem('kahade_refresh_token');
+      clearUserData();
       throw new Error(error.response?.data?.message || 'Login failed');
     } finally {
       setIsLoading(false);
@@ -158,28 +202,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: data.phone,
       });
       
-      const { accessToken, token, refreshToken, user: userData } = response.data;
+      const { user: userData } = response.data;
       
-      if (accessToken || token) {
-        localStorage.setItem('kahade_token', accessToken || token);
-        if (refreshToken) {
-          localStorage.setItem('kahade_refresh_token', refreshToken);
-        }
-        
-        if (userData) {
-          const mappedUser = mapUserData(userData, data.username);
-          mappedUser.phone = data.phone;
-          setUser(mappedUser);
-          localStorage.setItem('kahade_user', JSON.stringify(mappedUser));
-        } else {
-          await fetchCurrentUser();
-        }
-        
-        // Redirect to app after registration
-        const appMode = getAppMode();
-        if (appMode === 'landing') {
-          navigateToApp();
-        }
+      // Note: Tokens are now set as httpOnly cookies by the backend
+      if (userData) {
+        const mappedUser = mapUserData(userData, data.username);
+        mappedUser.phone = data.phone;
+        setUser(mappedUser);
+        storeUserData(mappedUser);
+      } else {
+        await fetchCurrentUser();
+      }
+      
+      // Redirect to app after registration
+      const appMode = getAppMode();
+      if (appMode === 'landing') {
+        navigateToApp();
       }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
@@ -190,18 +228,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Call logout API - this will clear httpOnly cookies on the server
       await authApi.logout();
-    } catch (error) {
-      console.error('Logout API error:', error);
+    } catch {
+      // Continue with local cleanup even if API call fails
     } finally {
-      // Clear all stored tokens and data
-      localStorage.removeItem('kahade_token');
-      localStorage.removeItem('kahade_user');
-      localStorage.removeItem('kahade_refresh_token');
-      
-      // Clear CSRF token from session storage
-      SecureStorage.clearAll();
-      
+      // Clear all stored data
+      clearUserData();
       setUser(null);
       
       // Redirect to landing page after logout
@@ -214,14 +247,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
-    localStorage.setItem('kahade_user', JSON.stringify(updatedUser));
+    storeUserData(updatedUser);
   };
 
   const refreshUser = async () => {
     try {
       await fetchCurrentUser();
-    } catch (error) {
-      console.error('Failed to refresh user:', error);
+    } catch {
+      // Failed to refresh - user may need to re-login
     }
   };
 

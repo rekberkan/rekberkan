@@ -6,7 +6,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 
 describe('PromoService', () => {
   let service: PromoService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let _prismaService: jest.Mocked<PrismaService>;
 
   const mockPrismaService = {
     promo: {
@@ -42,7 +42,7 @@ describe('PromoService', () => {
     }).compile();
 
     service = module.get<PromoService>(PromoService);
-    prismaService = module.get(PrismaService);
+    _prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -60,7 +60,7 @@ describe('PromoService', () => {
       currentUsages: 50,
       status: VoucherStatus.ACTIVE,
       validFrom: new Date('2024-01-01'),
-      validUntil: new Date('2025-12-31'),
+      validUntil: new Date('2030-12-31'),
       assignedToUserId: null,
       applicableCategories: null,
       promoId: null,
@@ -171,7 +171,7 @@ describe('PromoService', () => {
       currentUsages: 50,
       status: VoucherStatus.ACTIVE,
       validFrom: new Date('2024-01-01'),
-      validUntil: new Date('2025-12-31'),
+      validUntil: new Date('2030-12-31'),
       assignedToUserId: null,
       applicableCategories: null,
       promoId: null,

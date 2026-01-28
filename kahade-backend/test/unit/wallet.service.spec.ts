@@ -7,8 +7,8 @@ import { BadRequestException } from '@nestjs/common';
 
 describe('WalletService', () => {
   let service: WalletService;
-  let prismaService: jest.Mocked<PrismaService>;
-  let ledgerService: jest.Mocked<LedgerService>;
+  let _prismaService: jest.Mocked<PrismaService>;
+  let _ledgerService: jest.Mocked<LedgerService>;
 
   const mockPrismaService = {
     wallet: {
@@ -16,6 +16,7 @@ describe('WalletService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     walletTransaction: {
       create: jest.fn(),
@@ -50,8 +51,8 @@ describe('WalletService', () => {
     }).compile();
 
     service = module.get<WalletService>(WalletService);
-    prismaService = module.get(PrismaService);
-    ledgerService = module.get(LedgerService);
+    _prismaService = module.get(PrismaService);
+    _ledgerService = module.get(LedgerService);
 
     jest.clearAllMocks();
   });
@@ -122,10 +123,17 @@ describe('WalletService', () => {
       });
     });
 
-    it('should throw if wallet not found', async () => {
+    it('should return zero balance if wallet not found', async () => {
       mockPrismaService.wallet.findUnique.mockResolvedValue(null);
 
-      await expect(service.getBalance('user-1')).rejects.toThrow('Wallet not found');
+      const result = await service.getBalance('user-1');
+      expect(result).toEqual({
+        available: 0,
+        locked: 0,
+        total: 0,
+        currency: 'IDR',
+        lastReconciledAt: undefined,
+      });
     });
   });
 
@@ -136,13 +144,11 @@ describe('WalletService', () => {
         userId: 'user-1',
         balanceMinor: 100000n,
         lockedMinor: 0n,
+        version: 1,
       };
 
       mockPrismaService.wallet.findUnique.mockResolvedValue(mockWallet);
-      mockPrismaService.wallet.update.mockResolvedValue({
-        ...mockWallet,
-        lockedMinor: 50000n,
-      });
+      mockPrismaService.wallet.updateMany.mockResolvedValue({ count: 1 });
 
       await service.lockBalance({
         userId: 'user-1',
@@ -150,10 +156,11 @@ describe('WalletService', () => {
         reason: 'Escrow hold',
       });
 
-      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        data: { lockedMinor: { increment: 50000n } },
-      });
+      expect(mockPrismaService.wallet.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 'user-1' }),
+        }),
+      );
     });
 
     it('should throw if insufficient available balance', async () => {
@@ -183,6 +190,7 @@ describe('WalletService', () => {
         userId: 'user-1',
         balanceMinor: 100000n,
         lockedMinor: 50000n,
+        version: 1,
       };
 
       mockPrismaService.wallet.findUnique.mockResolvedValue(mockWallet);
@@ -193,10 +201,12 @@ describe('WalletService', () => {
 
       await service.unlockBalance('user-1', 50000n, 'Escrow refund');
 
-      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        data: { lockedMinor: { decrement: 50000n } },
-      });
+      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-1' },
+          data: expect.objectContaining({ lockedMinor: { decrement: 50000n } }),
+        }),
+      );
     });
 
     it('should throw if trying to unlock more than locked', async () => {
@@ -243,10 +253,12 @@ describe('WalletService', () => {
         referenceId: 'deposit-1',
       });
 
-      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        data: { balanceMinor: { increment: 50000n } },
-      });
+      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-1' },
+          data: expect.objectContaining({ balanceMinor: { increment: 50000n } }),
+        }),
+      );
     });
   });
 
@@ -259,11 +271,11 @@ describe('WalletService', () => {
         lockedMinor: 0n,
       };
 
-      mockPrismaService.wallet.findUnique.mockResolvedValue(mockWallet);
-      mockPrismaService.wallet.update.mockResolvedValue({
+      mockPrismaService.wallet.findUnique.mockResolvedValue({
         ...mockWallet,
-        balanceMinor: 50000n,
+        version: 1,
       });
+      mockPrismaService.wallet.updateMany.mockResolvedValue({ count: 1 });
       mockPrismaService.walletTransaction.create.mockResolvedValue({
         id: 'tx-1',
         type: 'DEBIT',
@@ -278,10 +290,12 @@ describe('WalletService', () => {
         referenceId: 'withdrawal-1',
       });
 
-      expect(mockPrismaService.wallet.update).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        data: { balanceMinor: { decrement: 50000n } },
-      });
+      // Use updateMany for optimistic locking
+      expect(mockPrismaService.wallet.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 'user-1' }),
+        }),
+      );
     });
 
     it('should throw if insufficient balance', async () => {

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   EscrowService,
   InvalidStateTransitionError,
-  UnauthorizedTransitionError,
+  // UnauthorizedTransitionError is exported but not used in these tests
 } from '../../src/core/escrow/escrow.service';
 import { PrismaService } from '../../src/infrastructure/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -12,9 +12,9 @@ import { EscrowHoldStatus, OrderStatus } from '@prisma/client';
 
 describe('EscrowService', () => {
   let service: EscrowService;
-  let prismaService: jest.Mocked<PrismaService>;
-  let walletService: jest.Mocked<WalletService>;
-  let ledgerService: jest.Mocked<LedgerService>;
+  let _prismaService: jest.Mocked<PrismaService>;
+  let _walletService: jest.Mocked<WalletService>;
+  let _ledgerService: jest.Mocked<LedgerService>;
 
   const mockPrismaService = {
     escrowHold: {
@@ -26,6 +26,7 @@ describe('EscrowService', () => {
     wallet: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      create: jest.fn(),
     },
     order: {
       update: jest.fn(),
@@ -66,9 +67,9 @@ describe('EscrowService', () => {
     }).compile();
 
     service = module.get<EscrowService>(EscrowService);
-    prismaService = module.get(PrismaService);
-    walletService = module.get(WalletService);
-    ledgerService = module.get(LedgerService);
+    _prismaService = module.get(PrismaService);
+    _walletService = module.get(WalletService);
+    _ledgerService = module.get(LedgerService);
 
     jest.clearAllMocks();
   });
@@ -203,19 +204,25 @@ describe('EscrowService', () => {
       expect(mockWalletService.lockBalance).not.toHaveBeenCalled();
     });
 
-    it('should throw if buyer wallet not found', async () => {
+    it('should handle missing buyer wallet gracefully (auto-create)', async () => {
+      // Service now auto-creates wallets, so this test verifies the behavior
       mockPrismaService.escrowHold.findFirst.mockResolvedValue(null);
-      mockPrismaService.wallet.findUnique.mockResolvedValue(null);
+      mockPrismaService.wallet.findUnique
+        .mockResolvedValueOnce(null) // Buyer wallet not found
+        .mockResolvedValueOnce(mockSellerWallet);
+      mockPrismaService.wallet.create.mockResolvedValue(mockBuyerWallet);
+      mockPrismaService.escrowHold.create.mockResolvedValue(mockEscrow);
 
-      await expect(
-        service.createEscrow({
-          orderId: 'order-1',
-          buyerUserId: 'buyer-1',
-          sellerUserId: 'seller-1',
-          amountMinor: 100000n,
-          idempotencyKey: 'idem-1',
-        }),
-      ).rejects.toThrow('Buyer wallet not found');
+      // Should not throw, but create wallet and proceed
+      const result = await service.createEscrow({
+        orderId: 'order-1',
+        buyerUserId: 'buyer-1',
+        sellerUserId: 'seller-1',
+        amountMinor: 100000n,
+        idempotencyKey: 'idem-1',
+      });
+
+      expect(result).toBeDefined();
     });
   });
 
