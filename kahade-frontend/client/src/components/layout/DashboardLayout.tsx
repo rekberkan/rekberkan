@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   House, ArrowsLeftRight, Wallet, Bell, User, Gear,
   SignOut, List, X, CaretRight, Plus, MagnifyingGlass,
-  ChartLine, CaretDown
+  ChartLine, CaretDown, Bank, IdentificationCard, Users,
+  Scales, ClockCounterClockwise
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,8 +26,12 @@ interface DashboardLayoutProps {
 const navItems = [
   { href: '/app', icon: House, label: 'Overview' },
   { href: '/app/transactions', icon: ArrowsLeftRight, label: 'Transactions' },
-  { href: '/app/wallet', icon: Wallet, label: 'Wallet / Billing' },
-  { href: '/app/analytics', icon: ChartLine, label: 'Analytics' },
+  { href: '/app/wallet', icon: Wallet, label: 'Wallet' },
+  { href: '/app/bank-accounts', icon: Bank, label: 'Bank Accounts' },
+  { href: '/app/disputes', icon: Scales, label: 'Disputes' },
+  { href: '/app/referrals', icon: Users, label: 'Referrals' },
+  { href: '/app/kyc', icon: IdentificationCard, label: 'KYC Verification' },
+  { href: '/app/activity', icon: ClockCounterClockwise, label: 'Activity Log' },
   { href: '/app/notifications', icon: Bell, label: 'Notifications' },
   { href: '/app/profile', icon: User, label: 'Profile' },
   { href: '/app/settings', icon: Gear, label: 'Settings' },

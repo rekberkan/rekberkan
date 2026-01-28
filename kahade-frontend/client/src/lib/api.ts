@@ -339,10 +339,18 @@ export const ratingApi = {
 
 // Dispute API
 export const disputeApi = {
+  getList: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get('/disputes', { params }),
+  
   list: (params?: { status?: string; page?: number; limit?: number }) =>
     api.get('/disputes', { params }),
   
   get: (id: string) => api.get(`/disputes/${id}`),
+  
+  getDetail: (id: string) => api.get(`/disputes/${id}`),
+  
+  sendMessage: (id: string, data: { content: string }) =>
+    api.post(`/disputes/${id}/messages`, { message: data.content }),
   
   respond: (id: string, response: string) =>
     api.post(`/disputes/${id}/respond`, { response }),
@@ -517,6 +525,58 @@ export const adminApi = {
   }) => api.post('/admin/vouchers', data),
   
   deactivateVoucher: (id: string) => api.delete(`/admin/vouchers/${id}`),
+  
+  // KYC Management
+  getKYCSubmissions: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get('/admin/kyc', { params }),
+};
+
+// Bank Account API
+export const bankApi = {
+  getAccounts: () => api.get('/bank-accounts'),
+  
+  getSupportedBanks: () => api.get('/bank-accounts/banks'),
+  
+  addAccount: (data: { bankCode: string; accountNumber: string; accountHolderName: string }) =>
+    api.post('/bank-accounts', data),
+  
+  setDefault: (id: string) => api.post(`/bank-accounts/${id}/default`),
+  
+  deleteAccount: (id: string) => api.delete(`/bank-accounts/${id}`),
+  
+  verifyAccount: (id: string) => api.post(`/bank-accounts/${id}/verify`),
+};
+
+// KYC API
+export const kycApi = {
+  getStatus: () => api.get('/kyc/status'),
+  
+  submit: (data: FormData) =>
+    api.post('/kyc/submit', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  
+  getDocuments: () => api.get('/kyc/documents'),
+};
+
+// Referral API
+export const referralApi = {
+  getStats: () => api.get('/referrals/stats'),
+  
+  getList: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get('/referrals', { params }),
+  
+  getCode: () => api.get('/referrals/code'),
+  
+  applyCode: (code: string) => api.post('/referrals/apply', { code }),
+};
+
+// Activity API
+export const activityApi = {
+  getList: (params?: { type?: string; page?: number; limit?: number }) =>
+    api.get('/activities', { params }),
+  
+  getRecent: (limit?: number) => api.get('/activities/recent', { params: { limit } }),
 };
 
 export default api;

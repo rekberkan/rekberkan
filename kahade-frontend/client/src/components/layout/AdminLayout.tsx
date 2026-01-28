@@ -15,7 +15,8 @@ import {
   House, Users, ArrowsLeftRight, Warning, FileText, Gear,
   SignOut, List, X, CaretRight, CaretDown, MagnifyingGlass,
   Bell, ChartBar, ShieldCheck, Database, ClockCounterClockwise,
-  UserCircleGear, Sliders, Key, Globe
+  UserCircleGear, Sliders, Key, Globe, IdentificationCard,
+  ArrowDown, Tag, Wallet
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,53 +35,29 @@ const navSections = [
     title: 'Overview',
     items: [
       { href: '/', icon: House, label: 'Dashboard' },
-      { href: '/reports', icon: ChartBar, label: 'Reports' },
     ]
   },
   {
     title: 'Management',
     items: [
-      { 
-        icon: Users, 
-        label: 'User Management',
-        children: [
-          { href: '/users', label: 'All Users' },
-          { href: '/users/roles', label: 'Roles & Permissions' },
-          { href: '/users/kyc', label: 'KYC Verification' },
-        ]
-      },
+      { href: '/users', icon: Users, label: 'Users' },
+      { href: '/kyc', icon: IdentificationCard, label: 'KYC Verification' },
       { href: '/transactions', icon: ArrowsLeftRight, label: 'Transactions' },
       { href: '/disputes', icon: Warning, label: 'Disputes' },
+      { href: '/withdrawals', icon: ArrowDown, label: 'Withdrawals' },
     ]
   },
   {
-    title: 'Content',
+    title: 'Marketing',
     items: [
-      { 
-        icon: FileText, 
-        label: 'Content Management',
-        children: [
-          { href: '/content/blog', label: 'Blog Posts' },
-          { href: '/content/pages', label: 'Static Pages' },
-          { href: '/content/announcements', label: 'Announcements' },
-        ]
-      },
+      { href: '/promos', icon: Tag, label: 'Promotions' },
     ]
   },
   {
     title: 'System',
     items: [
       { href: '/audit-logs', icon: ClockCounterClockwise, label: 'Audit Logs' },
-      { 
-        icon: Gear, 
-        label: 'Settings',
-        children: [
-          { href: '/settings/general', label: 'General' },
-          { href: '/settings/security', label: 'Security' },
-          { href: '/settings/api', label: 'API Keys' },
-          { href: '/settings/integrations', label: 'Integrations' },
-        ]
-      },
+      { href: '/settings', icon: Gear, label: 'Settings' },
     ]
   },
 ];

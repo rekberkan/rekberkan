@@ -48,6 +48,12 @@ import Wallet from "./pages/dashboard/Wallet";
 import Notifications from "./pages/dashboard/Notifications";
 import Profile from "./pages/dashboard/Profile";
 import Settings from "./pages/dashboard/Settings";
+import BankAccounts from "./pages/dashboard/BankAccounts";
+import KYCVerification from "./pages/dashboard/KYCVerification";
+import Referrals from "./pages/dashboard/Referrals";
+import Disputes from "./pages/dashboard/Disputes";
+import DisputeDetail from "./pages/dashboard/DisputeDetail";
+import ActivityLog from "./pages/dashboard/ActivityLog";
 
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -56,6 +62,9 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminDisputes from "./pages/admin/AdminDisputes";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminKYC from "./pages/admin/AdminKYC";
+import AdminWithdrawals from "./pages/admin/AdminWithdrawals";
+import AdminPromos from "./pages/admin/AdminPromos";
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -177,6 +186,38 @@ function AppRouter() {
           <Wallet />
         </ProtectedRoute>
       </Route>
+      <Route path="/bank-accounts">
+        <ProtectedRoute>
+          <BankAccounts />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/kyc">
+        <ProtectedRoute>
+          <KYCVerification />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/referrals">
+        <ProtectedRoute>
+          <Referrals />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/disputes">
+        <ProtectedRoute>
+          <Disputes />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/disputes/:id">
+        {(params) => (
+          <ProtectedRoute>
+            <DisputeDetail />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/activity">
+        <ProtectedRoute>
+          <ActivityLog />
+        </ProtectedRoute>
+      </Route>
       <Route path="/notifications">
         <ProtectedRoute>
           <Notifications />
@@ -220,6 +261,21 @@ function AdminRouter() {
       <Route path="/disputes">
         <AdminProtectedRoute>
           <AdminDisputes />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/kyc">
+        <AdminProtectedRoute>
+          <AdminKYC />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/withdrawals">
+        <AdminProtectedRoute>
+          <AdminWithdrawals />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/promos">
+        <AdminProtectedRoute>
+          <AdminPromos />
         </AdminProtectedRoute>
       </Route>
       <Route path="/audit-logs">
