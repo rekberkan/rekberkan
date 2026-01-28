@@ -28,8 +28,6 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
 
     // Track actual body size during streaming
     let bodySize = 0;
-    // Note: originalWrite preserved for potential future response size tracking
-    const _originalWrite = req.socket.write.bind(req.socket);
 
     req.on('data', (chunk: Buffer) => {
       bodySize += chunk.length;

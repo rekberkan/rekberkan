@@ -17,7 +17,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { DisputeService } from '../dispute/dispute.service';
 import { DisputeDecision } from '@prisma/client';
 
@@ -229,7 +229,7 @@ export class AdminController {
       throw new ForbiddenException('Cannot suspend admin users');
     }
 
-    const result = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id },
       data: {
         suspendedAt: new Date(),
@@ -257,7 +257,7 @@ export class AdminController {
       throw new NotFoundException('User not found');
     }
 
-    const result = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id },
       data: {
         suspendedAt: null,

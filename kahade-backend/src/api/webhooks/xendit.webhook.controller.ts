@@ -359,7 +359,7 @@ export class XenditWebhookController {
     payload: XenditWebhookPayload,
     webhookEventId: string,
   ): Promise<void> {
-    const { external_id, status, amount, paid_amount, paid_at } = payload;
+    const { external_id, status, paid_amount, paid_at } = payload;
 
     // Find payment by provider invoice ID
     const payment = await this.prisma.payment.findUnique({
@@ -422,7 +422,7 @@ export class XenditWebhookController {
           paymentDetails: {
             ...(targetPayment.paymentDetails as object),
             xendit_status: status,
-            paid_amount: paid_amount ?? amount,
+            paid_amount: paid_amount ?? payload.amount,
             callback_received_at: new Date().toISOString(),
           },
         },
@@ -447,8 +447,8 @@ export class XenditWebhookController {
   /**
    * Process disbursement callback (withdrawal completed)
    */
-  private async processDisbursementCallback(payload: any, webhookEventId: string): Promise<void> {
-    const { id, external_id, status, amount } = payload;
+  private async processDisbursementCallback(payload: any, _webhookEventId: string): Promise<void> {
+    const { id, status } = payload;
 
     // Find withdrawal by provider disbursement ID
     const withdrawal = await this.prisma.withdrawal.findFirst({

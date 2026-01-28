@@ -19,10 +19,12 @@ export class ThrottlerGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is public (for future rate limit differentiation)
-    const _isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+    // Reserved for future rate limit differentiation based on public routes
+    void isPublic;
 
     const request = context.switchToHttp().getRequest();
     const key = this.getKey(request);

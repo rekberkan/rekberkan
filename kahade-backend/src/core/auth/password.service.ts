@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HashUtil } from '@common/utils/crypto.util';
 import * as crypto from 'crypto';
 

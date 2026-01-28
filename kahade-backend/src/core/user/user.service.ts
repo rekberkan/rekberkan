@@ -423,14 +423,22 @@ export class UserService {
   // ============================================================================
 
   sanitizeUser(user: any): IUserResponse {
+    // Destructure to omit sensitive fields - using void to satisfy linter
     const {
-      passwordHash: _passwordHash,
-      passwordResetToken: _passwordResetToken,
-      passwordResetExpires: _passwordResetExpires,
-      totpSecretEnc: _totpSecretEnc,
-      backupCodesHash: _backupCodesHash,
+      passwordHash,
+      passwordResetToken,
+      passwordResetExpires,
+      totpSecretEnc,
+      backupCodesHash,
       ...sanitized
     } = user;
+
+    // Explicitly void the sensitive fields to indicate intentional omission
+    void passwordHash;
+    void passwordResetToken;
+    void passwordResetExpires;
+    void totpSecretEnc;
+    void backupCodesHash;
 
     return {
       ...sanitized,

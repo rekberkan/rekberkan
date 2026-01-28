@@ -140,8 +140,7 @@ export function safeInClause(values: (string | number)[]): Prisma.Sql {
     }
   }
 
-  // Build parameterized IN clause
-  const placeholders = values.map(() => '?').join(', ');
+  // Build parameterized IN clause using Prisma.join
   return Prisma.sql`(${Prisma.join(values)})`;
 }
 

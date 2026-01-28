@@ -183,11 +183,34 @@ export default defineConfig({
   build: {
     outDir: path.resolve(PROJECT_ROOT, OUTPUT_DIRS[APP_MODE] || 'dist/public'),
     emptyOutDir: true,
+    chunkSizeWarningLimit: 600, // Increase limit slightly for complex app
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
+        manualChunks(id) {
+          // React core
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor';
+          }
+          // Radix UI components
+          if (id.includes('node_modules/@radix-ui/')) {
+            return 'ui';
+          }
+          // Framer motion
+          if (id.includes('node_modules/framer-motion/')) {
+            return 'animations';
+          }
+          // Form libraries
+          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/@hookform/')) {
+            return 'forms';
+          }
+          // Icons
+          if (id.includes('node_modules/@phosphor-icons/')) {
+            return 'icons';
+          }
+          // Utility libraries
+          if (id.includes('node_modules/axios/') || id.includes('node_modules/clsx/') || id.includes('node_modules/class-variance-authority/')) {
+            return 'utils';
+          }
         },
       },
     },

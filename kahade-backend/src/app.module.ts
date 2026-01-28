@@ -131,7 +131,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
   ],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
+  configure(_consumer: MiddlewareConsumer) {
     // Middleware configuration can be added here if needed
   }
 }
