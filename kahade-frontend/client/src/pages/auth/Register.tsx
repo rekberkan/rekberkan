@@ -1,7 +1,6 @@
 /*
- * KAHADE REGISTER PAGE
- * Design: Glassmorphic centered form with brand elements
- * Icons: Phosphor Icons only
+ * KAHADE REGISTER PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { useState } from 'react';
@@ -73,12 +72,16 @@ export default function Register() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-[#FAFBFC]">
+    <div className="min-h-screen flex bg-white">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-white relative overflow-hidden">
-        {/* Background decorations */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
+      <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-black relative overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-full h-full" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }} />
+        </div>
         
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -86,17 +89,17 @@ export default function Register() {
           transition={{ delay: 0.2 }}
           className="relative z-10 max-w-md"
         >
-          <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center">
-            <ShieldCheck className="w-32 h-32 text-accent" weight="duotone" />
+          <div className="w-48 h-48 mx-auto mb-8 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
+            <ShieldCheck className="w-24 h-24 text-white" weight="duotone" />
           </div>
-          <h2 className="text-2xl font-bold mb-4 text-center">
+          <h2 className="text-2xl font-bold mb-4 text-center text-white">
             Join Kahade Today
           </h2>
-          <p className="text-muted-foreground text-center mb-8">
+          <p className="text-white/70 text-center mb-8">
             Enjoy various benefits as a Kahade member.
           </p>
           
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {benefits.map((benefit, index) => (
               <motion.li
                 key={benefit}
@@ -105,8 +108,10 @@ export default function Register() {
                 transition={{ delay: 0.3 + index * 0.1 }}
                 className="flex items-center gap-3"
               >
-                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" weight="fill" />
-                <span className="text-foreground">{benefit}</span>
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-white" weight="fill" />
+                </div>
+                <span className="text-white/90">{benefit}</span>
               </motion.li>
             ))}
           </ul>
@@ -125,31 +130,31 @@ export default function Register() {
             <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
           </Link>
           
-          <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-          <p className="text-muted-foreground mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-black">Create Account</h1>
+          <p className="text-[#6B7280] mb-8">
             Sign up free and start transacting securely
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="username">Username *</Label>
+              <Label htmlFor="username" className="text-black">Username *</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
                 <Input
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   placeholder="johndoe"
                   required
-                  className="pl-10 bg-white border-border"
+                  className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12"
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email" className="text-black">Email *</Label>
               <div className="relative">
-                <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+                <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
                 <Input
                   id="email"
                   type="email"
@@ -157,31 +162,31 @@ export default function Register() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@example.com"
                   required
-                  className="pl-10 bg-white border-border"
+                  className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12"
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number (Optional)</Label>
+              <Label htmlFor="phone" className="text-black">Phone Number (Optional)</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1 (555) 123-4567"
-                  className="pl-10 bg-white border-border"
+                  placeholder="+62 812 3456 7890"
+                  className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12"
                 />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
+                <Label htmlFor="password" className="text-black">Password *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -190,13 +195,13 @@ export default function Register() {
                     placeholder="••••••••"
                     required
                     minLength={8}
-                    className="pl-10 bg-white border-border"
+                    className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm *</Label>
+                <Label htmlFor="confirmPassword" className="text-black">Confirm *</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -205,12 +210,12 @@ export default function Register() {
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     placeholder="••••••••"
                     required
-                    className="bg-white border-border"
+                    className="bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-black transition-colors"
                   >
                     {showPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
                   </button>
@@ -218,22 +223,22 @@ export default function Register() {
               </div>
             </div>
             
-            <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
+            <p className="text-xs text-[#9CA3AF]">Password must be at least 8 characters</p>
             
             <div className="flex items-start gap-2">
               <Checkbox
                 id="agreeTerms"
                 checked={formData.agreeTerms}
                 onCheckedChange={(checked) => setFormData({ ...formData, agreeTerms: checked as boolean })}
-                className="mt-1"
+                className="mt-1 border-[#E5E5E5] data-[state=checked]:bg-black data-[state=checked]:border-black"
               />
-              <Label htmlFor="agreeTerms" className="text-sm cursor-pointer leading-relaxed">
+              <Label htmlFor="agreeTerms" className="text-sm cursor-pointer leading-relaxed text-[#6B7280]">
                 I agree to the{' '}
-                <Link href="/terms" className="text-accent hover:underline">
+                <Link href="/terms" className="text-black hover:underline font-medium">
                   Terms & Conditions
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="text-accent hover:underline">
+                <Link href="/privacy" className="text-black hover:underline font-medium">
                   Privacy Policy
                 </Link>
               </Label>
@@ -241,7 +246,7 @@ export default function Register() {
             
             <Button 
               type="submit" 
-              className="btn-accent w-full"
+              className="btn-primary w-full h-12"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -258,9 +263,9 @@ export default function Register() {
             </Button>
           </form>
           
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-6 text-center text-sm text-[#6B7280]">
             Already have an account?{' '}
-            <Link href="/login" className="text-accent hover:underline font-medium">
+            <Link href="/login" className="text-black hover:underline font-semibold">
               Sign in here
             </Link>
           </p>

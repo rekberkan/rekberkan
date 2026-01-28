@@ -1,6 +1,6 @@
 /*
- * KAHADE PRESS / NEWS PAGE
- * Icons: Phosphor Icons only
+ * KAHADE PRESS / NEWS PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { useState } from 'react';
@@ -75,34 +75,34 @@ export default function Press() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-16">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <Newspaper className="w-4 h-4" weight="fill" />
               Press & News
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Kahade in the News
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-xl text-[#6B7280] mb-8">
               Stay updated with the latest news, press releases, and media coverage about Kahade.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="btn-accent gap-2">
+              <Button className="btn-primary gap-2">
                 <Envelope className="w-5 h-5" weight="fill" />
                 Media Inquiries
               </Button>
-              <Button size="lg" variant="outline" className="gap-2">
+              <Button className="btn-secondary gap-2">
                 <Download className="w-5 h-5" weight="bold" />
                 Download Media Kit
               </Button>
@@ -112,17 +112,17 @@ export default function Press() {
       </section>
       
       {/* Press Releases */}
-      <section className="py-16">
+      <section className="py-16 bg-[#FAFAFA]">
         <div className="container">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <h2 className="text-2xl font-bold">Press Releases</h2>
+            <h2 className="text-2xl font-bold text-black">Press Releases</h2>
             <div className="relative w-full md:w-64">
-              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
               <Input
                 placeholder="Search releases..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white border-border"
+                className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black"
               />
             </div>
           </div>
@@ -134,25 +134,25 @@ export default function Press() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="glass-card p-6 group cursor-pointer hover:border-accent/50 transition-all"
+                className="feature-card group cursor-pointer"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">
+                      <span className="px-2 py-0.5 rounded-full bg-black text-white text-xs font-medium">
                         {release.category}
                       </span>
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <span className="text-sm text-[#9CA3AF] flex items-center gap-1">
                         <Calendar className="w-4 h-4" weight="regular" />
                         {release.date}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2 group-hover:text-accent transition-colors">
+                    <h3 className="font-semibold text-lg mb-2 text-black group-hover:text-[#6B7280] transition-colors">
                       {release.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground">{release.excerpt}</p>
+                    <p className="text-sm text-[#6B7280]">{release.excerpt}</p>
                   </div>
-                  <Button variant="ghost" className="gap-2 flex-shrink-0">
+                  <Button variant="ghost" className="gap-2 flex-shrink-0 text-black hover:text-[#6B7280]">
                     Read More
                     <ArrowRight className="w-4 h-4" weight="bold" />
                   </Button>
@@ -164,7 +164,7 @@ export default function Press() {
       </section>
       
       {/* Media Coverage */}
-      <section className="py-16 bg-secondary/30">
+      <section className="py-16 bg-white">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -172,8 +172,8 @@ export default function Press() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl font-bold mb-4">Media Coverage</h2>
-            <p className="text-muted-foreground">Featured stories from leading publications</p>
+            <h2 className="text-2xl font-bold mb-4 text-black">Media Coverage</h2>
+            <p className="text-[#6B7280]">Featured stories from leading publications</p>
           </motion.div>
           
           <div className="grid md:grid-cols-2 gap-6">
@@ -184,19 +184,19 @@ export default function Press() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6 flex items-center gap-4 group cursor-pointer hover:border-accent/50 transition-all"
+                className="feature-card flex items-center gap-4 group cursor-pointer"
               >
-                <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
-                  <Play className="w-8 h-8 text-muted-foreground" weight="fill" />
+                <div className="w-16 h-16 rounded-xl bg-[#F5F5F5] flex items-center justify-center flex-shrink-0 group-hover:bg-black transition-colors">
+                  <Play className="w-8 h-8 text-[#9CA3AF] group-hover:text-white transition-colors" weight="fill" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm text-accent font-medium mb-1">{feature.outlet}</div>
-                  <h3 className="font-semibold group-hover:text-accent transition-colors">
+                  <div className="text-sm text-black font-medium mb-1">{feature.outlet}</div>
+                  <h3 className="font-semibold text-black">
                     {feature.title}
                   </h3>
-                  <div className="text-sm text-muted-foreground">{feature.date}</div>
+                  <div className="text-sm text-[#9CA3AF]">{feature.date}</div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors" weight="bold" />
+                <ArrowRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-black transition-colors" weight="bold" />
               </motion.div>
             ))}
           </div>
@@ -204,7 +204,7 @@ export default function Press() {
       </section>
       
       {/* Media Kit */}
-      <section className="py-16">
+      <section className="py-16 bg-[#FAFAFA]">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -212,8 +212,8 @@ export default function Press() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl font-bold mb-4">Media Kit</h2>
-            <p className="text-muted-foreground">Download official Kahade brand assets</p>
+            <h2 className="text-2xl font-bold mb-4 text-black">Media Kit</h2>
+            <p className="text-[#6B7280]">Download official Kahade brand assets</p>
           </motion.div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -224,14 +224,14 @@ export default function Press() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6 text-center group cursor-pointer hover:border-accent/50 transition-all"
+                className="feature-card text-center group cursor-pointer"
               >
-                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/20 transition-colors">
-                  <item.icon className="w-7 h-7 text-accent" weight="fill" />
+                <div className="w-14 h-14 rounded-xl bg-[#F5F5F5] flex items-center justify-center mx-auto mb-4 group-hover:bg-black transition-colors">
+                  <item.icon className="w-7 h-7 text-black group-hover:text-white transition-colors" weight="fill" />
                 </div>
-                <h3 className="font-semibold mb-1">{item.title}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
-                <span className="inline-flex items-center gap-1 text-xs text-accent font-medium">
+                <h3 className="font-semibold mb-1 text-black">{item.title}</h3>
+                <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
+                <span className="inline-flex items-center gap-1 text-xs text-black font-medium">
                   <Download className="w-3 h-3" weight="bold" />
                   {item.format}
                 </span>
@@ -240,7 +240,7 @@ export default function Press() {
           </div>
           
           <div className="text-center mt-8">
-            <Button size="lg" className="btn-accent gap-2">
+            <Button className="btn-primary gap-2">
               <Download className="w-5 h-5" weight="bold" />
               Download Complete Media Kit
             </Button>
@@ -249,7 +249,7 @@ export default function Press() {
       </section>
       
       {/* Contact Section */}
-      <section className="py-16 bg-gradient-to-br from-accent/10 to-primary/10">
+      <section className="py-16 bg-black">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -257,16 +257,16 @@ export default function Press() {
             viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto"
           >
-            <Envelope className="w-16 h-16 mx-auto text-accent mb-6" weight="fill" />
-            <h2 className="text-3xl font-bold mb-4">
+            <Envelope className="w-16 h-16 mx-auto text-white mb-6" weight="fill" />
+            <h2 className="text-3xl font-bold mb-4 text-white">
               Media Inquiries
             </h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-white/70 mb-6">
               For press inquiries, interview requests, or media partnerships, please contact our communications team.
             </p>
-            <div className="glass-card p-6 inline-block">
-              <div className="text-lg font-semibold">press@kahade.com</div>
-              <div className="text-sm text-muted-foreground">We typically respond within 24 hours</div>
+            <div className="bg-white/10 rounded-xl p-6 inline-block">
+              <div className="text-lg font-semibold text-white">press@kahade.com</div>
+              <div className="text-sm text-white/70">We typically respond within 24 hours</div>
             </div>
           </motion.div>
         </div>

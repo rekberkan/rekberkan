@@ -1,14 +1,13 @@
 /*
- * KAHADE HOW IT WORKS PAGE
- * Design: Step-by-step guide with visual illustrations
- * Icons: Phosphor Icons only
+ * KAHADE HOW IT WORKS PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import { 
   UserPlus, FileText, Wallet, PaperPlaneTilt, CheckCircle,
-  ArrowRight, ShieldCheck, Clock, Question
+  ArrowRight, ShieldCheck, Clock, Question, Check
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -96,7 +95,7 @@ const faqs = [
   },
   {
     question: 'Is KYC verification required?',
-    answer: 'KYC verification is optional for small transactions. However, for transactions above $10,000, KYC verification is required for security and regulatory compliance.'
+    answer: 'KYC verification is optional for small transactions. However, for transactions above Rp 100,000,000, KYC verification is required for security and regulatory compliance.'
   },
   {
     question: 'What transaction categories are supported?',
@@ -104,9 +103,27 @@ const faqs = [
   }
 ];
 
+const securityFeatures = [
+  {
+    icon: ShieldCheck,
+    title: 'Guaranteed Escrow',
+    description: 'Funds are stored in a separate, supervised and insured escrow account.'
+  },
+  {
+    icon: Clock,
+    title: 'Holding Period',
+    description: 'Fund holding period provides time for verification before release.'
+  },
+  {
+    icon: Question,
+    title: 'Dispute Resolution',
+    description: 'Professional mediator team ready to help resolve disputes fairly.'
+  }
+];
+
 export default function HowItWorks() {
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
@@ -117,10 +134,10 @@ export default function HowItWorks() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              How <span className="gradient-text">Kahade</span> Works
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
+              How Kahade Works
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-[#6B7280]">
               Simple and secure process to protect every transaction. 
               Follow these steps to get started.
             </p>
@@ -129,7 +146,7 @@ export default function HowItWorks() {
       </section>
       
       {/* Steps Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#FAFAFA]">
         <div className="container">
           <div className="max-w-4xl mx-auto">
             {steps.map((step, index) => (
@@ -143,29 +160,32 @@ export default function HowItWorks() {
               >
                 {/* Connector */}
                 {index < steps.length - 1 && (
-                  <div className="absolute left-6 top-20 w-0.5 h-[calc(100%-2rem)] bg-gradient-to-b from-accent to-transparent" />
+                  <div className="absolute left-6 top-20 w-0.5 h-[calc(100%-2rem)] bg-[#E5E5E5]" />
                 )}
                 
                 <div className="flex gap-6">
                   {/* Step Number */}
                   <div className="shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-accent/10 border-2 border-accent flex items-center justify-center">
-                      <step.icon className="w-5 h-5 text-accent" weight="duotone" />
+                    <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center font-bold">
+                      {String(index + 1).padStart(2, '0')}
                     </div>
                   </div>
                   
                   {/* Content */}
-                  <div className="glass-card p-6 flex-1">
+                  <div className="bg-white rounded-xl p-6 flex-1 border border-[#E5E5E5]">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm font-mono text-accent">Step {index + 1}</span>
+                      <div className="w-10 h-10 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
+                        <step.icon className="w-5 h-5 text-black" weight="duotone" />
+                      </div>
+                      <span className="text-sm font-mono text-[#6B7280]">Step {index + 1}</span>
                     </div>
-                    <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                    <p className="text-muted-foreground mb-4">{step.description}</p>
+                    <h3 className="text-xl font-bold mb-3 text-black">{step.title}</h3>
+                    <p className="text-[#6B7280] mb-4">{step.description}</p>
                     <ul className="space-y-2">
                       {step.details.map((detail, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm">
-                          <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" weight="fill" />
-                          <span className="text-foreground/80">{detail}</span>
+                          <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" weight="bold" />
+                          <span className="text-[#6B7280]">{detail}</span>
                         </li>
                       ))}
                     </ul>
@@ -178,7 +198,7 @@ export default function HowItWorks() {
       </section>
       
       {/* Security Features */}
-      <section className="py-20 bg-[#FAFBFC]">
+      <section className="py-20 bg-white">
         <div className="container">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -186,61 +206,37 @@ export default function HowItWorks() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">
+            <h2 className="text-3xl font-bold mb-4 text-black">
               Security at Every Step
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               Every stage of the transaction is protected with cutting-edge security technology.
             </p>
           </motion.div>
           
           <div className="grid md:grid-cols-3 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="glass-card p-6 text-center"
-            >
-              <ShieldCheck className="w-12 h-12 text-accent mx-auto mb-4" weight="duotone" />
-              <h3 className="text-lg font-semibold mb-2">Guaranteed Escrow</h3>
-              <p className="text-sm text-muted-foreground">
-                Funds are stored in a separate, supervised and insured escrow account.
-              </p>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="glass-card p-6 text-center"
-            >
-              <Clock className="w-12 h-12 text-accent mx-auto mb-4" weight="duotone" />
-              <h3 className="text-lg font-semibold mb-2">Holding Period</h3>
-              <p className="text-sm text-muted-foreground">
-                Fund holding period provides time for verification before release.
-              </p>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="glass-card p-6 text-center"
-            >
-              <Question className="w-12 h-12 text-accent mx-auto mb-4" weight="duotone" />
-              <h3 className="text-lg font-semibold mb-2">Dispute Resolution</h3>
-              <p className="text-sm text-muted-foreground">
-                Professional mediator team ready to help resolve disputes fairly.
-              </p>
-            </motion.div>
+            {securityFeatures.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="feature-card text-center group"
+              >
+                <div className="w-14 h-14 rounded-xl bg-[#F5F5F5] flex items-center justify-center mx-auto mb-4 group-hover:bg-black group-hover:text-white transition-colors">
+                  <feature.icon className="w-7 h-7" weight="duotone" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-black">{feature.title}</h3>
+                <p className="text-sm text-[#6B7280]">{feature.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
       
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-white">
+      <section id="faq" className="py-20 bg-[#FAFAFA]">
         <div className="container">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -248,10 +244,10 @@ export default function HowItWorks() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">
+            <h2 className="text-3xl font-bold mb-4 text-black">
               Frequently Asked Questions
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               Answers to commonly asked questions.
             </p>
           </motion.div>
@@ -262,12 +258,12 @@ export default function HowItWorks() {
                 <AccordionItem 
                   key={index} 
                   value={`item-${index}`}
-                  className="glass-card px-6 border-none"
+                  className="bg-white rounded-xl px-6 border border-[#E5E5E5]"
                 >
                   <AccordionTrigger className="text-left hover:no-underline py-4">
-                    <span className="font-semibold">{faq.question}</span>
+                    <span className="font-semibold text-black">{faq.question}</span>
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground pb-4">
+                  <AccordionContent className="text-[#6B7280] pb-4">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -278,7 +274,7 @@ export default function HowItWorks() {
       </section>
       
       {/* CTA Section */}
-      <section className="py-20 bg-[#FAFBFC]">
+      <section className="py-20 bg-black">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -286,21 +282,21 @@ export default function HowItWorks() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="text-3xl font-bold mb-4">
+            <h2 className="text-3xl font-bold mb-4 text-white">
               Ready to Get Started?
             </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto mb-8">
+            <p className="text-white/70 max-w-xl mx-auto mb-8">
               Sign up now and enjoy secure transactions with Kahade.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
-                <Button className="btn-accent group">
+                <Button className="bg-white text-black hover:bg-[#F5F5F5] px-8 py-3 h-auto font-semibold rounded-lg group">
                   Sign Up Free
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" weight="bold" />
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button className="btn-secondary">
+                <Button className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-3 h-auto font-semibold rounded-lg bg-transparent">
                   Contact Us
                 </Button>
               </Link>

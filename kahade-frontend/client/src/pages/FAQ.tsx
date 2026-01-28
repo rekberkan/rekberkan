@@ -1,6 +1,6 @@
 /*
- * KAHADE FAQ PAGE
- * Icons: Phosphor Icons only
+ * KAHADE FAQ PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { useState } from 'react';
@@ -57,12 +57,12 @@ const faqs = [
   {
     category: 'payments',
     question: 'What payment methods do you accept?',
-    answer: 'We accept bank transfers, credit/debit cards, and various digital payment methods. Available options may vary by region. All payments are processed securely through our platform.'
+    answer: 'We accept bank transfers, credit/debit cards, and various digital payment methods including e-wallets and QRIS. Available options may vary by region. All payments are processed securely through our platform.'
   },
   {
     category: 'payments',
     question: 'What are the fees?',
-    answer: 'Our standard fee is 1% of the transaction amount, with a minimum fee of $1. Fees are typically paid by the buyer but can be split or paid by the seller based on agreement. View our pricing page for detailed information.'
+    answer: 'Our standard fee is 1-3% of the transaction amount, depending on the category. Fees are typically paid by the buyer but can be split or paid by the seller based on agreement. View our pricing page for detailed information.'
   },
   {
     category: 'payments',
@@ -110,36 +110,36 @@ export default function FAQ() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-16">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <Question className="w-4 h-4" weight="fill" />
               FAQ
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Frequently Asked Questions
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-xl text-[#6B7280] mb-8">
               Find quick answers to common questions about Kahade.
             </p>
             
             {/* Search */}
             <div className="relative max-w-xl mx-auto">
-              <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+              <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
               <Input
                 placeholder="Search questions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 text-lg bg-white border-border shadow-lg"
+                className="pl-12 h-14 text-lg bg-white border-[#E5E5E5] focus:border-black focus:ring-black shadow-sm"
               />
             </div>
           </motion.div>
@@ -147,7 +147,7 @@ export default function FAQ() {
       </section>
       
       {/* Category Tabs */}
-      <section className="py-6 border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
+      <section className="py-6 border-b border-[#E5E5E5] sticky top-0 bg-white/95 backdrop-blur z-10">
         <div className="container">
           <div className="flex flex-wrap justify-center gap-2">
             {faqCategories.map((category) => (
@@ -156,8 +156,8 @@ export default function FAQ() {
                 onClick={() => { setSelectedCategory(category.id); setOpenIndex(null); }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   selectedCategory === category.id
-                    ? 'bg-accent text-white'
-                    : 'bg-secondary hover:bg-secondary/80 text-foreground'
+                    ? 'bg-black text-white'
+                    : 'bg-[#F5F5F5] hover:bg-[#E5E5E5] text-black'
                 }`}
               >
                 {category.name}
@@ -168,7 +168,7 @@ export default function FAQ() {
       </section>
       
       {/* FAQ Accordion */}
-      <section className="py-16">
+      <section className="py-16 bg-[#FAFAFA]">
         <div className="container">
           <div className="max-w-3xl mx-auto space-y-4">
             {filteredFaqs.map((faq, index) => (
@@ -177,15 +177,15 @@ export default function FAQ() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="glass-card overflow-hidden"
+                className="bg-white rounded-xl border border-[#E5E5E5] overflow-hidden"
               >
                 <button
                   onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  className="w-full p-6 flex items-center justify-between text-left hover:bg-secondary/30 transition-colors"
+                  className="w-full p-6 flex items-center justify-between text-left hover:bg-[#FAFAFA] transition-colors"
                 >
-                  <span className="font-semibold pr-4">{faq.question}</span>
+                  <span className="font-semibold pr-4 text-black">{faq.question}</span>
                   <CaretDown 
-                    className={`w-5 h-5 text-accent flex-shrink-0 transition-transform ${
+                    className={`w-5 h-5 text-black flex-shrink-0 transition-transform ${
                       openIndex === index ? 'rotate-180' : ''
                     }`} 
                     weight="bold" 
@@ -200,7 +200,7 @@ export default function FAQ() {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-6 text-muted-foreground">
+                      <div className="px-6 pb-6 text-[#6B7280]">
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -211,9 +211,9 @@ export default function FAQ() {
             
             {filteredFaqs.length === 0 && (
               <div className="text-center py-12">
-                <Lightbulb className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" weight="regular" />
-                <h3 className="font-semibold text-lg mb-2">No questions found</h3>
-                <p className="text-muted-foreground">Try adjusting your search terms.</p>
+                <Lightbulb className="w-16 h-16 mx-auto text-[#9CA3AF] mb-4" weight="regular" />
+                <h3 className="font-semibold text-lg mb-2 text-black">No questions found</h3>
+                <p className="text-[#6B7280]">Try adjusting your search terms.</p>
               </div>
             )}
           </div>
@@ -221,7 +221,7 @@ export default function FAQ() {
       </section>
       
       {/* Contact CTA */}
-      <section className="py-16 bg-gradient-to-br from-accent/10 to-primary/10">
+      <section className="py-16 bg-black">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -229,22 +229,24 @@ export default function FAQ() {
             viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto"
           >
-            <ChatCircle className="w-16 h-16 mx-auto text-accent mb-6" weight="fill" />
-            <h2 className="text-3xl font-bold mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-6">
+              <ChatCircle className="w-8 h-8 text-white" weight="fill" />
+            </div>
+            <h2 className="text-3xl font-bold mb-4 text-white">
               Still Have Questions?
             </h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-white/70 mb-8">
               Can't find what you're looking for? Our support team is here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/contact">
-                <Button size="lg" className="btn-accent gap-2">
+                <Button className="bg-white text-black hover:bg-[#F5F5F5] px-6 py-3 h-auto font-semibold rounded-lg gap-2">
                   Contact Support
                   <ArrowRight className="w-5 h-5" weight="bold" />
                 </Button>
               </Link>
               <Link href="/help">
-                <Button size="lg" variant="outline">
+                <Button className="border-2 border-white/30 text-white hover:bg-white/10 px-6 py-3 h-auto font-semibold rounded-lg bg-transparent">
                   Visit Help Center
                 </Button>
               </Link>

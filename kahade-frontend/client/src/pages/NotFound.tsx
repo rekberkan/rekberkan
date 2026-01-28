@@ -1,49 +1,76 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
-import { useLocation } from "wouter";
+/*
+ * KAHADE 404 NOT FOUND PAGE - Modern Design
+ * Brand color: #000000
+ */
+
+import { motion } from 'framer-motion';
+import { Link } from 'wouter';
+import { House, MagnifyingGlass, ArrowLeft } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
-
-  const handleGoHome = () => {
-    setLocation("/");
-  };
-
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="pt-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-red-500" />
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center max-w-lg"
+      >
+        {/* 404 Number */}
+        <div className="relative mb-8">
+          <h1 className="text-[150px] md:text-[200px] font-bold text-[#F5F5F5] leading-none select-none">
+            404
+          </h1>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-2xl bg-black flex items-center justify-center">
+              <MagnifyingGlass className="w-12 h-12 text-white" weight="bold" />
             </div>
           </div>
-
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
-
-          <h2 className="text-xl font-semibold text-slate-700 mb-4">
-            Page Not Found
-          </h2>
-
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Sorry, the page you are looking for doesn't exist.
-            <br />
-            It may have been moved or deleted.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
-              onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Go Home
+        </div>
+        
+        <h2 className="text-2xl md:text-3xl font-bold text-black mb-4">
+          Page Not Found
+        </h2>
+        
+        <p className="text-[#6B7280] mb-8 max-w-sm mx-auto">
+          Sorry, the page you are looking for doesn't exist or has been moved to another location.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/">
+            <Button className="btn-primary gap-2">
+              <House className="w-5 h-5" weight="bold" />
+              Back to Home
             </Button>
+          </Link>
+          <Button 
+            className="btn-secondary gap-2"
+            onClick={() => window.history.back()}
+          >
+            <ArrowLeft className="w-5 h-5" weight="bold" />
+            Go Back
+          </Button>
+        </div>
+        
+        {/* Quick Links */}
+        <div className="mt-12 pt-8 border-t border-[#E5E5E5]">
+          <p className="text-sm text-[#9CA3AF] mb-4">Or visit these popular pages:</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/how-it-works" className="text-sm text-black hover:underline font-medium">
+              How It Works
+            </Link>
+            <Link href="/about" className="text-sm text-black hover:underline font-medium">
+              About Us
+            </Link>
+            <Link href="/contact" className="text-sm text-black hover:underline font-medium">
+              Contact
+            </Link>
+            <Link href="/faq" className="text-sm text-black hover:underline font-medium">
+              FAQ
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </motion.div>
     </div>
   );
 }

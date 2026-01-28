@@ -1,6 +1,6 @@
 /*
- * KAHADE COOKIE POLICY PAGE
- * Icons: Phosphor Icons only
+ * KAHADE COOKIE POLICY PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { motion } from 'framer-motion';
@@ -119,7 +119,7 @@ We will notify you of any material changes by posting the updated policy on our 
     content: `If you have questions about our use of cookies or this Cookie Policy, please contact us:
 
 Email: privacy@kahade.com
-Address: 1 Raffles Place, Singapore 048616
+Address: Jakarta, Indonesia
 
 You can also manage your cookie preferences at any time using the Cookie Settings button below.`
   }
@@ -127,11 +127,11 @@ You can also manage your cookie preferences at any time using the Cookie Setting
 
 export default function Cookies() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-12">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,25 +139,25 @@ export default function Cookies() {
             className="max-w-3xl"
           >
             <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-6 gap-2">
+              <Button variant="ghost" size="sm" className="mb-6 gap-2 text-[#6B7280] hover:text-black">
                 <ArrowLeft className="w-4 h-4" weight="bold" />
                 Back to Home
               </Button>
             </Link>
             
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <Cookie className="w-4 h-4" weight="fill" />
               Legal
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Cookie Policy
             </h1>
-            <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="flex items-center gap-4 text-[#6B7280]">
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" weight="regular" />
                 Last updated: January 1, 2026
               </span>
-              <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.print()}>
+              <Button variant="ghost" size="sm" className="gap-2 text-[#6B7280] hover:text-black" onClick={() => window.print()}>
                 <Printer className="w-4 h-4" weight="regular" />
                 Print
               </Button>
@@ -167,7 +167,7 @@ export default function Cookies() {
       </section>
       
       {/* Cookie Types */}
-      <section className="py-12 bg-secondary/30">
+      <section className="py-12 bg-[#FAFAFA]">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -175,8 +175,8 @@ export default function Cookies() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl font-bold mb-4">Types of Cookies We Use</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4 text-black">Types of Cookies We Use</h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               We use different types of cookies for various purposes on our platform.
             </p>
           </motion.div>
@@ -189,22 +189,22 @@ export default function Cookies() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6"
+                className="feature-card"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-lg">{cookie.name}</h3>
+                  <h3 className="font-semibold text-lg text-black">{cookie.name}</h3>
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     cookie.canDisable 
-                      ? 'bg-amber-500/10 text-amber-500' 
-                      : 'bg-emerald-500/10 text-emerald-500'
+                      ? 'bg-[#F5F5F5] text-[#6B7280]' 
+                      : 'bg-black text-white'
                   }`}>
                     {cookie.canDisable ? 'Optional' : 'Required'}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">{cookie.description}</p>
+                <p className="text-sm text-[#6B7280] mb-4">{cookie.description}</p>
                 <div className="flex flex-wrap gap-2">
                   {cookie.examples.map((example) => (
-                    <span key={example} className="text-xs px-2 py-1 rounded-full bg-secondary">
+                    <span key={example} className="text-xs px-2 py-1 rounded-full bg-[#F5F5F5] text-[#6B7280]">
                       {example}
                     </span>
                   ))}
@@ -216,7 +216,7 @@ export default function Cookies() {
       </section>
       
       {/* Content */}
-      <section className="py-12">
+      <section className="py-12 bg-white">
         <div className="container">
           <div className="grid lg:grid-cols-4 gap-12">
             {/* Table of Contents */}
@@ -225,14 +225,14 @@ export default function Cookies() {
               animate={{ opacity: 1, x: 0 }}
               className="lg:col-span-1"
             >
-              <div className="sticky top-24">
-                <h3 className="font-semibold mb-4">Table of Contents</h3>
+              <div className="sticky top-24 bg-[#FAFAFA] rounded-xl border border-[#E5E5E5] p-6">
+                <h3 className="font-semibold mb-4 text-black">Table of Contents</h3>
                 <nav className="space-y-2">
                   {sections.map((section) => (
                     <a
                       key={section.id}
                       href={`#${section.id}`}
-                      className="block text-sm text-muted-foreground hover:text-accent transition-colors py-1"
+                      className="block text-sm text-[#6B7280] hover:text-black transition-colors py-1"
                     >
                       {section.title}
                     </a>
@@ -248,7 +248,7 @@ export default function Cookies() {
               transition={{ delay: 0.1 }}
               className="lg:col-span-3"
             >
-              <div className="prose prose-gray max-w-none">
+              <div className="bg-white rounded-xl border border-[#E5E5E5] p-8">
                 {sections.map((section, index) => (
                   <motion.div
                     key={section.id}
@@ -259,8 +259,8 @@ export default function Cookies() {
                     transition={{ delay: index * 0.05 }}
                     className="mb-12 scroll-mt-24"
                   >
-                    <h2 className="text-xl font-bold mb-4">{section.title}</h2>
-                    <div className="text-muted-foreground whitespace-pre-line">
+                    <h2 className="text-xl font-bold mb-4 text-black">{section.title}</h2>
+                    <div className="text-[#6B7280] whitespace-pre-line leading-relaxed">
                       {section.content}
                     </div>
                   </motion.div>
@@ -268,15 +268,15 @@ export default function Cookies() {
               </div>
               
               {/* Cookie Settings Button */}
-              <div className="mt-8 p-6 rounded-xl bg-accent/5 border border-accent/20">
+              <div className="mt-8 p-6 rounded-xl bg-black">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold mb-1">Manage Your Cookie Preferences</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-1 text-white">Manage Your Cookie Preferences</h3>
+                    <p className="text-sm text-white/70">
                       Customize which cookies you want to allow on our platform.
                     </p>
                   </div>
-                  <Button className="btn-accent gap-2">
+                  <Button className="bg-white text-black hover:bg-[#F5F5F5] font-semibold gap-2">
                     <Gear className="w-5 h-5" weight="fill" />
                     Cookie Settings
                   </Button>

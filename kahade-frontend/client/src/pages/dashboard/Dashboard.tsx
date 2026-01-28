@@ -1,12 +1,6 @@
 /*
- * KAHADE USER DASHBOARD
- * 
- * Features:
- * - Overview with KPIs
- * - Charts placeholders
- * - Lightning feed
- * - Quick actions
- * - Phosphor Icons only
+ * KAHADE USER DASHBOARD - Modern Design
+ * Brand color: #000000
  */
 
 import { useEffect, useState } from 'react';
@@ -14,7 +8,7 @@ import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import {
   Wallet, ArrowUpRight, ArrowDownRight, Clock, CheckCircle,
-  Warning, Plus, ArrowRight, ChartLineUp, ShieldCheck, Spinner,
+  Warning, Plus, ArrowRight, ShieldCheck, Spinner,
   CreditCard, Receipt, Lightning
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
@@ -40,20 +34,20 @@ interface Transaction {
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
-  WAITING_COUNTERPARTY: { label: 'Waiting', color: 'text-amber-500 bg-amber-50', icon: Clock },
-  PENDING_ACCEPT: { label: 'Pending', color: 'text-amber-500 bg-amber-50', icon: Clock },
-  ACCEPTED: { label: 'Accepted', color: 'text-blue-500 bg-blue-50', icon: CheckCircle },
-  PAID: { label: 'Paid', color: 'text-emerald-500 bg-emerald-50', icon: CheckCircle },
-  COMPLETED: { label: 'Completed', color: 'text-emerald-500 bg-emerald-50', icon: CheckCircle },
-  DISPUTED: { label: 'Disputed', color: 'text-red-500 bg-red-50', icon: Warning },
-  CANCELLED: { label: 'Cancelled', color: 'text-gray-500 bg-gray-50', icon: Warning },
-  REFUNDED: { label: 'Refunded', color: 'text-orange-500 bg-orange-50', icon: ArrowDownRight },
+  WAITING_COUNTERPARTY: { label: 'Waiting', color: 'text-[#6B7280] bg-[#F5F5F5]', icon: Clock },
+  PENDING_ACCEPT: { label: 'Pending', color: 'text-[#6B7280] bg-[#F5F5F5]', icon: Clock },
+  ACCEPTED: { label: 'Accepted', color: 'text-black bg-[#F5F5F5]', icon: CheckCircle },
+  PAID: { label: 'Paid', color: 'text-black bg-[#F5F5F5]', icon: CheckCircle },
+  COMPLETED: { label: 'Completed', color: 'text-white bg-black', icon: CheckCircle },
+  DISPUTED: { label: 'Disputed', color: 'text-red-600 bg-red-50', icon: Warning },
+  CANCELLED: { label: 'Cancelled', color: 'text-[#9CA3AF] bg-[#F5F5F5]', icon: Warning },
+  REFUNDED: { label: 'Refunded', color: 'text-[#6B7280] bg-[#F5F5F5]', icon: ArrowDownRight },
 };
 
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('id-ID', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
@@ -70,7 +64,7 @@ function formatTimeAgo(dateString: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US');
+  return date.toLocaleDateString('id-ID');
 }
 
 export default function Dashboard() {
@@ -125,25 +119,25 @@ export default function Dashboard() {
       label: 'Wallet Balance', 
       value: balance ? formatCurrency(balance.available) : '-', 
       icon: Wallet, 
-      color: 'text-accent bg-accent/10' 
+      color: 'text-black bg-[#F5F5F5]' 
     },
     { 
       label: 'Total Transactions', 
       value: stats.total.toString(), 
       icon: Receipt, 
-      color: 'text-emerald-600 bg-emerald-50' 
+      color: 'text-black bg-[#F5F5F5]' 
     },
     { 
       label: 'In Progress', 
       value: stats.inProgress.toString(), 
       icon: Clock, 
-      color: 'text-amber-600 bg-amber-50' 
+      color: 'text-black bg-[#F5F5F5]' 
     },
     { 
       label: 'Completed This Month', 
       value: stats.completedThisMonth.toString(), 
       icon: CheckCircle, 
-      color: 'text-emerald-600 bg-emerald-50' 
+      color: 'text-black bg-[#F5F5F5]' 
     },
   ];
 
@@ -151,7 +145,7 @@ export default function Dashboard() {
     return (
       <DashboardLayout title="Dashboard" subtitle="Loading...">
         <div className="flex items-center justify-center h-64">
-          <Spinner className="w-8 h-8 animate-spin text-accent" />
+          <Spinner className="w-8 h-8 animate-spin text-black" />
         </div>
       </DashboardLayout>
     );
@@ -168,15 +162,15 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="glass-card p-5"
+              className="bg-white rounded-xl border border-[#E5E5E5] p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
                   <stat.icon className="w-5 h-5" weight="duotone" />
                 </div>
               </div>
-              <div className="text-2xl font-bold mb-1">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
+              <div className="text-2xl font-bold mb-1 text-black">{stat.value}</div>
+              <div className="text-sm text-[#6B7280]">{stat.label}</div>
             </motion.div>
           ))}
         </div>
@@ -186,30 +180,30 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-card p-6"
+          className="bg-white rounded-xl border border-[#E5E5E5] p-6"
         >
-          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+          <h2 className="text-lg font-semibold mb-4 text-black">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href="/app/transactions/new">
-              <Button className="w-full h-auto py-4 flex-col gap-2 btn-accent">
+              <Button className="w-full h-auto py-4 flex-col gap-2 btn-primary">
                 <Plus className="w-5 h-5" weight="bold" />
                 <span>New Transaction</span>
               </Button>
             </Link>
             <Link href="/app/wallet">
-              <Button variant="outline" className="w-full h-auto py-4 flex-col gap-2 bg-white">
+              <Button className="w-full h-auto py-4 flex-col gap-2 btn-secondary">
                 <ArrowDownRight className="w-5 h-5" weight="bold" />
                 <span>Top Up</span>
               </Button>
             </Link>
             <Link href="/app/wallet">
-              <Button variant="outline" className="w-full h-auto py-4 flex-col gap-2 bg-white">
+              <Button className="w-full h-auto py-4 flex-col gap-2 btn-secondary">
                 <ArrowUpRight className="w-5 h-5" weight="bold" />
                 <span>Withdraw</span>
               </Button>
             </Link>
             <Link href="/app/profile">
-              <Button variant="outline" className="w-full h-auto py-4 flex-col gap-2 bg-white">
+              <Button className="w-full h-auto py-4 flex-col gap-2 btn-secondary">
                 <ShieldCheck className="w-5 h-5" weight="bold" />
                 <span>Verify KYC</span>
               </Button>
@@ -224,12 +218,12 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="glass-card p-6"
+            className="bg-white rounded-xl border border-[#E5E5E5] p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Recent Transactions</h2>
+              <h2 className="text-lg font-semibold text-black">Recent Transactions</h2>
               <Link href="/app/transactions">
-                <Button variant="ghost" size="sm" className="text-accent">
+                <Button variant="ghost" size="sm" className="text-black hover:text-[#6B7280]">
                   View All
                   <ArrowRight className="w-4 h-4 ml-1" weight="bold" />
                 </Button>
@@ -237,11 +231,11 @@ export default function Dashboard() {
             </div>
             
             {transactions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-[#6B7280]">
                 <Receipt className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No transactions yet</p>
                 <Link href="/app/transactions/new">
-                  <Button className="mt-4 btn-accent">
+                  <Button className="mt-4 btn-primary">
                     <Plus className="w-4 h-4 mr-2" weight="bold" />
                     Create First Transaction
                   </Button>
@@ -254,18 +248,18 @@ export default function Dashboard() {
                   const isBuyer = tx.initiatorRole === 'BUYER';
                   return (
                     <Link key={tx.id} href={`/app/transactions/${tx.id}`}>
-                      <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isBuyer ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-[#FAFAFA] hover:bg-[#F5F5F5] transition-colors cursor-pointer border border-transparent hover:border-[#E5E5E5]">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isBuyer ? 'bg-[#F5F5F5] text-black' : 'bg-black text-white'}`}>
                           {isBuyer ? <ArrowUpRight className="w-5 h-5" weight="bold" /> : <ArrowDownRight className="w-5 h-5" weight="bold" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{tx.title}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="font-medium truncate text-black">{tx.title}</div>
+                          <div className="text-sm text-[#6B7280]">
                             {isBuyer ? 'Buyer' : 'Seller'} • {tx.counterparty?.username || 'Waiting'}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold">{formatCurrency(tx.amount)}</div>
+                          <div className="font-semibold text-black">{formatCurrency(tx.amount)}</div>
                           <div className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${status.color}`}>
                             <status.icon className="w-3 h-3" weight="fill" />
                             {status.label}
@@ -284,28 +278,27 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="glass-card p-6"
+            className="bg-white rounded-xl border border-[#E5E5E5] p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Lightning Feed</h2>
-              <Lightning className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-black">Lightning Feed</h2>
+              <Lightning className="w-5 h-5 text-[#9CA3AF]" />
             </div>
             
             <div className="space-y-4">
-              {/* Placeholder activity items */}
               {[
-                { icon: CheckCircle, text: 'Transaction #1234 completed', time: '2h ago', color: 'text-emerald-500' },
-                { icon: CreditCard, text: 'Wallet topped up $500', time: '5h ago', color: 'text-accent' },
-                { icon: ShieldCheck, text: 'KYC verification approved', time: '1d ago', color: 'text-emerald-500' },
-                { icon: Plus, text: 'New transaction created', time: '2d ago', color: 'text-accent' },
+                { icon: CheckCircle, text: 'Transaction #1234 completed', time: '2h ago', color: 'text-black' },
+                { icon: CreditCard, text: 'Wallet topped up Rp 500.000', time: '5h ago', color: 'text-black' },
+                { icon: ShieldCheck, text: 'KYC verification approved', time: '1d ago', color: 'text-black' },
+                { icon: Plus, text: 'New transaction created', time: '2d ago', color: 'text-black' },
               ].map((activity, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-secondary flex items-center justify-center ${activity.color}`}>
+                  <div className={`w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center ${activity.color}`}>
                     <activity.icon className="w-4 h-4" weight="fill" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-foreground">{activity.text}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    <p className="text-sm text-black">{activity.text}</p>
+                    <p className="text-xs text-[#9CA3AF]">{activity.time}</p>
                   </div>
                 </div>
               ))}
@@ -319,19 +312,19 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="glass-card p-6 border-amber-200 bg-amber-50/50"
+            className="bg-[#FAFAFA] rounded-xl border border-[#E5E5E5] p-6"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-6 h-6 text-amber-600" weight="duotone" />
+              <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-white" weight="duotone" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold mb-1">Verify Your Identity</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <h3 className="font-semibold mb-1 text-black">Verify Your Identity</h3>
+                <p className="text-sm text-[#6B7280] mb-4">
                   Increase your transaction limits and access premium features with KYC verification.
                 </p>
                 <Link href="/app/profile">
-                  <Button className="btn-secondary">
+                  <Button className="btn-primary">
                     Start Verification
                     <ArrowRight className="w-4 h-4 ml-2" weight="bold" />
                   </Button>

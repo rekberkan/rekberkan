@@ -1,13 +1,13 @@
 /*
- * KAHADE LICENSES PAGE
- * Icons: Phosphor Icons only
+ * KAHADE LICENSES PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { motion } from 'framer-motion';
 import { Link } from 'wouter';
 import { 
   Certificate, Calendar, ArrowLeft, Printer, 
-  Code, Package, Image, FileText 
+  Code, Package, FileText 
 } from '@phosphor-icons/react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -88,11 +88,11 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 export default function Licenses() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-12">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -100,29 +100,29 @@ export default function Licenses() {
             className="max-w-3xl"
           >
             <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-6 gap-2">
+              <Button variant="ghost" size="sm" className="mb-6 gap-2 text-[#6B7280] hover:text-black">
                 <ArrowLeft className="w-4 h-4" weight="bold" />
                 Back to Home
               </Button>
             </Link>
             
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <Certificate className="w-4 h-4" weight="fill" />
               Legal
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Open Source Licenses
             </h1>
-            <p className="text-xl text-muted-foreground mb-6">
+            <p className="text-xl text-[#6B7280] mb-6">
               Kahade is built with the help of many open source projects. 
               We are grateful to the developers and communities behind these tools.
             </p>
-            <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="flex items-center gap-4 text-[#6B7280]">
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" weight="regular" />
                 Last updated: January 1, 2026
               </span>
-              <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.print()}>
+              <Button variant="ghost" size="sm" className="gap-2 text-[#6B7280] hover:text-black" onClick={() => window.print()}>
                 <Printer className="w-4 h-4" weight="regular" />
                 Print
               </Button>
@@ -132,42 +132,42 @@ export default function Licenses() {
       </section>
       
       {/* License Summary */}
-      <section className="py-12">
+      <section className="py-12 bg-[#FAFAFA]">
         <div className="container">
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="glass-card p-6 text-center"
+              className="feature-card text-center"
             >
-              <Package className="w-10 h-10 mx-auto text-accent mb-4" weight="fill" />
-              <div className="text-3xl font-bold mb-1">
+              <Package className="w-10 h-10 mx-auto text-black mb-4" weight="fill" />
+              <div className="text-3xl font-bold mb-1 text-black">
                 {licenses.reduce((acc, cat) => acc + cat.items.length, 0)}
               </div>
-              <div className="text-muted-foreground">Open Source Packages</div>
+              <div className="text-[#6B7280]">Open Source Packages</div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="glass-card p-6 text-center"
+              className="feature-card text-center"
             >
-              <Code className="w-10 h-10 mx-auto text-accent mb-4" weight="fill" />
-              <div className="text-3xl font-bold mb-1">{licenses.length}</div>
-              <div className="text-muted-foreground">Categories</div>
+              <Code className="w-10 h-10 mx-auto text-black mb-4" weight="fill" />
+              <div className="text-3xl font-bold mb-1 text-black">{licenses.length}</div>
+              <div className="text-[#6B7280]">Categories</div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="glass-card p-6 text-center"
+              className="feature-card text-center"
             >
-              <FileText className="w-10 h-10 mx-auto text-accent mb-4" weight="fill" />
-              <div className="text-3xl font-bold mb-1">3</div>
-              <div className="text-muted-foreground">License Types</div>
+              <FileText className="w-10 h-10 mx-auto text-black mb-4" weight="fill" />
+              <div className="text-3xl font-bold mb-1 text-black">3</div>
+              <div className="text-[#6B7280]">License Types</div>
             </motion.div>
           </div>
           
@@ -181,24 +181,24 @@ export default function Licenses() {
                 viewport={{ once: true }}
                 transition={{ delay: catIndex * 0.1 }}
               >
-                <h2 className="text-xl font-bold mb-4">{category.category}</h2>
-                <div className="glass-card overflow-hidden">
+                <h2 className="text-xl font-bold mb-4 text-black">{category.category}</h2>
+                <div className="bg-white rounded-xl border border-[#E5E5E5] overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-secondary/50">
+                    <thead className="bg-[#FAFAFA]">
                       <tr>
-                        <th className="text-left p-4 font-medium">Package</th>
-                        <th className="text-left p-4 font-medium hidden sm:table-cell">Version</th>
-                        <th className="text-left p-4 font-medium">License</th>
-                        <th className="text-right p-4 font-medium">Link</th>
+                        <th className="text-left p-4 font-medium text-black">Package</th>
+                        <th className="text-left p-4 font-medium text-black hidden sm:table-cell">Version</th>
+                        <th className="text-left p-4 font-medium text-black">License</th>
+                        <th className="text-right p-4 font-medium text-black">Link</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-[#E5E5E5]">
                       {category.items.map((item) => (
-                        <tr key={item.name} className="hover:bg-secondary/30 transition-colors">
-                          <td className="p-4 font-medium">{item.name}</td>
-                          <td className="p-4 text-muted-foreground hidden sm:table-cell">{item.version}</td>
+                        <tr key={item.name} className="hover:bg-[#FAFAFA] transition-colors">
+                          <td className="p-4 font-medium text-black">{item.name}</td>
+                          <td className="p-4 text-[#6B7280] hidden sm:table-cell">{item.version}</td>
                           <td className="p-4">
-                            <span className="px-2 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">
+                            <span className="px-2 py-1 rounded-full bg-[#F5F5F5] text-black text-xs font-medium">
                               {item.license}
                             </span>
                           </td>
@@ -207,7 +207,7 @@ export default function Licenses() {
                               href={item.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-accent hover:underline text-sm"
+                              className="text-black hover:underline text-sm font-medium"
                             >
                               View →
                             </a>
@@ -224,7 +224,7 @@ export default function Licenses() {
       </section>
       
       {/* License Texts */}
-      <section className="py-12 bg-secondary/30">
+      <section className="py-12 bg-white">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -232,8 +232,8 @@ export default function Licenses() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl font-bold mb-4">License Texts</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-bold mb-4 text-black">License Texts</h2>
+            <p className="text-[#6B7280]">
               Full text of the open source licenses used in this project.
             </p>
           </motion.div>
@@ -246,10 +246,10 @@ export default function Licenses() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6"
+                className="bg-white rounded-xl border border-[#E5E5E5] p-6"
               >
-                <h3 className="font-semibold text-lg mb-4">{name} License</h3>
-                <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-mono bg-background p-4 rounded-lg overflow-x-auto">
+                <h3 className="font-semibold text-lg mb-4 text-black">{name} License</h3>
+                <pre className="text-sm text-[#6B7280] whitespace-pre-wrap font-mono bg-[#FAFAFA] p-4 rounded-lg overflow-x-auto">
                   {text}
                 </pre>
               </motion.div>
@@ -259,7 +259,7 @@ export default function Licenses() {
       </section>
       
       {/* Acknowledgments */}
-      <section className="py-12">
+      <section className="py-12 bg-black">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -267,16 +267,16 @@ export default function Licenses() {
             viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto"
           >
-            <h2 className="text-2xl font-bold mb-4">Acknowledgments</h2>
-            <p className="text-muted-foreground mb-6">
+            <h2 className="text-2xl font-bold mb-4 text-white">Acknowledgments</h2>
+            <p className="text-white/70 mb-6">
               We extend our sincere gratitude to all the open source maintainers and contributors 
               whose work makes projects like Kahade possible. Your dedication to building and 
               sharing quality software benefits the entire developer community.
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/50">
               If you believe we have missed any attribution or have questions about our use of 
               open source software, please contact us at{' '}
-              <a href="mailto:legal@kahade.com" className="text-accent hover:underline">
+              <a href="mailto:legal@kahade.com" className="text-white hover:underline">
                 legal@kahade.com
               </a>
             </p>

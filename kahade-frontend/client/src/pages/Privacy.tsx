@@ -1,6 +1,6 @@
 /*
- * KAHADE PRIVACY POLICY PAGE
- * Icons: Phosphor Icons only
+ * KAHADE PRIVACY POLICY PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { motion } from 'framer-motion';
@@ -179,7 +179,7 @@ Your continued use of our services after changes are posted constitutes acceptan
 
 Data Protection Officer
 Email: privacy@kahade.com
-Address: 1 Raffles Place, Singapore 048616
+Address: Jakarta, Indonesia
 
 For EU residents, you also have the right to lodge a complaint with your local data protection authority.`
   },
@@ -187,11 +187,11 @@ For EU residents, you also have the right to lodge a complaint with your local d
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-12">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -199,25 +199,25 @@ export default function Privacy() {
             className="max-w-3xl"
           >
             <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-6 gap-2">
+              <Button variant="ghost" size="sm" className="mb-6 gap-2 text-[#6B7280] hover:text-black">
                 <ArrowLeft className="w-4 h-4" weight="bold" />
                 Back to Home
               </Button>
             </Link>
             
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <ShieldCheck className="w-4 h-4" weight="fill" />
               Legal
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Privacy Policy
             </h1>
-            <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="flex items-center gap-4 text-[#6B7280]">
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" weight="regular" />
                 Last updated: January 1, 2026
               </span>
-              <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.print()}>
+              <Button variant="ghost" size="sm" className="gap-2 text-[#6B7280] hover:text-black" onClick={() => window.print()}>
                 <Printer className="w-4 h-4" weight="regular" />
                 Print
               </Button>
@@ -227,7 +227,7 @@ export default function Privacy() {
       </section>
       
       {/* Content */}
-      <section className="py-12">
+      <section className="py-12 bg-[#FAFAFA]">
         <div className="container">
           <div className="grid lg:grid-cols-4 gap-12">
             {/* Table of Contents */}
@@ -236,14 +236,14 @@ export default function Privacy() {
               animate={{ opacity: 1, x: 0 }}
               className="lg:col-span-1"
             >
-              <div className="sticky top-24">
-                <h3 className="font-semibold mb-4">Table of Contents</h3>
+              <div className="sticky top-24 bg-white rounded-xl border border-[#E5E5E5] p-6">
+                <h3 className="font-semibold mb-4 text-black">Table of Contents</h3>
                 <nav className="space-y-2">
                   {sections.map((section) => (
                     <a
                       key={section.id}
                       href={`#${section.id}`}
-                      className="block text-sm text-muted-foreground hover:text-accent transition-colors py-1"
+                      className="block text-sm text-[#6B7280] hover:text-black transition-colors py-1"
                     >
                       {section.title}
                     </a>
@@ -259,8 +259,8 @@ export default function Privacy() {
               transition={{ delay: 0.1 }}
               className="lg:col-span-3"
             >
-              <div className="prose prose-gray max-w-none">
-                <p className="text-lg text-muted-foreground mb-8">
+              <div className="bg-white rounded-xl border border-[#E5E5E5] p-8">
+                <p className="text-lg text-[#6B7280] mb-8">
                   Your privacy is important to us. This Privacy Policy explains how Kahade collects, uses, 
                   and protects your personal information.
                 </p>
@@ -275,8 +275,8 @@ export default function Privacy() {
                     transition={{ delay: index * 0.05 }}
                     className="mb-12 scroll-mt-24"
                   >
-                    <h2 className="text-xl font-bold mb-4">{section.title}</h2>
-                    <div className="text-muted-foreground whitespace-pre-line">
+                    <h2 className="text-xl font-bold mb-4 text-black">{section.title}</h2>
+                    <div className="text-[#6B7280] whitespace-pre-line leading-relaxed">
                       {section.content}
                     </div>
                   </motion.div>

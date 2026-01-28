@@ -1,6 +1,6 @@
 /*
- * KAHADE CAREERS PAGE
- * Icons: Phosphor Icons only
+ * KAHADE CAREERS PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { useState } from 'react';
@@ -150,40 +150,39 @@ export default function Careers() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-20">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <Briefcase className="w-4 h-4" weight="fill" />
               We're Hiring
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              Build the Future of{' '}
-              <span className="gradient-text">Trust</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-black">
+              Build the Future of Trust
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-xl text-[#6B7280] mb-8">
               Join our mission to make online transactions safe and trustworthy for everyone. 
               We're looking for passionate people to help us grow.
             </p>
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-6 text-sm text-[#6B7280]">
               <span className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-accent" weight="fill" />
+                <Users className="w-5 h-5 text-black" weight="fill" />
                 50+ Team Members
               </span>
               <span className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-accent" weight="fill" />
+                <Globe className="w-5 h-5 text-black" weight="fill" />
                 15+ Countries
               </span>
               <span className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-accent" weight="fill" />
+                <Briefcase className="w-5 h-5 text-black" weight="fill" />
                 {jobs.length} Open Roles
               </span>
             </div>
@@ -192,7 +191,7 @@ export default function Careers() {
       </section>
       
       {/* Values Section */}
-      <section className="py-20">
+      <section className="py-20 bg-[#FAFAFA]">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -200,8 +199,8 @@ export default function Careers() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Our Values</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-black">Our Values</h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               These principles guide everything we do at Kahade.
             </p>
           </motion.div>
@@ -214,10 +213,10 @@ export default function Careers() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6 text-center"
+                className="feature-card text-center"
               >
-                <h3 className="font-semibold text-lg mb-2">{value.title}</h3>
-                <p className="text-sm text-muted-foreground">{value.description}</p>
+                <h3 className="font-semibold text-lg mb-2 text-black">{value.title}</h3>
+                <p className="text-sm text-[#6B7280]">{value.description}</p>
               </motion.div>
             ))}
           </div>
@@ -225,7 +224,7 @@ export default function Careers() {
       </section>
       
       {/* Benefits Section */}
-      <section className="py-20 bg-secondary/30">
+      <section className="py-20 bg-white">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -233,8 +232,8 @@ export default function Careers() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Benefits & Perks</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-black">Benefits & Perks</h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               We take care of our team so they can focus on doing their best work.
             </p>
           </motion.div>
@@ -247,14 +246,14 @@ export default function Careers() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6 flex items-start gap-4"
+                className="feature-card flex items-start gap-4"
               >
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                  <benefit.icon className="w-6 h-6 text-accent" weight="fill" />
+                <div className="w-12 h-12 rounded-xl bg-[#F5F5F5] flex items-center justify-center flex-shrink-0">
+                  <benefit.icon className="w-6 h-6 text-black" weight="fill" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">{benefit.title}</h3>
-                  <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                  <h3 className="font-semibold mb-1 text-black">{benefit.title}</h3>
+                  <p className="text-sm text-[#6B7280]">{benefit.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -263,7 +262,7 @@ export default function Careers() {
       </section>
       
       {/* Open Positions */}
-      <section className="py-20">
+      <section className="py-20 bg-[#FAFAFA]">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -271,8 +270,8 @@ export default function Careers() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Open Positions</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-black">Open Positions</h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               Find your next opportunity and join our growing team.
             </p>
           </motion.div>
@@ -280,12 +279,12 @@ export default function Careers() {
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="relative flex-1 max-w-md">
-              <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+              <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
               <Input
                 placeholder="Search positions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-white border-border"
+                className="pl-12 bg-white border-[#E5E5E5] focus:border-black focus:ring-black"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -295,8 +294,8 @@ export default function Careers() {
                   onClick={() => setSelectedDepartment(dept.name)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedDepartment === dept.name
-                      ? 'bg-accent text-white'
-                      : 'bg-secondary hover:bg-secondary/80 text-foreground'
+                      ? 'bg-black text-white'
+                      : 'bg-white border border-[#E5E5E5] hover:bg-[#F5F5F5] text-black'
                   }`}
                 >
                   {dept.name} ({dept.count})
@@ -313,43 +312,45 @@ export default function Careers() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="glass-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 group cursor-pointer hover:border-accent/50 transition-all"
+                className="bg-white rounded-xl border border-[#E5E5E5] p-6 hover:border-black transition-colors group cursor-pointer"
               >
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 group-hover:text-accent transition-colors">
-                    {job.title}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Buildings className="w-4 h-4" weight="regular" />
-                      {job.department}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" weight="regular" />
-                      {job.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" weight="regular" />
-                      {job.type}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <CurrencyDollar className="w-4 h-4" weight="regular" />
-                      {job.salary}
-                    </span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-lg text-black group-hover:text-[#6B7280] transition-colors">
+                      {job.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-[#6B7280]">
+                      <span className="flex items-center gap-1">
+                        <Buildings className="w-4 h-4" weight="regular" />
+                        {job.department}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" weight="regular" />
+                        {job.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" weight="regular" />
+                        {job.type}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <CurrencyDollar className="w-4 h-4" weight="regular" />
+                        {job.salary}
+                      </span>
+                    </div>
                   </div>
+                  <Button className="btn-primary whitespace-nowrap gap-2">
+                    Apply Now
+                    <ArrowRight className="w-4 h-4" weight="bold" />
+                  </Button>
                 </div>
-                <Button className="btn-accent gap-2 flex-shrink-0">
-                  Apply Now
-                  <ArrowRight className="w-4 h-4" weight="bold" />
-                </Button>
               </motion.div>
             ))}
             
             {filteredJobs.length === 0 && (
               <div className="text-center py-12">
-                <Briefcase className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" weight="regular" />
-                <h3 className="font-semibold text-lg mb-2">No positions found</h3>
-                <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+                <Briefcase className="w-16 h-16 mx-auto text-[#9CA3AF] mb-4" weight="regular" />
+                <h3 className="font-semibold text-lg mb-2 text-black">No positions found</h3>
+                <p className="text-[#6B7280]">Try adjusting your search or filter criteria.</p>
               </div>
             )}
           </div>
@@ -357,7 +358,7 @@ export default function Careers() {
       </section>
       
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-accent/10 to-primary/10">
+      <section className="py-20 bg-black">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -365,14 +366,13 @@ export default function Careers() {
             viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto"
           >
-            <GraduationCap className="w-16 h-16 mx-auto text-accent mb-6" weight="fill" />
-            <h2 className="text-3xl font-bold mb-4">
-              Don't See a Perfect Fit?
+            <h2 className="text-3xl font-bold mb-4 text-white">
+              Don't See the Right Role?
             </h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-white/70 mb-8">
               We're always looking for talented people. Send us your resume and we'll keep you in mind for future opportunities.
             </p>
-            <Button size="lg" className="btn-accent gap-2">
+            <Button className="bg-white text-black hover:bg-[#F5F5F5] px-8 py-3 h-auto font-semibold rounded-lg gap-2">
               Send Your Resume
               <ArrowRight className="w-5 h-5" weight="bold" />
             </Button>

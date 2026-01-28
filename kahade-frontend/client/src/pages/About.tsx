@@ -1,11 +1,12 @@
 /*
- * KAHADE ABOUT PAGE
- * Design: Glassmorphic with company story and team
- * Icons: Phosphor Icons only
+ * KAHADE ABOUT PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { motion } from 'framer-motion';
-import { ShieldCheck, Target, Eye, Heart, Globe, Lightning } from '@phosphor-icons/react';
+import { ShieldCheck, Target, Eye, Heart, Globe, Lightning, ArrowRight } from '@phosphor-icons/react';
+import { Link } from 'wouter';
+import { Button } from '@/components/ui/button';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
@@ -39,9 +40,16 @@ const milestones = [
   { year: '2025', title: 'Regional Expansion', description: 'Expanding services throughout Southeast Asia.' }
 ];
 
+const stats = [
+  { value: '10K+', label: 'Active Users' },
+  { value: 'Rp 50M+', label: 'Total Transactions' },
+  { value: '99.9%', label: 'Uptime' },
+  { value: '4.9/5', label: 'User Rating' },
+];
+
 export default function About() {
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
@@ -52,10 +60,10 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              About <span className="gradient-text">Kahade</span>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
+              About Kahade
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-[#6B7280]">
               We are a dedicated team creating a safe, transparent, and trusted 
               online transaction ecosystem.
             </p>
@@ -64,20 +72,20 @@ export default function About() {
       </section>
       
       {/* Mission & Vision */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#FAFAFA]">
         <div className="container">
           <div className="grid md:grid-cols-2 gap-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="glass-card p-8"
+              className="bg-white rounded-2xl p-8 border border-[#E5E5E5]"
             >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <Target className="w-6 h-6 text-accent" weight="duotone" />
+              <div className="w-12 h-12 rounded-xl bg-[#F5F5F5] flex items-center justify-center mb-4">
+                <Target className="w-6 h-6 text-black" weight="duotone" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-4 text-black">Our Mission</h2>
+              <p className="text-[#6B7280]">
                 To provide a secure and easy-to-use escrow platform to protect every online 
                 transaction. We are committed to eliminating fraud risks and building 
                 trust in the digital economy.
@@ -88,13 +96,13 @@ export default function About() {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="glass-card p-8"
+              className="bg-white rounded-2xl p-8 border border-[#E5E5E5]"
             >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <Globe className="w-6 h-6 text-accent" weight="duotone" />
+              <div className="w-12 h-12 rounded-xl bg-[#F5F5F5] flex items-center justify-center mb-4">
+                <Globe className="w-6 h-6 text-black" weight="duotone" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">Our Vision</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-4 text-black">Our Vision</h2>
+              <p className="text-[#6B7280]">
                 To become the leading escrow platform in Southeast Asia, known for security, 
                 transparency, and technological innovation. We want everyone to be able to 
                 transact online with peace of mind and confidence.
@@ -105,7 +113,7 @@ export default function About() {
       </section>
       
       {/* Values */}
-      <section className="py-20 bg-[#FAFBFC]">
+      <section className="py-20 bg-white">
         <div className="container">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -113,8 +121,8 @@ export default function About() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Our Values</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-black">Our Values</h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               The principles that guide every decision and action we take.
             </p>
           </motion.div>
@@ -127,13 +135,13 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card-hover p-6 text-center"
+                className="feature-card text-center group"
               >
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                  <value.icon className="w-6 h-6 text-accent" weight="duotone" />
+                <div className="w-12 h-12 rounded-xl bg-[#F5F5F5] flex items-center justify-center mx-auto mb-4 group-hover:bg-black group-hover:text-white transition-colors">
+                  <value.icon className="w-6 h-6" weight="duotone" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{value.title}</h3>
-                <p className="text-sm text-muted-foreground">{value.description}</p>
+                <h3 className="text-lg font-semibold mb-2 text-black">{value.title}</h3>
+                <p className="text-sm text-[#6B7280]">{value.description}</p>
               </motion.div>
             ))}
           </div>
@@ -141,7 +149,7 @@ export default function About() {
       </section>
       
       {/* Timeline */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#FAFAFA]">
         <div className="container">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -149,8 +157,8 @@ export default function About() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Our Journey</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-black">Our Journey</h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
               Important milestones in Kahade's journey.
             </p>
           </motion.div>
@@ -165,16 +173,16 @@ export default function About() {
                 className="flex gap-6 mb-8 last:mb-0"
               >
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-accent/10 border-2 border-accent flex items-center justify-center text-accent font-bold text-sm">
+                  <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
                     {milestone.year}
                   </div>
                   {index < milestones.length - 1 && (
-                    <div className="w-0.5 h-full bg-accent/20 mt-2" />
+                    <div className="w-0.5 h-full bg-[#E5E5E5] mt-2" />
                   )}
                 </div>
-                <div className="glass-card p-6 flex-1">
-                  <h3 className="text-lg font-semibold mb-2">{milestone.title}</h3>
-                  <p className="text-sm text-muted-foreground">{milestone.description}</p>
+                <div className="bg-white rounded-xl p-6 flex-1 border border-[#E5E5E5]">
+                  <h3 className="text-lg font-semibold mb-2 text-black">{milestone.title}</h3>
+                  <p className="text-sm text-[#6B7280]">{milestone.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -183,28 +191,47 @@ export default function About() {
       </section>
       
       {/* Stats */}
-      <section className="py-20 bg-[#FAFBFC]">
+      <section className="py-20 bg-white">
         <div className="container">
-          <div className="glass-card p-12">
+          <div className="bg-black rounded-2xl p-12">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-4xl font-bold gradient-text mb-2">10K+</div>
-                <div className="text-muted-foreground">Active Users</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold gradient-text mb-2">$50M+</div>
-                <div className="text-muted-foreground">Total Transactions</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold gradient-text mb-2">99.9%</div>
-                <div className="text-muted-foreground">Uptime</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold gradient-text mb-2">4.9/5</div>
-                <div className="text-muted-foreground">User Rating</div>
-              </div>
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="text-4xl font-bold text-white mb-2">{stat.value}</div>
+                  <div className="text-white/70">{stat.label}</div>
+                </motion.div>
+              ))}
             </div>
           </div>
+        </div>
+      </section>
+      
+      {/* CTA Section */}
+      <section className="py-20 bg-[#FAFAFA]">
+        <div className="container">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center max-w-2xl mx-auto"
+          >
+            <h2 className="text-3xl font-bold mb-4 text-black">Join our team</h2>
+            <p className="text-[#6B7280] mb-8">
+              We're always looking for talented people to join our mission of making online transactions safer.
+            </p>
+            <Link href="/careers">
+              <Button className="btn-primary group">
+                View Open Positions
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" weight="bold" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
       

@@ -1,6 +1,6 @@
 /*
- * KAHADE HELP CENTER PAGE
- * Icons: Phosphor Icons only
+ * KAHADE HELP CENTER PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { useState } from 'react';
@@ -98,36 +98,36 @@ export default function Help() {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-16">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <Headset className="w-4 h-4" weight="fill" />
               Help Center
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               How Can We Help You?
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-xl text-[#6B7280] mb-8">
               Search our knowledge base or browse categories to find answers to your questions.
             </p>
             
             {/* Search */}
             <div className="relative max-w-xl mx-auto">
-              <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+              <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
               <Input
                 placeholder="Search for help articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 text-lg bg-white border-border shadow-lg"
+                className="pl-12 h-14 text-lg bg-white border-[#E5E5E5] focus:border-black focus:ring-black shadow-sm"
               />
             </div>
           </motion.div>
@@ -135,7 +135,7 @@ export default function Help() {
       </section>
       
       {/* Categories Grid */}
-      <section className="py-16">
+      <section className="py-16 bg-[#FAFAFA]">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -143,8 +143,8 @@ export default function Help() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Browse by Category</h2>
-            <p className="text-muted-foreground">Find answers organized by topic</p>
+            <h2 className="text-3xl font-bold mb-4 text-black">Browse by Category</h2>
+            <p className="text-[#6B7280]">Find answers organized by topic</p>
           </motion.div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -157,21 +157,21 @@ export default function Help() {
                 transition={{ delay: index * 0.1 }}
               >
                 <Link href={category.href}>
-                  <div className="glass-card p-6 h-full group cursor-pointer hover:border-accent/50 transition-all">
-                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                      <category.icon className="w-6 h-6 text-accent" weight="fill" />
+                  <div className="feature-card h-full group cursor-pointer">
+                    <div className="w-12 h-12 rounded-xl bg-[#F5F5F5] flex items-center justify-center mb-4 group-hover:bg-black group-hover:text-white transition-colors">
+                      <category.icon className="w-6 h-6" weight="fill" />
                     </div>
-                    <h3 className="font-semibold text-lg mb-2 group-hover:text-accent transition-colors">
+                    <h3 className="font-semibold text-lg mb-2 text-black">
                       {category.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-sm text-[#6B7280] mb-4">
                       {category.description}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-[#9CA3AF]">
                         {category.articles} articles
                       </span>
-                      <CaretRight className="w-5 h-5 text-accent opacity-0 group-hover:opacity-100 transition-opacity" weight="bold" />
+                      <CaretRight className="w-5 h-5 text-black opacity-0 group-hover:opacity-100 transition-opacity" weight="bold" />
                     </div>
                   </div>
                 </Link>
@@ -182,7 +182,7 @@ export default function Help() {
       </section>
       
       {/* Popular Articles */}
-      <section className="py-16 bg-secondary/30">
+      <section className="py-16 bg-white">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -190,12 +190,12 @@ export default function Help() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Popular Articles</h2>
-            <p className="text-muted-foreground">Most frequently viewed help articles</p>
+            <h2 className="text-3xl font-bold mb-4 text-black">Popular Articles</h2>
+            <p className="text-[#6B7280]">Most frequently viewed help articles</p>
           </motion.div>
           
           <div className="max-w-3xl mx-auto">
-            <div className="glass-card divide-y divide-border">
+            <div className="bg-white rounded-xl border border-[#E5E5E5] divide-y divide-[#E5E5E5]">
               {popularArticles.map((article, index) => (
                 <motion.div
                   key={article.title}
@@ -203,20 +203,20 @@ export default function Help() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-4 flex items-center justify-between group cursor-pointer hover:bg-secondary/50 transition-colors"
+                  className="p-4 flex items-center justify-between group cursor-pointer hover:bg-[#FAFAFA] transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <Book className="w-5 h-5 text-accent" weight="regular" />
+                    <Book className="w-5 h-5 text-black" weight="regular" />
                     <div>
-                      <div className="font-medium group-hover:text-accent transition-colors">
+                      <div className="font-medium text-black group-hover:text-[#6B7280] transition-colors">
                         {article.title}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-[#9CA3AF]">
                         {article.category}
                       </div>
                     </div>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors" weight="bold" />
+                  <ArrowRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-black transition-colors" weight="bold" />
                 </motion.div>
               ))}
             </div>
@@ -225,7 +225,7 @@ export default function Help() {
       </section>
       
       {/* Contact Options */}
-      <section className="py-16">
+      <section className="py-16 bg-[#FAFAFA]">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -233,8 +233,8 @@ export default function Help() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Still Need Help?</h2>
-            <p className="text-muted-foreground">Our support team is here to assist you</p>
+            <h2 className="text-3xl font-bold mb-4 text-black">Still Need Help?</h2>
+            <p className="text-[#6B7280]">Our support team is here to assist you</p>
           </motion.div>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -245,18 +245,18 @@ export default function Help() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="glass-card p-6 text-center"
+                className="feature-card text-center"
               >
-                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                  <option.icon className="w-7 h-7 text-accent" weight="fill" />
+                <div className="w-14 h-14 rounded-full bg-[#F5F5F5] flex items-center justify-center mx-auto mb-4">
+                  <option.icon className="w-7 h-7 text-black" weight="fill" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{option.title}</h3>
-                <p className="text-sm text-muted-foreground mb-2">{option.description}</p>
-                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-4">
+                <h3 className="font-semibold text-lg mb-2 text-black">{option.title}</h3>
+                <p className="text-sm text-[#6B7280] mb-2">{option.description}</p>
+                <div className="flex items-center justify-center gap-1 text-xs text-[#9CA3AF] mb-4">
                   <Clock className="w-3 h-3" weight="regular" />
                   {option.availability}
                 </div>
-                <Button className="w-full btn-accent">{option.action}</Button>
+                <Button className="w-full btn-primary">{option.action}</Button>
               </motion.div>
             ))}
           </div>
@@ -264,7 +264,7 @@ export default function Help() {
       </section>
       
       {/* FAQ Link */}
-      <section className="py-16 bg-gradient-to-br from-accent/10 to-primary/10">
+      <section className="py-16 bg-black">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -272,14 +272,14 @@ export default function Help() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-2xl font-bold mb-4 text-white">
               Looking for Quick Answers?
             </h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-white/70 mb-6">
               Check out our frequently asked questions for instant answers.
             </p>
             <Link href="/faq">
-              <Button size="lg" className="btn-accent gap-2">
+              <Button className="bg-white text-black hover:bg-[#F5F5F5] px-8 py-3 h-auto font-semibold rounded-lg gap-2">
                 View FAQ
                 <ArrowRight className="w-5 h-5" weight="bold" />
               </Button>

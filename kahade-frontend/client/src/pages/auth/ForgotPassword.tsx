@@ -1,6 +1,6 @@
 /*
- * KAHADE FORGOT PASSWORD PAGE
- * Icons: Phosphor Icons only
+ * KAHADE FORGOT PASSWORD PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { useState } from 'react';
@@ -30,10 +30,14 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-[#FAFBFC]">
-      {/* Background decorations */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center p-8 bg-white">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-full h-full" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -45,21 +49,21 @@ export default function ForgotPassword() {
           <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
         </Link>
         
-        <div className="glass-card p-8">
+        <div className="bg-white rounded-2xl border border-[#E5E5E5] p-8 shadow-sm">
           {!isSubmitted ? (
             <>
-              <h1 className="text-2xl font-bold mb-2 text-center">
+              <h1 className="text-2xl font-bold mb-2 text-center text-black">
                 Forgot Password?
               </h1>
-              <p className="text-muted-foreground mb-8 text-center text-sm">
+              <p className="text-[#6B7280] mb-8 text-center text-sm">
                 Enter your email and we'll send you a link to reset your password.
               </p>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-black">Email</Label>
                   <div className="relative">
-                    <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="regular" />
+                    <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
                     <Input
                       id="email"
                       type="email"
@@ -67,14 +71,14 @@ export default function ForgotPassword() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@example.com"
                       required
-                      className="pl-10 bg-white border-border"
+                      className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12"
                     />
                   </div>
                 </div>
                 
                 <Button 
                   type="submit" 
-                  className="btn-accent w-full"
+                  className="btn-primary w-full h-12"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -90,17 +94,16 @@ export default function ForgotPassword() {
             </>
           ) : (
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-emerald-500" weight="fill" />
+              <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-white" weight="fill" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Email Sent!</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                We have sent a password reset link to <strong className="text-foreground">{email}</strong>. 
+              <h2 className="text-xl font-bold mb-2 text-black">Email Sent!</h2>
+              <p className="text-[#6B7280] text-sm mb-6">
+                We have sent a password reset link to <strong className="text-black">{email}</strong>. 
                 Please check your inbox.
               </p>
               <Button 
-                variant="outline" 
-                className="w-full"
+                className="btn-secondary w-full"
                 onClick={() => setIsSubmitted(false)}
               >
                 Resend Email
@@ -109,7 +112,7 @@ export default function ForgotPassword() {
           )}
           
           <div className="mt-6 text-center">
-            <Link href="/login" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-accent">
+            <Link href="/login" className="inline-flex items-center gap-2 text-sm text-[#6B7280] hover:text-black transition-colors">
               <ArrowLeft className="w-4 h-4" weight="bold" />
               Back to Login
             </Link>

@@ -1,6 +1,6 @@
 /*
- * KAHADE TERMS OF SERVICE PAGE
- * Icons: Phosphor Icons only
+ * KAHADE TERMS OF SERVICE PAGE - Modern Design
+ * Brand color: #000000
  */
 
 import { motion } from 'framer-motion';
@@ -75,8 +75,8 @@ Transaction fees are non-refundable once a transaction is initiated. Please revi
     title: '6. Fees and Payments',
     content: `Our fee structure is as follows:
 
-• Standard escrow fee: 1% of transaction amount
-• Minimum fee: $1 per transaction
+• Standard escrow fee: 1-3% of transaction amount
+• Minimum fee: Rp 5.000 per transaction
 • Withdrawal fees may apply depending on payment method
 • Currency conversion fees may apply for international transactions
 
@@ -147,9 +147,9 @@ Upon termination, your right to use our services will cease immediately. Provisi
   {
     id: 'governing',
     title: '12. Governing Law',
-    content: `These Terms shall be governed by and construed in accordance with the laws of Singapore, without regard to its conflict of law provisions.
+    content: `These Terms shall be governed by and construed in accordance with the laws of Indonesia, without regard to its conflict of law provisions.
 
-Any disputes arising from these Terms or your use of our services shall be resolved through binding arbitration in Singapore, unless otherwise required by applicable law.`
+Any disputes arising from these Terms or your use of our services shall be resolved through binding arbitration in Indonesia, unless otherwise required by applicable law.`
   },
   {
     id: 'changes',
@@ -168,7 +168,7 @@ Your continued use of our services after such modifications constitutes acceptan
     content: `For questions about these Terms of Service, please contact us:
 
 Email: legal@kahade.com
-Address: 1 Raffles Place, Singapore 048616
+Address: Jakarta, Indonesia
 
 We aim to respond to all inquiries within 5 business days.`
   },
@@ -176,11 +176,11 @@ We aim to respond to all inquiries within 5 business days.`
 
 export default function Terms() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-accent/5 via-transparent to-primary/5">
+      <section className="pt-32 pb-12">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -188,25 +188,25 @@ export default function Terms() {
             className="max-w-3xl"
           >
             <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-6 gap-2">
+              <Button variant="ghost" size="sm" className="mb-6 gap-2 text-[#6B7280] hover:text-black">
                 <ArrowLeft className="w-4 h-4" weight="bold" />
                 Back to Home
               </Button>
             </Link>
             
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <FileText className="w-4 h-4" weight="fill" />
               Legal
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Terms of Service
             </h1>
-            <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="flex items-center gap-4 text-[#6B7280]">
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" weight="regular" />
                 Last updated: January 1, 2026
               </span>
-              <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.print()}>
+              <Button variant="ghost" size="sm" className="gap-2 text-[#6B7280] hover:text-black" onClick={() => window.print()}>
                 <Printer className="w-4 h-4" weight="regular" />
                 Print
               </Button>
@@ -216,7 +216,7 @@ export default function Terms() {
       </section>
       
       {/* Content */}
-      <section className="py-12">
+      <section className="py-12 bg-[#FAFAFA]">
         <div className="container">
           <div className="grid lg:grid-cols-4 gap-12">
             {/* Table of Contents */}
@@ -225,14 +225,14 @@ export default function Terms() {
               animate={{ opacity: 1, x: 0 }}
               className="lg:col-span-1"
             >
-              <div className="sticky top-24">
-                <h3 className="font-semibold mb-4">Table of Contents</h3>
+              <div className="sticky top-24 bg-white rounded-xl border border-[#E5E5E5] p-6">
+                <h3 className="font-semibold mb-4 text-black">Table of Contents</h3>
                 <nav className="space-y-2">
                   {sections.map((section) => (
                     <a
                       key={section.id}
                       href={`#${section.id}`}
-                      className="block text-sm text-muted-foreground hover:text-accent transition-colors py-1"
+                      className="block text-sm text-[#6B7280] hover:text-black transition-colors py-1"
                     >
                       {section.title}
                     </a>
@@ -248,8 +248,8 @@ export default function Terms() {
               transition={{ delay: 0.1 }}
               className="lg:col-span-3"
             >
-              <div className="prose prose-gray max-w-none">
-                <p className="text-lg text-muted-foreground mb-8">
+              <div className="bg-white rounded-xl border border-[#E5E5E5] p-8">
+                <p className="text-lg text-[#6B7280] mb-8">
                   Please read these Terms of Service carefully before using Kahade's platform and services. 
                   By using our services, you agree to be bound by these terms.
                 </p>
@@ -264,8 +264,8 @@ export default function Terms() {
                     transition={{ delay: index * 0.05 }}
                     className="mb-12 scroll-mt-24"
                   >
-                    <h2 className="text-xl font-bold mb-4">{section.title}</h2>
-                    <div className="text-muted-foreground whitespace-pre-line">
+                    <h2 className="text-xl font-bold mb-4 text-black">{section.title}</h2>
+                    <div className="text-[#6B7280] whitespace-pre-line leading-relaxed">
                       {section.content}
                     </div>
                   </motion.div>
