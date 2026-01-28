@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  Headers,
   HttpCode,
   HttpStatus,
   Logger,
@@ -354,7 +353,7 @@ export class MidtransWebhookController {
     payload: MidtransNotificationPayload,
     webhookEventId: string,
   ): Promise<void> {
-    const { order_id, transaction_status, fraud_status, gross_amount } = payload;
+    const { order_id, transaction_status, fraud_status } = payload;
 
     // Find payment by order_id (which should be our payment reference)
     const payment = await this.prisma.payment.findFirst({
@@ -440,7 +439,7 @@ export class MidtransWebhookController {
   /**
    * Process payout notification (withdrawal)
    */
-  private async processPayoutNotification(payload: any, webhookEventId: string): Promise<void> {
+  private async processPayoutNotification(payload: any, _webhookEventId: string): Promise<void> {
     const { reference_no, status } = payload;
 
     // Find withdrawal by reference

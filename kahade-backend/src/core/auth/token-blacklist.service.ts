@@ -277,8 +277,8 @@ export class TokenBlacklistService {
       }
     }
 
-    // Memory fallback
-    for (const [hash, entry] of this.refreshTokens.entries()) {
+    // Memory fallback - iterate through all tokens to find user's tokens
+    for (const entry of this.refreshTokens.values()) {
       if (entry.userId === userId && !entry.revokedAt) {
         entry.revokedAt = Date.now();
         entry.revokeReason = reason;

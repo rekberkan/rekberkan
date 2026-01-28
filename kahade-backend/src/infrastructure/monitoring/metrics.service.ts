@@ -17,18 +17,6 @@ export enum MetricType {
 }
 
 /**
- * Metric data structure
- * Note: Used for type documentation, actual implementation uses Maps
- */
-interface _Metric {
-  name: string;
-  type: MetricType;
-  value: number;
-  labels: Record<string, string>;
-  timestamp: number;
-}
-
-/**
  * Histogram bucket configuration
  */
 interface HistogramBuckets {

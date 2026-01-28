@@ -5,6 +5,7 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Prisma } from '@prisma/client';
 import { Wallet } from '@prisma/client';
@@ -805,7 +806,6 @@ export class WalletService {
   }
 
   private generateReconciliationHash(walletId: string, balance: bigint): string {
-    const crypto = require('crypto');
     const data = `${walletId}:${balance.toString()}:${Date.now()}`;
     return crypto.createHash('sha256').update(data).digest('hex');
   }

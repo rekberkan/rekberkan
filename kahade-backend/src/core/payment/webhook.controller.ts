@@ -185,7 +185,7 @@ export class WebhookController {
   @ApiOperation({ summary: 'Handle Midtrans payment notifications' })
   async handleMidtransNotification(
     @Body() payload: MidtransWebhookPayload,
-    @Req() req: RawBodyRequest<Request>,
+    @Req() _req: RawBodyRequest<Request>,
   ) {
     // Step 1: Verify signature
     const serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY');
@@ -289,7 +289,7 @@ export class WebhookController {
   private async processOrderPayment(
     orderId: string,
     status: string,
-    amount: number,
+    _amount: number,
   ): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -324,7 +324,7 @@ export class WebhookController {
   }
 
   private async processXenditDisbursement(payload: any): Promise<void> {
-    const { external_id, status, amount } = payload;
+    const { external_id, status } = payload;
 
     // external_id format: "withdrawal_{withdrawalId}"
     const parts = external_id.split('_');

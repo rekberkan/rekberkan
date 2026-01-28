@@ -191,7 +191,7 @@ export class OrderRepository {
     const {
       userId,
       status,
-      role,
+      // role is available in options but not used in current filter logic
       search,
       dateFrom,
       dateTo,

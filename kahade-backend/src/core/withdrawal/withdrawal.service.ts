@@ -140,9 +140,12 @@ export class WithdrawalService {
       amountMinor,
       idempotencyKey,
       ipAddress,
-      userAgent: _userAgent,
+      userAgent,
       deviceFingerprint,
     } = dto;
+
+    // userAgent is captured for audit but not used in current logic
+    void userAgent;
 
     // Step 1: Idempotency check
     const existingWithdrawal = await this.prisma.withdrawal.findUnique({
