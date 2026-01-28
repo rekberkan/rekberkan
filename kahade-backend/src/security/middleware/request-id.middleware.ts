@@ -13,20 +13,16 @@ import { v4 as uuidv4 } from 'uuid';
 // - Client-side debugging
 // ============================================================================
 
-// Extend Express Request type to include request ID
-declare global {
-  namespace Express {
-    interface Request {
-      id: string;
-    }
-  }
+// Extended Request interface with request ID
+interface RequestWithId extends Request {
+  id?: string;
 }
 
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
   private readonly REQUEST_ID_HEADER = 'X-Request-ID';
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: RequestWithId, res: Response, next: NextFunction): void {
     // Use existing request ID from header if provided (for distributed tracing)
     // Otherwise, generate a new one
     const existingId = req.headers[this.REQUEST_ID_HEADER.toLowerCase()] as string;
