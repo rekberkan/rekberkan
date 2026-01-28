@@ -22,7 +22,7 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
 
     if (contentLength > this.maxBodySize) {
       throw new PayloadTooLargeException(
-        `Request body too large. Maximum allowed size is ${this.formatBytes(this.maxBodySize)}`
+        `Request body too large. Maximum allowed size is ${this.formatBytes(this.maxBodySize)}`,
       );
     }
 
@@ -35,7 +35,7 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
       if (bodySize > this.maxBodySize) {
         req.destroy();
         throw new PayloadTooLargeException(
-          `Request body too large. Maximum allowed size is ${this.formatBytes(this.maxBodySize)}`
+          `Request body too large. Maximum allowed size is ${this.formatBytes(this.maxBodySize)}`,
         );
       }
     });
@@ -61,13 +61,13 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
 export const BODY_SIZE_LIMITS = {
   // Standard API endpoints
   default: 1 * 1024 * 1024, // 1 MB
-  
+
   // File upload endpoints
   upload: 50 * 1024 * 1024, // 50 MB
-  
+
   // Webhook endpoints (payment providers may send large payloads)
   webhook: 5 * 1024 * 1024, // 5 MB
-  
+
   // Admin endpoints
   admin: 10 * 1024 * 1024, // 10 MB
 };

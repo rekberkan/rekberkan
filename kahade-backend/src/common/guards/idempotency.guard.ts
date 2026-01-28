@@ -17,10 +17,10 @@ export class IdempotencyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(
-      IDEMPOTENCY_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(IDEMPOTENCY_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiresIdempotency) {
       return true;
@@ -30,9 +30,7 @@ export class IdempotencyGuard implements CanActivate {
     const idempotencyKey = request.headers['x-idempotency-key'];
 
     if (!idempotencyKey) {
-      throw new BadRequestException(
-        'X-Idempotency-Key header is required for this operation',
-      );
+      throw new BadRequestException('X-Idempotency-Key header is required for this operation');
     }
 
     // Check if request with this key was already processed

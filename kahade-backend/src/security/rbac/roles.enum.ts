@@ -5,28 +5,28 @@
 export enum Role {
   // Super Admin - Full system access
   SUPER_ADMIN = 'SUPER_ADMIN',
-  
+
   // Admin - Platform management
   ADMIN = 'ADMIN',
-  
+
   // Finance Team - Financial operations
   FINANCE_MANAGER = 'FINANCE_MANAGER',
   FINANCE_OFFICER = 'FINANCE_OFFICER',
-  
+
   // Support Team - Customer support
   SUPPORT_MANAGER = 'SUPPORT_MANAGER',
   SUPPORT_AGENT = 'SUPPORT_AGENT',
 
   // Moderation Team
   MODERATOR = 'MODERATOR',
-  
+
   // Compliance - KYC & AML
   COMPLIANCE_OFFICER = 'COMPLIANCE_OFFICER',
-  
+
   // Regular Users
   USER = 'USER',
-  VERIFIED_USER = 'VERIFIED_USER',  // KYC verified
-  PREMIUM_USER = 'PREMIUM_USER',    // Premium features
+  VERIFIED_USER = 'VERIFIED_USER', // KYC verified
+  PREMIUM_USER = 'PREMIUM_USER', // Premium features
 }
 
 // Role hierarchy (higher roles inherit lower role permissions)

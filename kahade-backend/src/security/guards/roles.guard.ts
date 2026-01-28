@@ -25,8 +25,6 @@ export class RolesGuard implements CanActivate {
     }
 
     // Check if user has ANY of the required roles
-    return requiredRoles.some((requiredRole) =>
-      hasRoleLevel(user.role, requiredRole),
-    );
+    return requiredRoles.some((requiredRole) => hasRoleLevel(user.role, requiredRole));
   }
 }

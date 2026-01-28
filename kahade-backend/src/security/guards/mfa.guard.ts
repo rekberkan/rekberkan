@@ -67,10 +67,10 @@ export class MfaGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    const adminOnlyMFA = this.reflector.getAllAndOverride<boolean>(
-      MFA_ADMIN_ONLY_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const adminOnlyMFA = this.reflector.getAllAndOverride<boolean>(MFA_ADMIN_ONLY_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -184,17 +184,17 @@ export class MfaGuard implements CanActivate {
     try {
       // Decrypt the secret
       const secret = this.decryptSecret(encryptedSecret);
-      
+
       // Generate expected tokens for current and adjacent time windows
       const currentTime = Math.floor(Date.now() / 1000 / 30);
-      
+
       for (let i = -1; i <= 1; i++) {
         const expectedToken = this.generateTotp(secret, currentTime + i);
         if (this.timingSafeEqual(expectedToken, token)) {
           return true;
         }
       }
-      
+
       return false;
     } catch (error) {
       this.logger.error(`TOTP verification error: ${error.message}`);
@@ -208,7 +208,7 @@ export class MfaGuard implements CanActivate {
   private generateTotp(secret: string, counter: number): string {
     const buffer = Buffer.alloc(8);
     buffer.writeBigInt64BE(BigInt(counter));
-    
+
     // Decode base32 secret manually
     const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
     const secretUpper = secret.toUpperCase().replace(/=+$/, '');
@@ -224,19 +224,19 @@ export class MfaGuard implements CanActivate {
       bytes.push(parseInt(bits.substr(i, 8), 2));
     }
     const secretBuffer = Buffer.from(bytes);
-    
+
     const hmac = crypto.createHmac('sha1', secretBuffer);
     hmac.update(buffer);
     const hash = hmac.digest();
-    
+
     const offset = hash[hash.length - 1] & 0xf;
-    const code = (
-      ((hash[offset] & 0x7f) << 24) |
-      ((hash[offset + 1] & 0xff) << 16) |
-      ((hash[offset + 2] & 0xff) << 8) |
-      (hash[offset + 3] & 0xff)
-    ) % 1000000;
-    
+    const code =
+      (((hash[offset] & 0x7f) << 24) |
+        ((hash[offset + 1] & 0xff) << 16) |
+        ((hash[offset + 2] & 0xff) << 8) |
+        (hash[offset + 3] & 0xff)) %
+      1000000;
+
     return code.toString().padStart(6, '0');
   }
 
@@ -307,11 +307,11 @@ export class MfaGuard implements CanActivate {
    */
   private decryptSecret(encryptedSecret: string): string {
     const encryptionKey = this.configService.get<string>('MFA_ENCRYPTION_KEY');
-    
+
     if (!encryptionKey) {
       throw new Error('MFA encryption key not configured');
     }
-    
+
     try {
       return CryptoUtil.decrypt(encryptedSecret, encryptionKey);
     } catch (error) {
@@ -327,7 +327,7 @@ export class MfaGuard implements CanActivate {
     if (a.length !== b.length) {
       return false;
     }
-    
+
     return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
   }
 
@@ -336,11 +336,11 @@ export class MfaGuard implements CanActivate {
    */
   private checkMfaRateLimit(userId: string): { isLocked: boolean; remainingMinutes?: number } {
     const attempts = this.mfaAttempts.get(userId);
-    
+
     if (!attempts) {
       return { isLocked: false };
     }
-    
+
     if (attempts.lockedUntil) {
       if (new Date() < attempts.lockedUntil) {
         const remainingMs = attempts.lockedUntil.getTime() - Date.now();
@@ -354,7 +354,7 @@ export class MfaGuard implements CanActivate {
         return { isLocked: false };
       }
     }
-    
+
     return { isLocked: false };
   }
 
@@ -364,26 +364,26 @@ export class MfaGuard implements CanActivate {
   private recordFailedMfaAttempt(userId: string): void {
     const now = new Date();
     const attempts = this.mfaAttempts.get(userId);
-    
+
     if (!attempts) {
       this.mfaAttempts.set(userId, { count: 1, lastAttempt: now });
       return;
     }
-    
+
     // Reset if outside window
     if (now.getTime() - attempts.lastAttempt.getTime() > this.ATTEMPT_WINDOW_MS) {
       this.mfaAttempts.set(userId, { count: 1, lastAttempt: now });
       return;
     }
-    
+
     attempts.count++;
     attempts.lastAttempt = now;
-    
+
     if (attempts.count >= this.MAX_ATTEMPTS) {
       attempts.lockedUntil = new Date(now.getTime() + this.LOCKOUT_DURATION_MS);
       this.logger.warn(`MFA locked for user ${userId} due to ${attempts.count} failed attempts`);
     }
-    
+
     this.mfaAttempts.set(userId, attempts);
   }
 }

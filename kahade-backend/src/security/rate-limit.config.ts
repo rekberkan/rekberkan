@@ -52,19 +52,19 @@ export const RATE_LIMITS = {
     // Wallet operations
     WALLET_BALANCE: { ttl: 60000, limit: 30 }, // 30 per minute
     WALLET_HISTORY: { ttl: 60000, limit: 20 }, // 20 per minute
-    
+
     // Withdrawal (CRITICAL)
     WITHDRAWAL_CREATE: { ttl: 3600000, limit: 5 }, // 5 per hour
     WITHDRAWAL_LIST: { ttl: 60000, limit: 20 }, // 20 per minute
-    
+
     // Deposit
     DEPOSIT_CREATE: { ttl: 3600000, limit: 10 }, // 10 per hour
     DEPOSIT_LIST: { ttl: 60000, limit: 20 }, // 20 per minute
-    
+
     // Payment
     PAYMENT_CREATE: { ttl: 60000, limit: 3 }, // 3 per minute
     PAYMENT_STATUS: { ttl: 60000, limit: 30 }, // 30 per minute
-    
+
     // Escrow
     ESCROW_CREATE: { ttl: 300000, limit: 10 }, // 10 per 5 minutes
     ESCROW_RELEASE: { ttl: 300000, limit: 5 }, // 5 per 5 minutes
@@ -157,10 +157,10 @@ export function getRateLimit(
 export const IP_RATE_LIMITS = {
   // Global IP limit
   GLOBAL: { ttl: 60000, limit: 300 }, // 300 requests per minute per IP
-  
+
   // Suspicious IP limit (after failed attempts)
   SUSPICIOUS: { ttl: 3600000, limit: 50 }, // 50 requests per hour
-  
+
   // Blocked IP (after repeated violations)
   BLOCKED: { ttl: 86400000, limit: 0 }, // Blocked for 24 hours
 };
@@ -173,17 +173,17 @@ export const USER_RATE_LIMIT_TIERS = {
   UNVERIFIED: {
     multiplier: 0.5, // 50% of normal limits
   },
-  
+
   // Basic verified users
   BASIC: {
     multiplier: 1.0, // 100% of normal limits
   },
-  
+
   // Premium verified users
   PREMIUM: {
     multiplier: 2.0, // 200% of normal limits
   },
-  
+
   // Admin users
   ADMIN: {
     multiplier: 3.0, // 300% of normal limits
@@ -198,7 +198,7 @@ export const BURST_PROTECTION = {
   // Maximum requests in a very short window
   WINDOW_MS: 100, // 100ms window
   MAX_REQUESTS: 5, // Max 5 requests per 100ms
-  
+
   // Penalty for burst violations
   PENALTY_DURATION_MS: 60000, // 1 minute cooldown
 };
@@ -209,10 +209,10 @@ export const BURST_PROTECTION = {
 export const SLIDING_WINDOW_CONFIG = {
   // Use sliding window instead of fixed window
   ENABLED: true,
-  
+
   // Number of segments for sliding window
   SEGMENTS: 10,
-  
+
   // Precision of rate limiting
   PRECISION_MS: 1000, // 1 second precision
 };

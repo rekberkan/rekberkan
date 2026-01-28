@@ -22,8 +22,8 @@ export const IP_WHITELIST_KEY = 'ipWhitelist';
  * @param ips Array of allowed IP addresses or CIDR ranges
  */
 export const IpWhitelist = (ips?: string[]) => {
-  return (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => {
-    Reflect.defineMetadata(IP_WHITELIST_KEY, ips || [], target, propertyKey);
+  return (target: any, propertyKey?: string | symbol, descriptor?: PropertyDescriptor) => {
+    Reflect.defineMetadata(IP_WHITELIST_KEY, ips || [], target, propertyKey ?? '');
   };
 };
 
@@ -39,17 +39,16 @@ export class IpWhitelistGuard implements CanActivate {
     private readonly configService: ConfigService,
   ) {
     // Global whitelist from environment
-    this.globalWhitelist = this.parseIpList(
-      this.configService.get<string>('IP_WHITELIST', '')
-    );
-    
+    this.globalWhitelist = this.parseIpList(this.configService.get<string>('IP_WHITELIST', ''));
+
     // Admin-specific whitelist
     this.adminWhitelist = this.parseIpList(
-      this.configService.get<string>('ADMIN_IP_WHITELIST', '')
+      this.configService.get<string>('ADMIN_IP_WHITELIST', ''),
     );
-    
+
     // Enable/disable IP whitelist (disabled in development by default)
-    this.isEnabled = this.configService.get<string>('NODE_ENV') === 'production' ||
+    this.isEnabled =
+      this.configService.get<string>('NODE_ENV') === 'production' ||
       this.configService.get<string>('ENABLE_IP_WHITELIST') === 'true';
   }
 
@@ -63,20 +62,12 @@ export class IpWhitelistGuard implements CanActivate {
     const clientIp = this.getClientIp(request);
 
     // Get route-specific whitelist from decorator
-    const routeWhitelist = this.reflector.get<string[]>(
-      IP_WHITELIST_KEY,
-      context.getHandler(),
-    ) || this.reflector.get<string[]>(
-      IP_WHITELIST_KEY,
-      context.getClass(),
-    );
+    const routeWhitelist =
+      this.reflector.get<string[]>(IP_WHITELIST_KEY, context.getHandler()) ||
+      this.reflector.get<string[]>(IP_WHITELIST_KEY, context.getClass());
 
     // Combine whitelists
-    const allowedIps = [
-      ...this.globalWhitelist,
-      ...this.adminWhitelist,
-      ...(routeWhitelist || []),
-    ];
+    const allowedIps = [...this.globalWhitelist, ...this.adminWhitelist, ...(routeWhitelist || [])];
 
     // If no whitelist configured, allow all (but log warning)
     if (allowedIps.length === 0) {
@@ -203,7 +194,7 @@ export class IpWhitelistGuard implements CanActivate {
 
     return ipList
       .split(',')
-      .map(ip => ip.trim())
-      .filter(ip => ip.length > 0);
+      .map((ip) => ip.trim())
+      .filter((ip) => ip.length > 0);
   }
 }
