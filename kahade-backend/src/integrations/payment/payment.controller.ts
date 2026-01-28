@@ -33,8 +33,9 @@ export class PaymentController {
   @ApiOperation({ summary: 'Payment gateway callback' })
   @ApiResponse({ status: 200, description: 'Callback processed' })
   async handleCallback(@Body() payload: any, @Headers() headers: Record<string, string>) {
-    const provider = (this.configService.get<string>('payment.gateway', 'midtrans') || 'midtrans')
-      .toLowerCase() as 'midtrans' | 'xendit' | 'custom';
+    const provider = (
+      this.configService.get<string>('payment.gateway', 'midtrans') || 'midtrans'
+    ).toLowerCase() as 'midtrans' | 'xendit' | 'custom';
     const normalizedHeaders = this.normalizeHeaders(headers);
 
     const validationResult = await this.webhookValidatorService.validateWebhookRequest(
@@ -75,7 +76,9 @@ export class PaymentController {
     return this.paymentService.verifyPayment(paymentId);
   }
 
-  private normalizeHeaders(headers: Record<string, string | string[] | undefined>): Record<string, string> {
+  private normalizeHeaders(
+    headers: Record<string, string | string[] | undefined>,
+  ): Record<string, string> {
     return Object.entries(headers).reduce<Record<string, string>>((acc, [key, value]) => {
       if (typeof value === 'undefined') {
         return acc;

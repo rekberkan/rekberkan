@@ -15,8 +15,8 @@ export const SUPPORTED_BANKS = [
   { code: 'MEGA', name: 'Bank Mega', logo: '/banks/mega.png' },
 ] as const;
 
-export const BANK_CODES = SUPPORTED_BANKS.map(b => b.code);
+export const BANK_CODES = SUPPORTED_BANKS.map((b) => b.code);
 
 export const getBankByCode = (code: string) => {
-  return SUPPORTED_BANKS.find(b => b.code === code.toUpperCase());
+  return SUPPORTED_BANKS.find((b) => b.code === code.toUpperCase());
 };

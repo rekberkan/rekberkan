@@ -16,12 +16,12 @@ export const FEE_CALCULATION = {
     const fee = (amountMinor * percentage) / 10000n;
     const minFee = BigInt(PLATFORM_FEES.MIN_ESCROW_FEE_IDR * 100);
     const maxFee = BigInt(PLATFORM_FEES.MAX_ESCROW_FEE_IDR * 100);
-    
+
     if (fee < minFee) return minFee;
     if (fee > maxFee) return maxFee;
     return fee;
   },
-  
+
   calculateWithdrawalFee: (): bigint => {
     return BigInt(PLATFORM_FEES.WITHDRAWAL_FEE_IDR * 100);
   },

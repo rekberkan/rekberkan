@@ -8,15 +8,15 @@ export class DecimalUtil {
     if (decimal === null || decimal === undefined) {
       return 0;
     }
-    
+
     if (typeof decimal === 'number') {
       return decimal;
     }
-    
+
     if (typeof decimal === 'string') {
       return parseFloat(decimal);
     }
-    
+
     // Prisma Decimal object
     return decimal.toNumber();
   }
@@ -43,11 +43,11 @@ export class DecimalUtil {
    */
   static toCurrency(decimal: Decimal | number, currency: string = 'IDR'): string {
     const number = this.toNumber(decimal);
-    
+
     if (currency === 'IDR') {
       return `Rp ${number.toLocaleString('id-ID')}`;
     }
-    
+
     return `${currency} ${number.toLocaleString()}`;
   }
 

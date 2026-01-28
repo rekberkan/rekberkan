@@ -17,12 +17,12 @@ export class NumberUtil {
     const bytesNeeded = Math.ceil(Math.log2(range) / 8);
     const maxVal = Math.pow(256, bytesNeeded);
     const limit = maxVal - (maxVal % range);
-    
+
     let value;
     do {
       value = crypto.randomBytes(bytesNeeded).readUIntBE(0, bytesNeeded);
     } while (value >= limit);
-    
+
     return min + (value % range);
   }
 

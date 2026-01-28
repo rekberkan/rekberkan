@@ -1,6 +1,6 @@
 /**
  * Prisma Types Shim
- * 
+ *
  * This file provides type definitions that mirror Prisma-generated types.
  * It allows the application to compile even when Prisma client hasn't been generated yet.
  * Once Prisma is properly set up, these types should be imported from @prisma/client.
@@ -29,11 +29,14 @@ export enum UserRole {
 }
 
 export enum KycStatus {
-  NOT_STARTED = 'NOT_STARTED',
+  NONE = 'NONE',
   PENDING = 'PENDING',
   VERIFIED = 'VERIFIED',
   REJECTED = 'REJECTED',
 }
+
+// Alias for backward compatibility
+export { KycStatus as KYCStatus };
 
 export enum OrderStatus {
   WAITING_COUNTERPARTY = 'WAITING_COUNTERPARTY',
@@ -95,17 +98,22 @@ export enum PaymentMethod {
 export enum WithdrawalStatus {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
+  APPROVED = 'APPROVED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
+  REJECTED = 'REJECTED',
 }
 
 export enum DisputeStatus {
   OPEN = 'OPEN',
+  RESPONDED = 'RESPONDED',
+  ESCALATED = 'ESCALATED',
   UNDER_REVIEW = 'UNDER_REVIEW',
-  RESOLVED_BUYER = 'RESOLVED_BUYER',
-  RESOLVED_SELLER = 'RESOLVED_SELLER',
-  RESOLVED_SPLIT = 'RESOLVED_SPLIT',
+  UNDER_ARBITRATION = 'UNDER_ARBITRATION',
+  AWAITING_RESPONSE = 'AWAITING_RESPONSE',
+  DECIDED = 'DECIDED',
+  APPEALED = 'APPEALED',
+  RESOLVED = 'RESOLVED',
   CLOSED = 'CLOSED',
 }
 
@@ -125,6 +133,14 @@ export enum LedgerEntryType {
   CREDIT = 'CREDIT',
 }
 
+export enum LedgerAccountType {
+  ASSET = 'ASSET',
+  LIABILITY = 'LIABILITY',
+  EQUITY = 'EQUITY',
+  REVENUE = 'REVENUE',
+  EXPENSE = 'EXPENSE',
+}
+
 export enum NotificationType {
   ORDER = 'ORDER',
   PAYMENT = 'PAYMENT',
@@ -140,24 +156,36 @@ export enum NotificationType {
 
 export interface User {
   id: string;
-  email: string;
   username: string;
-  passwordHash: string;
+  email: string;
   phone?: string | null;
-  avatarUrl?: string | null;
-  status: UserStatus;
-  role: UserRole;
-  kycStatus: KycStatus;
+  passwordHash: string;
+  passwordUpdatedAt?: Date | null;
+  passwordResetToken?: string | null;
+  passwordResetExpires?: Date | null;
+  lastLoginAt?: Date | null;
+  lastFailedLoginAt?: Date | null;
+  failedLoginCount: number;
+  lockedUntil?: Date | null;
+  suspendedAt?: Date | null;
+  suspendedUntil?: Date | null;
+  suspendReason?: string | null;
   mfaEnabled: boolean;
-  mfaSecret?: string | null;
-  emailVerified: boolean;
+  totpSecretEnc?: string | null;
+  backupCodesHash?: any | null;
   emailVerifiedAt?: Date | null;
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
+  kycStatus: KycStatus;
   reputationScore: number;
   totalTransactions: number;
-  lastLoginAt?: Date | null;
+  isAdmin: boolean;
+  avatarUrl?: string | null;
+  notificationSettings?: any | null;
+  deletedAt?: Date | null;
+  deletedByUserId?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt?: Date | null;
 }
 
 export interface Order {
@@ -199,22 +227,28 @@ export interface Order {
 export interface EscrowHold {
   id: string;
   orderId: string;
-  buyerUserId: string;
-  sellerUserId?: string | null;
+  buyerWalletId: string;
+  sellerWalletId?: string | null;
   amountMinor: bigint;
   currency: Currency;
-  status: EscrowStatus;
+  status: EscrowHoldStatus;
   timeoutAt?: Date | null;
-  extensionCount: number;
-  releasedAt?: Date | null;
-  refundedAt?: Date | null;
-  disputedAt?: Date | null;
+  timeoutJobId?: string | null;
   createdAt: Date;
-  updatedAt: Date;
+  resolvedAt?: Date | null;
   // Relations
   order?: Order;
-  buyer?: User;
-  seller?: User | null;
+  buyerWallet?: Wallet;
+  sellerWallet?: Wallet | null;
+}
+
+export enum EscrowHoldStatus {
+  ACTIVE = 'ACTIVE',
+  HELD = 'HELD',
+  RELEASED = 'RELEASED',
+  REFUNDED = 'REFUNDED',
+  DISPUTED = 'DISPUTED',
+  ADJUSTED = 'ADJUSTED',
 }
 
 export interface Payment {
@@ -243,22 +277,39 @@ export interface Payment {
 
 export interface Withdrawal {
   id: string;
-  reference: string;
+  walletId: string;
   userId: string;
-  amountMinor: bigint;
-  feeMinor: bigint;
-  netAmountMinor: bigint;
-  currency: Currency;
   bankAccountId: string;
+  currency: Currency;
+  amountMinor: bigint;
   status: WithdrawalStatus;
+  reviewedBy?: string | null;
+  reviewStartedAt?: Date | null;
+  reviewNotes?: string | null;
+  adminNotes?: string | null;
+  riskHoldUntil?: Date | null;
+  requiresMultipleApprovals: boolean;
+  approvalCount: number;
+  requiredApprovals: number;
+  approvedBy?: string | null;
+  approvedAt?: Date | null;
+  rejectedAt?: Date | null;
+  rejectionReason?: string | null;
+  providerDisbursementId?: string | null;
+  providerResponse?: any | null;
+  requestedAt: Date;
   processedAt?: Date | null;
-  failedAt?: Date | null;
-  failureReason?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  completedAt?: Date | null;
+  idempotencyKey?: string | null;
+  velocityScore?: number | null;
+  isFlaggedBySystem: boolean;
+  flagReason?: string | null;
+  coolingPeriodEndsAt?: Date | null;
+  canProcessAfter?: Date | null;
   // Relations
   user?: User;
   bankAccount?: BankAccount;
+  wallet?: Wallet;
 }
 
 export interface BankAccount {
@@ -283,6 +334,10 @@ export interface Wallet {
   currency: Currency;
   balanceMinor: bigint;
   lockedMinor: bigint;
+  lastReconciledAt?: Date | null;
+  reconciliationHash?: string | null;
+  version: number;
+  deletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   // Relations
@@ -292,19 +347,34 @@ export interface Wallet {
 export interface Dispute {
   id: string;
   orderId: string;
-  initiatorId: string;
+  openedBy: string;
   reason: string;
-  description: string;
   status: DisputeStatus;
-  resolution?: string | null;
-  resolvedAt?: Date | null;
-  resolvedById?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  responseDeadline?: Date | null;
+  escalatedAt?: Date | null;
+  escalatedTo?: string | null;
+  arbitratorId?: string | null;
+  decision: DisputeDecision;
+  sellerAmountMinor?: bigint | null;
+  buyerRefundMinor?: bigint | null;
+  adminNotes?: string | null;
+  resolutionNotes?: string | null;
+  canAppeal: boolean;
+  appealDeadline?: Date | null;
+  appealCount: number;
+  openedAt: Date;
+  decidedAt?: Date | null;
   // Relations
   order?: Order;
-  initiator?: User;
-  resolvedBy?: User | null;
+  opener?: User;
+  arbitrator?: User | null;
+}
+
+export enum DisputeDecision {
+  NONE = 'NONE',
+  BUYER_WINS = 'BUYER_WINS',
+  SELLER_WINS = 'SELLER_WINS',
+  SPLIT = 'SPLIT',
 }
 
 export interface Rating {
@@ -339,20 +409,41 @@ export interface OrderComment {
   replies?: OrderComment[];
 }
 
+// Transaction is an alias for Order in this codebase (transaction.repository uses prisma.order)
 export interface Transaction {
   id: string;
-  userId: string;
-  type: TransactionType;
-  amountMinor: bigint;
+  orderNumber: string;
+  initiatorId: string;
+  counterpartyId?: string | null;
+  initiatorRole: InitiatorRole;
+  title: string;
+  description: string;
+  category: OrderCategory;
   currency: Currency;
-  referenceId?: string | null;
-  referenceType?: string | null;
-  description?: string | null;
-  balanceBefore: bigint;
-  balanceAfter: bigint;
+  amountMinor: bigint;
+  feePayer: FeePayer;
+  platformFeeMinor: bigint;
+  holdingPeriodDays: number;
+  customTerms?: string | null;
+  status: OrderStatus;
+  inviteToken: string;
+  inviteExpiresAt: Date;
+  acceptedAt?: Date | null;
+  paidAt?: Date | null;
+  autoReleaseAt?: Date | null;
+  completedAt?: Date | null;
+  cancelledAt?: Date | null;
   createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
+  deletedByUserId?: string | null;
   // Relations
-  user?: User;
+  initiator?: User;
+  counterparty?: User | null;
+  escrowHold?: EscrowHold | null;
+  dispute?: Dispute | null;
+  ratings?: Rating[];
+  comments?: OrderComment[];
 }
 
 export interface LedgerEntry {
@@ -370,11 +461,10 @@ export interface LedgerEntry {
 export interface Notification {
   id: string;
   userId: string;
-  type: NotificationType;
+  type: string;
   title: string;
   message: string;
-  data?: string | null;
-  isRead: boolean;
+  metadata?: any | null;
   readAt?: Date | null;
   createdAt: Date;
   // Relations

@@ -35,7 +35,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // Email addresses
     { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, replacement: '[EMAIL]' },
     // Phone numbers (various formats)
-    { pattern: /\b(?:\+62|62|0)[\s.-]?\d{2,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}\b/g, replacement: '[PHONE]' },
+    {
+      pattern: /\b(?:\+62|62|0)[\s.-]?\d{2,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}\b/g,
+      replacement: '[PHONE]',
+    },
     // Credit card numbers (16 digits)
     { pattern: /\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b/g, replacement: '[CARD]' },
     // Bank account numbers (10-16 digits)
@@ -51,7 +54,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // Secret in URLs
     { pattern: /secret=[^&\s]*/gi, replacement: 'secret=[REDACTED]' },
     // Private keys
-    { pattern: /-----BEGIN[^-]+PRIVATE KEY-----[\s\S]*?-----END[^-]+PRIVATE KEY-----/g, replacement: '[PRIVATE_KEY]' },
+    {
+      pattern: /-----BEGIN[^-]+PRIVATE KEY-----[\s\S]*?-----END[^-]+PRIVATE KEY-----/g,
+      replacement: '[PRIVATE_KEY]',
+    },
   ];
 
   // Error messages that should never be exposed
@@ -274,11 +280,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   /**
    * Log error with full details (sanitized)
    */
-  private logError(
-    exception: unknown,
-    request: Request,
-    requestId: string,
-  ): void {
+  private logError(exception: unknown, request: Request, requestId: string): void {
     const errorLog = {
       requestId,
       timestamp: new Date().toISOString(),

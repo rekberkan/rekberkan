@@ -49,11 +49,7 @@ export class PaymentService {
     }
   }
 
-  async transferToSeller(data: {
-    amount: number;
-    sellerId: string;
-    transactionId: string;
-  }) {
+  async transferToSeller(data: { amount: number; sellerId: string; transactionId: string }) {
     try {
       this.logger.log(`Transferring funds to seller: ${data.sellerId}`);
 
@@ -72,11 +68,7 @@ export class PaymentService {
     }
   }
 
-  async refundToBuyer(data: {
-    amount: number;
-    buyerId: string;
-    transactionId: string;
-  }) {
+  async refundToBuyer(data: { amount: number; buyerId: string; transactionId: string }) {
     try {
       this.logger.log(`Refunding to buyer: ${data.buyerId}`);
 

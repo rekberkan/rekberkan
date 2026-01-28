@@ -1,9 +1,9 @@
 /**
  * Money Utility - Safe Financial Calculations
- * 
+ *
  * All amounts are stored as BIGINT in minor units (cents/sen).
  * 1 IDR = 100 sen (minor units)
- * 
+ *
  * Examples:
  * - 10,000 IDR = 1,000,000 minor units
  * - 50.50 IDR = 5,050 minor units
@@ -48,7 +48,7 @@ export class MoneyUtil {
    * Multiply amount by factor
    */
   static multiply(amount: bigint, factor: number): bigint {
-    return amount * BigInt(Math.round(factor * 100)) / BigInt(100);
+    return (amount * BigInt(Math.round(factor * 100))) / BigInt(100);
   }
 
   /**
@@ -56,16 +56,13 @@ export class MoneyUtil {
    * Example: 10% of 1000 IDR = 100 IDR
    */
   static calculatePercentage(amount: bigint, percentage: number): bigint {
-    return amount * BigInt(Math.round(percentage * 100)) / BigInt(10000);
+    return (amount * BigInt(Math.round(percentage * 100))) / BigInt(10000);
   }
 
   /**
    * Calculate platform fee
    */
-  static calculatePlatformFee(
-    amount: bigint,
-    feePercentage: number,
-  ): bigint {
+  static calculatePlatformFee(amount: bigint, feePercentage: number): bigint {
     return this.calculatePercentage(amount, feePercentage);
   }
 
