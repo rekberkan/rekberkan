@@ -396,6 +396,10 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error('Failed to start application:', error);
+  const bootstrapLogger = new Logger('Bootstrap');
+  bootstrapLogger.error(
+    'Failed to start application:',
+    error instanceof Error ? error.message : String(error),
+  );
   process.exit(1);
 });

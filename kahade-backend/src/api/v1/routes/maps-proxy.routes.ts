@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { Logger } from '@nestjs/common';
 
 /**
  * Google Maps API Proxy
@@ -18,6 +19,7 @@ import { Router, Request, Response, NextFunction } from 'express';
  */
 
 const router: Router = Router();
+const logger = new Logger('MapsProxyRoutes');
 
 // Constants
 const CACHE_MAX_AGE_SECONDS = 86400; // 24 hours
@@ -122,7 +124,7 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
 
     if (!apiKey) {
       // Don't leak configuration details
-      console.error('Google Maps API key not configured');
+      logger.error('Google Maps API key not configured');
       res.status(503).json({
         error: 'Service temporarily unavailable',
       });
@@ -145,7 +147,7 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
     const response = await fetchWithTimeout(mapsUrl);
 
     if (!response.ok) {
-      console.error(`Google Maps API error: ${response.status}`);
+      logger.error(`Google Maps API error: ${response.status}`);
       res.status(502).json({
         error: 'Failed to load Google Maps API',
       });
@@ -162,14 +164,14 @@ router.get('/js', rateLimiter, async (req: Request, res: Response) => {
     res.send(script);
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Google Maps API request timed out');
+      logger.error('Google Maps API request timed out');
       res.status(504).json({
         error: 'Request timed out',
       });
       return;
     }
 
-    console.error('Maps proxy error:', error);
+    logger.error('Maps proxy error:', error instanceof Error ? error.message : String(error));
     res.status(500).json({
       error: 'Internal server error',
     });
@@ -182,7 +184,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
-      console.error('Google Maps API key not configured');
+      logger.error('Google Maps API key not configured');
       res.status(503).json({
         error: 'Service temporarily unavailable',
       });
@@ -204,7 +206,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
     const response = await fetchWithTimeout(geocodeUrl);
 
     if (!response.ok) {
-      console.error(`Geocoding API error: ${response.status}`);
+      logger.error(`Geocoding API error: ${response.status}`);
       res.status(502).json({
         error: 'Failed to geocode address',
       });
@@ -224,7 +226,7 @@ router.get('/geocode', rateLimiter, async (req: Request, res: Response) => {
       return;
     }
 
-    console.error('Geocoding proxy error:', error);
+    logger.error('Geocoding proxy error:', error instanceof Error ? error.message : String(error));
     res.status(500).json({
       error: 'Internal server error',
     });
@@ -237,7 +239,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
-      console.error('Google Maps API key not configured');
+      logger.error('Google Maps API key not configured');
       res.status(503).json({
         error: 'Service temporarily unavailable',
       });
@@ -259,7 +261,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
     const response = await fetchWithTimeout(placesUrl);
 
     if (!response.ok) {
-      console.error(`Places API error: ${response.status}`);
+      logger.error(`Places API error: ${response.status}`);
       res.status(502).json({
         error: 'Failed to fetch places',
       });
@@ -279,7 +281,7 @@ router.get('/places/autocomplete', rateLimiter, async (req: Request, res: Respon
       return;
     }
 
-    console.error('Places proxy error:', error);
+    logger.error('Places proxy error:', error instanceof Error ? error.message : String(error));
     res.status(500).json({
       error: 'Internal server error',
     });

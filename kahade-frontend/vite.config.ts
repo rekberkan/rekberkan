@@ -183,33 +183,49 @@ export default defineConfig({
   build: {
     outDir: path.resolve(PROJECT_ROOT, OUTPUT_DIRS[APP_MODE] || 'dist/public'),
     emptyOutDir: true,
-    chunkSizeWarningLimit: 600, // Increase limit slightly for complex app
+    chunkSizeWarningLimit: 800, // Adjusted for complex SPA with many features
     rollupOptions: {
       output: {
         manualChunks(id) {
           // React core
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-            return 'vendor';
+            return 'vendor-react';
           }
-          // Radix UI components
+          // Radix UI components - split into smaller chunks
+          if (id.includes('node_modules/@radix-ui/react-dialog') || 
+              id.includes('node_modules/@radix-ui/react-dropdown') ||
+              id.includes('node_modules/@radix-ui/react-popover')) {
+            return 'ui-overlays';
+          }
           if (id.includes('node_modules/@radix-ui/')) {
-            return 'ui';
+            return 'ui-primitives';
           }
           // Framer motion
           if (id.includes('node_modules/framer-motion/')) {
             return 'animations';
           }
           // Form libraries
-          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/@hookform/')) {
+          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/@hookform/') || id.includes('node_modules/zod/')) {
             return 'forms';
           }
-          // Icons
+          // Icons - split by usage
           if (id.includes('node_modules/@phosphor-icons/')) {
             return 'icons';
           }
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'icons-lucide';
+          }
+          // Charts
+          if (id.includes('node_modules/recharts/')) {
+            return 'charts';
+          }
           // Utility libraries
-          if (id.includes('node_modules/axios/') || id.includes('node_modules/clsx/') || id.includes('node_modules/class-variance-authority/')) {
+          if (id.includes('node_modules/axios/') || id.includes('node_modules/clsx/') || id.includes('node_modules/class-variance-authority/') || id.includes('node_modules/tailwind-merge/')) {
             return 'utils';
+          }
+          // Other vendor modules
+          if (id.includes('node_modules/')) {
+            return 'vendor-misc';
           }
         },
       },
