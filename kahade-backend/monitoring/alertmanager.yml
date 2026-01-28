@@ -1,0 +1,191 @@
+# ============================================================================
+# KAHADE - ALERTMANAGER CONFIGURATION
+# Incident notification and escalation for financial application
+# ============================================================================
+
+global:
+  # SMTP configuration for email alerts
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@kahade.com'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+  
+  # Slack configuration
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+  
+  # PagerDuty configuration
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+  
+  # Default resolve timeout
+  resolve_timeout: 5m
+
+# Route tree
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'team']
+  
+  # Wait before sending first notification
+  group_wait: 30s
+  
+  # Wait before sending subsequent notifications
+  group_interval: 5m
+  
+  # Wait before resending notification
+  repeat_interval: 4h
+  
+  # Child routes
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+    
+    # Security alerts - immediate + escalation
+    - match:
+        team: security
+      receiver: 'security-receiver'
+      group_wait: 0s
+      repeat_interval: 30m
+      continue: true
+    
+    # Payment alerts - high priority
+    - match:
+        team: payments
+      receiver: 'payments-receiver'
+      group_wait: 30s
+      repeat_interval: 2h
+    
+    # Database alerts
+    - match:
+        team: database
+      receiver: 'database-receiver'
+      group_wait: 1m
+      repeat_interval: 4h
+    
+    # Infrastructure alerts
+    - match:
+        team: infrastructure
+      receiver: 'infrastructure-receiver'
+      group_wait: 2m
+      repeat_interval: 4h
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning alerts if critical alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+  
+  # Inhibit all alerts if application is down
+  - source_match:
+      alertname: 'ApplicationDown'
+    target_match_re:
+      alertname: '.+'
+    equal: ['instance']
+
+# Receivers
+receivers:
+  # Default receiver
+  - name: 'default-receiver'
+    slack_configs:
+      - channel: '#kahade-alerts'
+        send_resolved: true
+        title: '{{ template "slack.default.title" . }}'
+        text: '{{ template "slack.default.text" . }}'
+        actions:
+          - type: button
+            text: 'View in Grafana'
+            url: '{{ template "slack.default.grafana_url" . }}'
+          - type: button
+            text: 'Runbook'
+            url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+    email_configs:
+      - to: 'backend-team@kahade.com'
+        send_resolved: true
+
+  # Critical alerts receiver
+  - name: 'critical-receiver'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        description: '{{ template "pagerduty.default.description" . }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+          resolved: '{{ template "pagerduty.default.instances" .Alerts.Resolved }}'
+    slack_configs:
+      - channel: '#kahade-critical'
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        title: ':rotating_light: CRITICAL: {{ .CommonAnnotations.summary }}'
+        text: '{{ .CommonAnnotations.description }}'
+    email_configs:
+      - to: 'oncall@kahade.com,cto@kahade.com'
+        send_resolved: true
+        headers:
+          Subject: '[CRITICAL] {{ .CommonAnnotations.summary }}'
+
+  # Security alerts receiver
+  - name: 'security-receiver'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SECURITY_KEY}'
+        severity: critical
+    slack_configs:
+      - channel: '#kahade-security'
+        send_resolved: true
+        color: 'danger'
+        title: ':shield: SECURITY ALERT: {{ .CommonAnnotations.summary }}'
+        text: |
+          *Description:* {{ .CommonAnnotations.description }}
+          *Runbook:* {{ (index .Alerts 0).Annotations.runbook_url }}
+    email_configs:
+      - to: 'security@kahade.com,cto@kahade.com'
+        send_resolved: true
+        headers:
+          Subject: '[SECURITY] {{ .CommonAnnotations.summary }}'
+
+  # Payments alerts receiver
+  - name: 'payments-receiver'
+    slack_configs:
+      - channel: '#kahade-payments'
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: ':credit_card: Payment Alert: {{ .CommonAnnotations.summary }}'
+        text: '{{ .CommonAnnotations.description }}'
+    email_configs:
+      - to: 'payments-team@kahade.com'
+        send_resolved: true
+
+  # Database alerts receiver
+  - name: 'database-receiver'
+    slack_configs:
+      - channel: '#kahade-database'
+        send_resolved: true
+        title: ':floppy_disk: Database Alert: {{ .CommonAnnotations.summary }}'
+        text: '{{ .CommonAnnotations.description }}'
+    email_configs:
+      - to: 'database-team@kahade.com'
+        send_resolved: true
+
+  # Infrastructure alerts receiver
+  - name: 'infrastructure-receiver'
+    slack_configs:
+      - channel: '#kahade-infrastructure'
+        send_resolved: true
+        title: ':gear: Infrastructure Alert: {{ .CommonAnnotations.summary }}'
+        text: '{{ .CommonAnnotations.description }}'
+    email_configs:
+      - to: 'infrastructure-team@kahade.com'
+        send_resolved: true
+
+# Templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

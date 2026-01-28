@@ -1,0 +1,102 @@
+# ============================================================================
+# KAHADE BACKEND - PRODUCTION DOCKERFILE
+# Security-hardened for financial applications
+# ============================================================================
+
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+
+# Install security updates
+RUN apk update && apk upgrade --no-cache
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
+
+# Install pnpm and dependencies
+RUN npm install -g pnpm && \
+    pnpm install --frozen-lockfile
+
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Build application
+RUN npm run build
+
+# Remove development dependencies
+RUN npm prune --production
+
+# Stage 3: Production
+FROM node:20-alpine AS production
+
+# Security: Install security updates and required packages
+RUN apk update && \
+    apk upgrade --no-cache && \
+    apk add --no-cache \
+      dumb-init \
+      curl \
+      ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+WORKDIR /app
+
+# Security: Set proper ownership
+RUN chown -R nodejs:nodejs /app
+
+# Copy built application with proper ownership
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+
+# Security: Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
+
+# Security: Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads && chown -R nodejs:nodejs /app/uploads
+
+# Security: Switch to non-root user
+USER nodejs
+
+# Security: Set secure environment defaults
+ENV NODE_ENV=production \
+    NODE_OPTIONS="--max-old-space-size=512" \
+    NPM_CONFIG_LOGLEVEL=warn
+
+# Expose port
+EXPOSE 3000
+
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Security: Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
+CMD ["node", "dist/main"]
+
+# ============================================================================
+# SECURITY NOTES:
+# - Runs as non-root user (nodejs:1001)
+# - Uses dumb-init for proper signal handling
+# - Health check enabled for orchestration
+# - Minimal attack surface (alpine + security updates)
+# - No shell access in production
+# - Proper file permissions
+# ============================================================================

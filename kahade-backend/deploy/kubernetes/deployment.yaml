@@ -1,1 +1,213 @@
-placeholder: true
+# ============================================================================
+# KAHADE BACKEND - KUBERNETES DEPLOYMENT
+# Production-grade deployment for financial application
+# ============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kahade-backend
+  namespace: kahade
+  labels:
+    app: kahade-backend
+    version: v1
+    environment: production
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: kahade-backend
+  template:
+    metadata:
+      labels:
+        app: kahade-backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Security: Use dedicated service account
+      serviceAccountName: kahade-backend
+      
+      # Security: Pod Security Context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      
+      # Scheduling: Spread across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: kahade-backend
+                topologyKey: kubernetes.io/hostname
+      
+      # Scheduling: Node selection
+      nodeSelector:
+        kubernetes.io/os: linux
+      
+      # Tolerations for dedicated nodes
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "kahade"
+          effect: "NoSchedule"
+      
+      containers:
+        - name: kahade-backend
+          image: kahade/backend:latest
+          imagePullPolicy: Always
+          
+          # Security: Container Security Context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          
+          # Environment variables from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: kahade-config
+          
+          # Secrets from Kubernetes Secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: JWT_SECRET
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: JWT_REFRESH_SECRET
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: REDIS_PASSWORD
+            - name: COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: COOKIE_SECRET
+            - name: MIDTRANS_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: MIDTRANS_SERVER_KEY
+                  optional: true
+            - name: XENDIT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kahade-secrets
+                  key: XENDIT_SECRET_KEY
+                  optional: true
+          
+          # Resource limits (adjust based on load testing)
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          
+          # Volume mounts
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /app/logs
+      
+      # Volumes
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+      
+      # Graceful shutdown
+      terminationGracePeriodSeconds: 30
+
+---
+# ============================================================================
+# SERVICE ACCOUNT
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kahade-backend
+  namespace: kahade
+  labels:
+    app: kahade-backend
+automountServiceAccountToken: false
+
+---
+# ============================================================================
+# POD DISRUPTION BUDGET
+# ============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kahade-backend-pdb
+  namespace: kahade
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: kahade-backend
