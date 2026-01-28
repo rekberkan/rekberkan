@@ -70,7 +70,7 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<IUserResponse> {
-    const user = await this.findById(id);
+    await this.findById(id); // Validate user exists
 
     const updateData: IUpdateUser = {};
 
@@ -424,11 +424,11 @@ export class UserService {
 
   sanitizeUser(user: any): IUserResponse {
     const {
-      passwordHash,
-      passwordResetToken,
-      passwordResetExpires,
-      totpSecretEnc,
-      backupCodesHash,
+      passwordHash: _passwordHash,
+      passwordResetToken: _passwordResetToken,
+      passwordResetExpires: _passwordResetExpires,
+      totpSecretEnc: _totpSecretEnc,
+      backupCodesHash: _backupCodesHash,
       ...sanitized
     } = user;
 

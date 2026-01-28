@@ -1,31 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
-  Headers,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiHeader,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, UseGuards, Headers } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { MfaGuard } from '@security/guards/mfa.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { WithdrawalService } from './withdrawal.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
-import { WithdrawalFilterDto } from './dto/withdrawal-filter.dto';
 
 @ApiTags('withdrawals')
 @Controller('withdrawals')

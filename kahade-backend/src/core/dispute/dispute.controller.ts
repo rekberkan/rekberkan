@@ -17,7 +17,7 @@ import {
 } from './dispute.service';
 import { CreateDisputeDto } from './dto/create-dispute.dto';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
-import { SubmitEvidenceDto, EvidenceType } from './dto/submit-evidence.dto';
+import { SubmitEvidenceDto } from './dto/submit-evidence.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';

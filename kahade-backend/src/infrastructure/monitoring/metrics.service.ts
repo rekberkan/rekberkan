@@ -18,8 +18,9 @@ export enum MetricType {
 
 /**
  * Metric data structure
+ * Note: Used for type documentation, actual implementation uses Maps
  */
-interface Metric {
+interface _Metric {
   name: string;
   type: MetricType;
   value: number;

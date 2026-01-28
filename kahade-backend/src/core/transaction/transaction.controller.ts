@@ -9,7 +9,6 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   BadRequestException,
-  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,7 +22,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionStatusDto } from './dto/update-transaction-status.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
