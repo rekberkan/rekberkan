@@ -8,8 +8,11 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   DisputeService,
   CreateDisputeDto as ServiceCreateDisputeDto,
@@ -23,6 +26,11 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Roles } from '@common/decorators/roles.decorator';
 
+// ============================================================================
+// DISPUTE CONTROLLER - Bank-Grade Security
+// Implements: Rate Limiting, Input Validation, Role-Based Access
+// ============================================================================
+
 @ApiTags('disputes')
 @Controller('disputes')
 @UseGuards(JwtAuthGuard)
@@ -31,9 +39,12 @@ export class DisputeController {
   constructor(private readonly disputeService: DisputeService) {}
 
   @Post()
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 disputes per hour max
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create new dispute' })
   @ApiResponse({ status: 201, description: 'Dispute created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async create(@CurrentUser('id') userId: string, @Body() createDisputeDto: CreateDisputeDto) {
     const dto: ServiceCreateDisputeDto = {
       orderId: createDisputeDto.orderId,
@@ -50,7 +61,10 @@ export class DisputeController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Returns paginated disputes' })
   async findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    return this.disputeService.findAll({ page, limit });
+    // Validate pagination
+    const validPage = page < 1 ? 1 : page;
+    const validLimit = limit < 1 ? 10 : limit > 100 ? 100 : limit;
+    return this.disputeService.findAll({ page: validPage, limit: validLimit });
   }
 
   @Get(':id')
@@ -62,23 +76,36 @@ export class DisputeController {
   }
 
   @Post(':id/respond')
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 responses per hour
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Respond to dispute (counterparty)' })
   @ApiResponse({ status: 200, description: 'Dispute responded' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async respond(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @Body('response') response: string,
   ) {
-    if (!response || response.trim().length < 5) {
+    if (!response || typeof response !== 'string') {
+      throw new BadRequestException('Response is required');
+    }
+    const trimmedResponse = response.trim();
+    if (trimmedResponse.length < 5) {
       throw new BadRequestException('Response must be at least 5 characters');
     }
-    return this.disputeService.respond(id, userId, response.trim());
+    if (trimmedResponse.length > 2000) {
+      throw new BadRequestException('Response must not exceed 2000 characters');
+    }
+    return this.disputeService.respond(id, userId, trimmedResponse);
   }
 
   @Post(':id/evidence')
+  @Throttle({ default: { limit: 20, ttl: 3600000 } }) // 20 evidence submissions per hour
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit dispute evidence' })
   @ApiResponse({ status: 200, description: 'Evidence submitted' })
   @ApiResponse({ status: 400, description: 'Invalid evidence data' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async submitEvidence(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
@@ -105,27 +132,37 @@ export class DisputeController {
   }
 
   @Post(':id/messages')
+  @Throttle({ default: { limit: 60, ttl: 60000 } }) // 60 messages per minute
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Add dispute message' })
   @ApiResponse({ status: 201, description: 'Message sent' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async addMessage(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @Body('message') message: string,
   ) {
-    if (!message || message.trim().length === 0) {
+    if (!message || typeof message !== 'string') {
+      throw new BadRequestException('Message is required');
+    }
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.length === 0) {
       throw new BadRequestException('Message cannot be empty');
     }
-    if (message.length > 1000) {
+    if (trimmedMessage.length > 1000) {
       throw new BadRequestException('Message must not exceed 1000 characters');
     }
-    return this.disputeService.addMessage(id, userId, message.trim());
+    return this.disputeService.addMessage(id, userId, trimmedMessage);
   }
 
   @Put(':id/resolve')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
+  @Throttle({ default: { limit: 30, ttl: 3600000 } }) // 30 resolutions per hour
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resolve dispute (Admin only)' })
   @ApiResponse({ status: 200, description: 'Dispute resolved successfully' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async resolve(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,

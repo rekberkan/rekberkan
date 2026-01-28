@@ -163,12 +163,35 @@ export async function withOptimisticLock<T extends { version: number }>(
  */
 export async function withPessimisticLock<T>(
   tx: Prisma.TransactionClient,
-  query: string,
-  params: any[],
+  tableName: 'wallet' | 'order' | 'escrowHold' | 'withdrawal', // Whitelist allowed tables
+  idColumn: 'id' | 'userId', // Whitelist allowed columns
+  idValue: string,
   updateFn: (locked: T) => Promise<T>,
 ): Promise<T> {
-  // Execute SELECT FOR UPDATE to acquire lock
-  const [locked] = await tx.$queryRawUnsafe<T[]>(`${query} FOR UPDATE`, ...params);
+  // SECURITY FIX: Use parameterized query with whitelisted table/column names
+  // This prevents SQL injection by only allowing predefined table and column names
+  const tableMap: Record<string, string> = {
+    wallet: '"Wallet"',
+    order: '"Order"',
+    escrowHold: '"EscrowHold"',
+    withdrawal: '"Withdrawal"',
+  };
+  const columnMap: Record<string, string> = {
+    id: '"id"',
+    userId: '"userId"',
+  };
+
+  const safeTable = tableMap[tableName];
+  const safeColumn = columnMap[idColumn];
+
+  if (!safeTable || !safeColumn) {
+    throw new Error('Invalid table or column name');
+  }
+
+  // Use Prisma.sql for safe parameterized query
+  const [locked] = await tx.$queryRaw<T[]>(
+    Prisma.sql`SELECT * FROM ${Prisma.raw(safeTable)} WHERE ${Prisma.raw(safeColumn)} = ${idValue} FOR UPDATE`,
+  );
 
   if (!locked) {
     throw new Error('Record not found for pessimistic lock');

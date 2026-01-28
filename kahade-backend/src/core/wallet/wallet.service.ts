@@ -397,17 +397,27 @@ export class WalletService {
         bankAccount = existingAccount;
         finalBankAccountId = existingAccount.id;
       } else {
-        // Create new bank account with encrypted data
-        // Simple encryption for demo - in production use proper KMS
-        const encryptSimple = (text: string) => Buffer.from(text).toString('base64');
+        // Create new bank account with encrypted data using AES-256-GCM
+        const encryptBankData = (text: string): string => {
+          const secret =
+            this.configService.get<string>('BANK_ENCRYPTION_KEY') ||
+            'default-encryption-key-32-chars!';
+          const key = crypto.scryptSync(secret, 'salt', 32);
+          const iv = crypto.randomBytes(16);
+          const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+          let encrypted = cipher.update(text, 'utf8', 'hex');
+          encrypted += cipher.final('hex');
+          const authTag = cipher.getAuthTag();
+          return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+        };
 
         bankAccount = await this.prisma.bankAccount.create({
           data: {
             userId,
             bankName,
-            accountNumberEnc: encryptSimple(accountNumber),
+            accountNumberEnc: encryptBankData(accountNumber),
             accountNumberLast4,
-            accountNameEnc: encryptSimple(accountName),
+            accountNameEnc: encryptBankData(accountName),
             isDefault: false,
             isActive: true,
             isVerified: false,
