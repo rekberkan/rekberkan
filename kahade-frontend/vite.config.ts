@@ -1,4 +1,3 @@
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
@@ -113,14 +112,14 @@ function vitePluginManusDebugCollector(): Plugin {
           return next();
         }
 
-        const handlePayload = (payload: any) => {
-          if (payload.consoleLogs?.length > 0) {
+        const handlePayload = (payload: Record<string, unknown>) => {
+          if (Array.isArray(payload.consoleLogs) && payload.consoleLogs.length > 0) {
             writeToLogFile("browserConsole", payload.consoleLogs);
           }
-          if (payload.networkRequests?.length > 0) {
+          if (Array.isArray(payload.networkRequests) && payload.networkRequests.length > 0) {
             writeToLogFile("networkRequests", payload.networkRequests);
           }
-          if (payload.sessionEvents?.length > 0) {
+          if (Array.isArray(payload.sessionEvents) && payload.sessionEvents.length > 0) {
             writeToLogFile("sessionReplay", payload.sessionEvents);
           }
 
@@ -131,7 +130,7 @@ function vitePluginManusDebugCollector(): Plugin {
         const reqBody = (req as { body?: unknown }).body;
         if (reqBody && typeof reqBody === "object") {
           try {
-            handlePayload(reqBody);
+            handlePayload(reqBody as Record<string, unknown>);
           } catch (e) {
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ success: false, error: String(e) }));
@@ -161,7 +160,6 @@ function vitePluginManusDebugCollector(): Plugin {
 const plugins = [
   react(), 
   tailwindcss(), 
-  jsxLocPlugin(), 
   vitePluginManusRuntime(), 
   vitePluginManusDebugCollector()
 ];
@@ -186,47 +184,59 @@ export default defineConfig({
     chunkSizeWarningLimit: 800, // Adjusted for complex SPA with many features
     rollupOptions: {
       output: {
+        // Use function-based manualChunks to properly handle dependencies
         manualChunks(id) {
-          // React core
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-            return 'vendor-react';
+          // Skip non-node_modules
+          if (!id.includes('node_modules')) {
+            return undefined;
           }
-          // Radix UI components - split into smaller chunks
-          if (id.includes('node_modules/@radix-ui/react-dialog') || 
-              id.includes('node_modules/@radix-ui/react-dropdown') ||
-              id.includes('node_modules/@radix-ui/react-popover')) {
-            return 'ui-overlays';
+
+          // Radix UI - group all together
+          if (id.includes('@radix-ui/')) {
+            return 'ui-radix';
           }
-          if (id.includes('node_modules/@radix-ui/')) {
-            return 'ui-primitives';
-          }
+
           // Framer motion
-          if (id.includes('node_modules/framer-motion/')) {
+          if (id.includes('framer-motion')) {
             return 'animations';
           }
+
           // Form libraries
-          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/@hookform/') || id.includes('node_modules/zod/')) {
+          if (id.includes('react-hook-form') || 
+              id.includes('@hookform/') || 
+              id.includes('/zod/')) {
             return 'forms';
           }
-          // Icons - split by usage
-          if (id.includes('node_modules/@phosphor-icons/')) {
+
+          // Icons
+          if (id.includes('@phosphor-icons/') || 
+              id.includes('lucide-react')) {
             return 'icons';
           }
-          if (id.includes('node_modules/lucide-react/')) {
-            return 'icons-lucide';
-          }
-          // Charts
-          if (id.includes('node_modules/recharts/')) {
+
+          // Charts and D3
+          if (id.includes('recharts') || 
+              id.includes('d3-')) {
             return 'charts';
           }
-          // Utility libraries
-          if (id.includes('node_modules/axios/') || id.includes('node_modules/clsx/') || id.includes('node_modules/class-variance-authority/') || id.includes('node_modules/tailwind-merge/')) {
+
+          // Utilities
+          if (id.includes('/axios/') || 
+              id.includes('/clsx/') || 
+              id.includes('class-variance-authority') || 
+              id.includes('tailwind-merge')) {
             return 'utils';
           }
-          // Other vendor modules
-          if (id.includes('node_modules/')) {
-            return 'vendor-misc';
+
+          // React ecosystem - keep together to avoid circular deps
+          if (id.includes('/react/') || 
+              id.includes('/react-dom/') ||
+              id.includes('/scheduler/')) {
+            return 'react-vendor';
           }
+
+          // Let Vite handle other vendor modules automatically
+          return undefined;
         },
       },
     },
