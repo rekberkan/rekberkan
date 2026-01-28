@@ -1,9 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { LedgerService } from './ledger.service';
+import { LedgerLockService } from './ledger-lock.service';
+import { LedgerRepository } from './ledger.repository';
+import { DatabaseModule } from '@infrastructure/database/database.module';
 
 @Module({
-  providers: [],
+  imports: [DatabaseModule],
+  providers: [LedgerService, LedgerLockService, LedgerRepository],
   controllers: [],
-  imports: [],
-  exports: [],
+  exports: [LedgerService, LedgerLockService, LedgerRepository],
 })
 export class LedgerModule {}
