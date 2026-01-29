@@ -212,7 +212,6 @@ export class AdminController {
     @CurrentUser('id') adminId: string,
     @Body() dto: SuspendUserDto,
   ) {
-
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
@@ -305,7 +304,6 @@ export class AdminController {
     @CurrentUser('id') adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
-
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
@@ -426,7 +424,6 @@ export class AdminController {
     @CurrentUser('id') adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
-
     const transaction = await (this.prisma as any).order.findUnique({
       where: { id },
     });
@@ -462,7 +459,6 @@ export class AdminController {
     @CurrentUser('id') adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
-
     const transaction = await (this.prisma as any).order.findUnique({
       where: { id },
     });
@@ -753,7 +749,6 @@ export class AdminController {
     @CurrentUser('id') adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
-
     const withdrawal = await (this.prisma as any).withdrawal.findUnique({
       where: { id },
     });

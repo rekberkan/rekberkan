@@ -6,10 +6,7 @@ import { DatabaseModule } from '@infrastructure/database/database.module';
 import { PaymentModule as PaymentIntegrationModule } from '@integrations/payment/payment.module';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    forwardRef(() => PaymentIntegrationModule),
-  ],
+  imports: [DatabaseModule, forwardRef(() => PaymentIntegrationModule)],
   controllers: [PaymentController, WebhookController],
   providers: [PaymentRepository],
   exports: [PaymentRepository],
