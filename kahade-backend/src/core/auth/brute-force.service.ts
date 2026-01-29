@@ -50,8 +50,8 @@ export class BruteForceService {
       try {
         this.redis = new Redis(redisUrl, {
           maxRetriesPerRequest: 3,
-          retryDelayOnFailover: 100,
           lazyConnect: true,
+          retryStrategy: (times: number) => Math.min(times * 100, 3000),
         });
 
         this.redis.on('connect', () => {

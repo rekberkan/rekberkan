@@ -1,4 +1,10 @@
 import { NestFactory } from '@nestjs/core';
+
+// Fix BigInt serialization for JSON responses
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 import {
   ValidationPipe,
   VersioningType,
@@ -312,7 +318,8 @@ async function bootstrap() {
   // ============================================================================
 
   // Fix #13: Health check route with detailed status
-  app.getHttpAdapter().get('/health', async (req: Request, res: Response) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (app.getHttpAdapter() as any).get('/health', async (_req: any, res: any) => {
     const healthStatus = {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -323,7 +330,7 @@ async function bootstrap() {
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB',
       },
     };
-    res.status(200).send(healthStatus);
+    res.status(200).json(healthStatus);
   });
 
   // API Prefix (exclude webhooks for payment providers)

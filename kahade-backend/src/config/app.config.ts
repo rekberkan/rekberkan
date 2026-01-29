@@ -61,7 +61,7 @@ export default registerAs('app', () => {
     },
 
     // Trust proxy configuration - Fixed: Made configurable
-    trustProxy: parseInt(process.env.TRUST_PROXY_HOPS, 10) || 1,
+    trustProxy: parseInt(process.env.TRUST_PROXY_HOPS || '1', 10),
 
     // Feature flags
     enableSwagger: process.env.ENABLE_SWAGGER === 'true',

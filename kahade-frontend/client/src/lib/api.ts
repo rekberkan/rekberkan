@@ -15,8 +15,8 @@ import { SecureStorage } from '@/lib/secure-storage';
 // Base API URL - from centralized config
 const API_BASE_URL = APP_URLS.api;
 
-// Request timeout
-const REQUEST_TIMEOUT = 30000;
+// Request timeout - reduced from 30s to 15s for better UX
+const REQUEST_TIMEOUT = 15000;
 
 // SECURITY FIX [C-01]: Removed token storage keys - tokens now in HttpOnly cookies
 const USER_CACHE_KEY = 'rekberkan_user_cache';
