@@ -101,5 +101,11 @@
   "overrides": {
     "lodash-es": "^4.17.21",
     "esbuild": "^0.25.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide"
+    ]
   }
 }
