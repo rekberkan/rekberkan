@@ -17,6 +17,7 @@ import Contact from "./pages/Contact";
 // Product Pages
 import MobileApp from "./pages/MobileApp";
 import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 
 // Support Pages
 import Help from "./pages/Help";
@@ -38,6 +39,7 @@ import Licenses from "./pages/Licenses";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 // User Dashboard Pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -155,6 +157,7 @@ function LandingRouter() {
       {/* Product Pages */}
       <Route path="/mobile-app" component={MobileApp} />
       <Route path="/blog" component={Blog} />
+      <Route path="/blog/:slug" component={BlogDetail} />
       
       {/* Support Pages */}
       <Route path="/help" component={Help} />
@@ -176,6 +179,7 @@ function LandingRouter() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       
       {/* 404 */}
       <Route path="/404" component={NotFound} />

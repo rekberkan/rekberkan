@@ -134,9 +134,9 @@ export default function CreateTransaction() {
       
       const transactionId = response.data.id || response.data.transaction?.id;
       if (transactionId) {
-        setLocation(`/app/transactions/${transactionId}`);
+        setLocation(`/transactions/${transactionId}`);
       } else {
-        setLocation('/app/transactions');
+        setLocation('/transactions');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create transaction');

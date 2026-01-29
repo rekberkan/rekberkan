@@ -165,6 +165,9 @@ export const authApi = {
   resetPassword: (data: { token: string; password: string }) =>
     api.post('/auth/reset-password', data),
   
+  validateResetToken: (token: string) =>
+    api.get(`/auth/reset-password/validate?token=${token}`),
+  
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post('/auth/change-password', data),
   
@@ -242,6 +245,10 @@ export const userApi = {
   getPublicProfile: (userId: string) => api.get(`/users/${userId}`),
   
   getRatings: (userId: string) => api.get(`/users/${userId}/ratings`),
+  
+  requestDataExport: () => api.post('/user/data-export'),
+  
+  deleteAccount: (password: string) => api.delete('/user/account', { data: { password } }),
 };
 
 // Transaction API
