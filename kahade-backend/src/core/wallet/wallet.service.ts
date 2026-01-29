@@ -398,11 +398,18 @@ export class WalletService {
         finalBankAccountId = existingAccount.id;
       } else {
         // Create new bank account with encrypted data using AES-256-GCM
+        // SECURITY FIX [C003]: Removed hardcoded default encryption key
         const encryptBankData = (text: string): string => {
-          const secret =
-            this.configService.get<string>('BANK_ENCRYPTION_KEY') ||
-            'default-encryption-key-32-chars!';
-          const key = crypto.scryptSync(secret, 'salt', 32);
+          const secret = this.configService.get<string>('BANK_ENCRYPTION_KEY');
+          if (!secret) {
+            throw new InternalServerErrorException(
+              'BANK_ENCRYPTION_KEY must be configured for bank account operations'
+            );
+          }
+          // SECURITY FIX [M007]: Use proper salt derivation
+          const salt = this.configService.get<string>('BANK_ENCRYPTION_SALT') || 
+            `rekberkan-bank-${secret.substring(0, 8)}`;
+          const key = crypto.scryptSync(secret, salt, 32);
           const iv = crypto.randomBytes(16);
           const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
           let encrypted = cipher.update(text, 'utf8', 'hex');

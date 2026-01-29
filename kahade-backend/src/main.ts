@@ -28,11 +28,88 @@ const COMPRESSION_LEVEL = 6; // Balanced compression (0-9 scale)
 const CORS_MAX_AGE_SECONDS = 86400; // 24 hours
 const HSTS_MAX_AGE_SECONDS = 31536000; // 1 year
 
+/**
+ * Validate critical environment variables at startup
+ * SECURITY FIX [H003]: Ensure encryption keys are configured in production
+ */
+function validateCriticalConfig(isProduction: boolean, logger: Logger): void {
+  const criticalKeys = [
+    { key: 'JWT_SECRET', description: 'JWT signing secret' },
+    { key: 'JWT_REFRESH_SECRET', description: 'JWT refresh token secret' },
+    { key: 'DATABASE_URL', description: 'Database connection string' },
+  ];
+
+  const encryptionKeys = [
+    { key: 'MFA_ENCRYPTION_KEY', description: 'MFA secret encryption key' },
+    { key: 'BANK_ENCRYPTION_KEY', description: 'Bank account encryption key' },
+  ];
+
+  const missingCritical: string[] = [];
+  const missingEncryption: string[] = [];
+
+  // Check critical keys (always required)
+  for (const { key, description } of criticalKeys) {
+    if (!process.env[key]) {
+      missingCritical.push(`${key} (${description})`);
+    }
+  }
+
+  // Check encryption keys (required in production, warned in development)
+  for (const { key, description } of encryptionKeys) {
+    if (!process.env[key]) {
+      missingEncryption.push(`${key} (${description})`);
+    }
+  }
+
+  if (missingCritical.length > 0) {
+    const message = `CRITICAL: Missing required environment variables:\n${missingCritical.map(k => `  - ${k}`).join('\n')}`;
+    logger.error(message);
+    throw new Error(message);
+  }
+
+  if (missingEncryption.length > 0) {
+    if (isProduction) {
+      const message = `CRITICAL: Missing encryption keys in production:\n${missingEncryption.map(k => `  - ${k}`).join('\n')}`;
+      logger.error(message);
+      throw new Error(message);
+    } else {
+      logger.warn(
+        `Missing encryption keys (using development defaults):\n${missingEncryption.map(k => `  - ${k}`).join('\n')}\n` +
+        'DO NOT deploy to production without configuring these keys!'
+      );
+    }
+  }
+
+  // Validate key lengths
+  const keyLengthChecks = [
+    { key: 'JWT_SECRET', minLength: 32 },
+    { key: 'JWT_REFRESH_SECRET', minLength: 32 },
+    { key: 'MFA_ENCRYPTION_KEY', minLength: 32 },
+    { key: 'BANK_ENCRYPTION_KEY', minLength: 32 },
+  ];
+
+  for (const { key, minLength } of keyLengthChecks) {
+    const value = process.env[key];
+    if (value && value.length < minLength) {
+      const message = `${key} should be at least ${minLength} characters for adequate security`;
+      if (isProduction) {
+        throw new Error(`CRITICAL: ${message}`);
+      }
+      logger.warn(message);
+    }
+  }
+
+  logger.log('Environment configuration validated successfully');
+}
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
+
+  // SECURITY FIX [H003]: Validate critical configuration at startup
+  validateCriticalConfig(isProduction, logger);
 
   // BANK-GRADE: Conditional logging based on environment
   const logLevels: LogLevel[] = isProduction

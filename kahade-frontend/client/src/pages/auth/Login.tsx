@@ -170,8 +170,9 @@ export default function Login() {
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    // SECURITY FIX [M005]: Aligned with backend validation (8 characters minimum)
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
     
     setErrors(newErrors);

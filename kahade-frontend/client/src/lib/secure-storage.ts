@@ -25,9 +25,25 @@ export class SecureStorage {
 
   /**
    * Get CSRF token for request headers
+   * SECURITY FIX [M002]: Also check cookie for CSRF token (Double Submit Cookie pattern)
    */
   static getCsrfToken(): string | null {
-    return sessionStorage.getItem(this.CSRF_TOKEN_KEY);
+    // First try sessionStorage
+    const sessionToken = sessionStorage.getItem(this.CSRF_TOKEN_KEY);
+    if (sessionToken) {
+      return sessionToken;
+    }
+    
+    // Fallback: read from cookie (XSRF-TOKEN set by backend)
+    const cookieMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    if (cookieMatch) {
+      const cookieToken = decodeURIComponent(cookieMatch[1]);
+      // Store in sessionStorage for faster access
+      sessionStorage.setItem(this.CSRF_TOKEN_KEY, cookieToken);
+      return cookieToken;
+    }
+    
+    return null;
   }
 
   /**

@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 import LandingLayout from '@/components/layout/LandingLayout';
 
 interface Author {
@@ -378,7 +379,17 @@ export default function BlogDetail() {
                 prose-ul:my-4 prose-li:text-[#374151]
                 prose-blockquote:border-l-4 prose-blockquote:border-black prose-blockquote:bg-[#FAFAFA] prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic
                 prose-blockquote:text-[#374151]"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              // SECURITY FIX [H001]: Sanitize HTML content to prevent XSS
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
+                ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'ul', 'ol', 'li', 
+                  'blockquote', 'pre', 'code', 'em', 'strong', 'a', 'img', 'table', 'thead', 
+                  'tbody', 'tr', 'th', 'td', 'span', 'div'],
+                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
+                ALLOW_DATA_ATTR: false,
+                ADD_ATTR: ['target'],
+                FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'button'],
+                FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+              }) }}
             />
 
             {/* Sidebar */}

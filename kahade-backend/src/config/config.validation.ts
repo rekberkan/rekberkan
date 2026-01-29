@@ -253,5 +253,5 @@ export function validateProductionConfig(config: Record<string, unknown>): void 
     throw new Error('CRITICAL: Swagger must be disabled in production (ENABLE_SWAGGER=false)');
   }
 
-  console.log('✅ Production configuration validated successfully');
+  // QUALITY FIX [M001]: Removed console.log - validation result is logged by main.ts
 }

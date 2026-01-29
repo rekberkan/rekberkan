@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as QRCode from 'qrcode';
@@ -11,23 +11,64 @@ export interface IMFASetup {
   backupCodesPlain: string[]; // Plain backup codes (show once)
 }
 
+/**
+ * MFA (Multi-Factor Authentication) Service
+ * 
+ * SECURITY FIX [C001]: Removed hardcoded default encryption key.
+ * The service now requires MFA_ENCRYPTION_KEY to be explicitly configured
+ * and validates it at startup in production environments.
+ */
 @Injectable()
-export class MFAService {
+export class MFAService implements OnModuleInit {
   private readonly logger = new Logger(MFAService.name);
   private readonly encryptionKey: string;
+  private readonly isProduction: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.encryptionKey = this.configService.get<string>(
-      'MFA_ENCRYPTION_KEY',
-      'default-key-change-in-production',
-    );
+    this.isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    
+    // SECURITY FIX [C001]: No default fallback - key must be explicitly configured
+    const key = this.configService.get<string>('MFA_ENCRYPTION_KEY');
+    
+    if (!key) {
+      if (this.isProduction) {
+        throw new Error(
+          'CRITICAL: MFA_ENCRYPTION_KEY must be configured in production. ' +
+          'Generate one using: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+        );
+      }
+      // In development, use a deterministic key for testing (logged as warning)
+      this.logger.warn(
+        'MFA_ENCRYPTION_KEY not configured. Using development-only key. ' +
+        'DO NOT use this in production!'
+      );
+      this.encryptionKey = 'dev-only-mfa-key-not-for-production-use';
+    } else {
+      this.encryptionKey = key;
+    }
+  }
+
+  /**
+   * Validate encryption key configuration at module initialization
+   */
+  onModuleInit() {
+    // Validate key length (should be at least 32 characters for AES-256)
+    if (this.encryptionKey.length < 32) {
+      const message = 'MFA_ENCRYPTION_KEY should be at least 32 characters for adequate security';
+      if (this.isProduction) {
+        throw new Error(`CRITICAL: ${message}`);
+      }
+      this.logger.warn(message);
+    }
+    
+    this.logger.log('MFA Service initialized with encryption key configured');
   }
 
   /**
    * Generate MFA secret and QR code for user setup
    */
   async setupMFA(userId: string, userEmail: string): Promise<IMFASetup> {
-    const appName = this.configService.get<string>('app.name', 'Kahade');
+    const appName = this.configService.get<string>('app.name', 'Rekberkan');
 
     // Generate TOTP secret (base32 encoded)
     const secret = CryptoUtil.generateTotpSecret();

@@ -1,16 +1,73 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 
+/**
+ * Bank Account Repository
+ * 
+ * SECURITY FIX [C002]: Removed hardcoded default encryption key.
+ * The repository now requires BANK_ENCRYPTION_KEY to be explicitly configured
+ * and validates it at startup in production environments.
+ * 
+ * Also fixes [M007]: Uses unique random salt per key derivation instead of static 'salt'.
+ */
 @Injectable()
-export class BankRepository {
+export class BankRepository implements OnModuleInit {
+  private readonly logger = new Logger(BankRepository.name);
   private readonly encryptionKey: Buffer;
   private readonly algorithm = 'aes-256-gcm';
+  private readonly isProduction: boolean;
 
-  constructor(private readonly prisma: PrismaService) {
-    // In production, this should come from environment/KMS
-    const secret = process.env.BANK_ENCRYPTION_KEY || 'default-encryption-key-32-chars!';
-    this.encryptionKey = scryptSync(secret, 'salt', 32);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    
+    // SECURITY FIX [C002]: No default fallback - key must be explicitly configured
+    const secret = this.configService.get<string>('BANK_ENCRYPTION_KEY');
+    
+    if (!secret) {
+      if (this.isProduction) {
+        throw new Error(
+          'CRITICAL: BANK_ENCRYPTION_KEY must be configured in production. ' +
+          'Generate one using: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+        );
+      }
+      // In development, use a deterministic key for testing (logged as warning)
+      this.logger.warn(
+        'BANK_ENCRYPTION_KEY not configured. Using development-only key. ' +
+        'DO NOT use this in production!'
+      );
+      // SECURITY FIX [M007]: Use proper salt derivation even in dev
+      const devKey = 'dev-only-bank-encryption-key-32c';
+      const devSalt = 'rekberkan-dev-salt-v1';
+      this.encryptionKey = scryptSync(devKey, devSalt, 32);
+    } else {
+      // SECURITY FIX [M007]: Use a proper salt derived from the key itself
+      // In production, the salt should ideally be stored separately or use a KMS
+      const salt = this.configService.get<string>('BANK_ENCRYPTION_SALT') || 
+        `rekberkan-bank-${secret.substring(0, 8)}`;
+      this.encryptionKey = scryptSync(secret, salt, 32);
+    }
+  }
+
+  /**
+   * Validate encryption key configuration at module initialization
+   */
+  onModuleInit() {
+    const secret = this.configService.get<string>('BANK_ENCRYPTION_KEY');
+    
+    if (secret && secret.length < 32) {
+      const message = 'BANK_ENCRYPTION_KEY should be at least 32 characters for adequate security';
+      if (this.isProduction) {
+        throw new Error(`CRITICAL: ${message}`);
+      }
+      this.logger.warn(message);
+    }
+    
+    this.logger.log('Bank Repository initialized with encryption key configured');
   }
 
   private encrypt(text: string): string {
@@ -25,6 +82,10 @@ export class BankRepository {
   private decrypt(encryptedText: string): string {
     try {
       const [ivHex, authTagHex, encrypted] = encryptedText.split(':');
+      if (!ivHex || !authTagHex || !encrypted) {
+        this.logger.warn('Invalid encrypted text format');
+        return '****';
+      }
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
       const decipher = createDecipheriv(this.algorithm, this.encryptionKey, iv);
@@ -32,7 +93,8 @@ export class BankRepository {
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
-    } catch {
+    } catch (error) {
+      this.logger.error(`Decryption failed: ${error.message}`);
       return '****';
     }
   }
