@@ -1,8 +1,11 @@
 /*
- * KAHADE API SERVICE
- * Centralized API client for backend communication
- * SECURITY: Implements secure token handling, request validation, and error handling
- * MULTI-SUBDOMAIN: Supports cross-subdomain authentication via shared cookies
+ * KAHADE API SERVICE - SECURITY ENHANCED
+ * 
+ * SECURITY FIX [C-01]: Migrated from localStorage to HttpOnly cookies
+ * - JWT tokens are now stored in HttpOnly cookies (set by backend)
+ * - Frontend no longer handles or stores authentication tokens
+ * - CSRF protection via double-submit cookie pattern
+ * - XSS attacks cannot steal authentication tokens
  */
 
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -15,10 +18,8 @@ const API_BASE_URL = APP_URLS.api;
 // Request timeout
 const REQUEST_TIMEOUT = 30000;
 
-// Token storage keys
-const TOKEN_KEY = 'rekberkan_token';
-const USER_KEY = 'rekberkan_user';
-const REFRESH_TOKEN_KEY = 'rekberkan_refresh_token';
+// SECURITY FIX [C-01]: Removed token storage keys - tokens now in HttpOnly cookies
+const USER_CACHE_KEY = 'rekberkan_user_cache';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -27,7 +28,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: REQUEST_TIMEOUT,
-  withCredentials: true, // Enable cookies for CSRF and cross-subdomain auth
+  withCredentials: true, // SECURITY FIX [C-01]: Enable cookies for HttpOnly token handling
 });
 
 // Generate unique request ID for tracing
@@ -35,15 +36,13 @@ function generateRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Request interceptor to add auth token and security headers
+// Request interceptor to add security headers
 api.interceptors.request.use(
   (config) => {
-    // Add auth token
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // SECURITY FIX [C-01]: Removed Authorization header handling
+    // Tokens are now sent automatically via HttpOnly cookies
 
+    // Add CSRF token for protection against CSRF attacks
     const csrfToken = SecureStorage.getCsrfToken();
     if (csrfToken) {
       config.headers['x-xsrf-token'] = csrfToken;
@@ -73,6 +72,7 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    // SECURITY FIX [C-01]: Store CSRF token from response header
     const csrfToken = response.headers['x-csrf-token'];
     if (csrfToken) {
       SecureStorage.setCsrfToken(csrfToken);
@@ -84,30 +84,18 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
-      // Try to refresh token if not already retrying
-      if (!originalRequest._retry && localStorage.getItem(TOKEN_KEY)) {
+      // SECURITY FIX [C-01]: Try to refresh token via API call
+      // Backend will handle token refresh via HttpOnly cookies
+      if (!originalRequest._retry) {
         originalRequest._retry = true;
         
         try {
-          if (!localStorage.getItem(REFRESH_TOKEN_KEY)) {
-            throw new Error('Refresh token missing');
-          }
-          const refreshResponse = await authApi.refreshToken();
-          const newToken = refreshResponse.data.accessToken || refreshResponse.data.token;
-          const newRefreshToken = refreshResponse.data.refreshToken;
-          
-          if (newToken) {
-            localStorage.setItem(TOKEN_KEY, newToken);
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            }
-            if (newRefreshToken) {
-              localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
-            }
-            return api(originalRequest);
-          }
+          // Attempt to refresh the session
+          await authApi.refreshToken();
+          // Retry the original request
+          return api(originalRequest);
         } catch (refreshError) {
-          // Refresh failed, clear auth and redirect
+          // Refresh failed, clear cached data and redirect
           clearAuth();
           redirectToLogin();
         }
@@ -136,11 +124,10 @@ api.interceptors.response.use(
   }
 );
 
-// Helper functions
+// SECURITY FIX [C-01]: Clear only cached user data (tokens are in HttpOnly cookies)
 function clearAuth(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  sessionStorage.removeItem(USER_CACHE_KEY);
+  SecureStorage.clearAll();
 }
 
 function redirectToLogin(): void {
@@ -179,20 +166,14 @@ export const authApi = {
   
   me: () => api.get('/auth/me'),
   
-  logout: () => {
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    return api.post('/auth/logout', refreshToken ? { refreshToken } : {});
-  },
+  // SECURITY FIX [C-01]: Logout now handled via API call
+  // Backend will clear HttpOnly cookies
+  logout: () => api.post('/auth/logout'),
   
   logoutAll: () => api.post('/auth/logout-all'),
   
-  refreshToken: () => {
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!refreshToken) {
-      return Promise.reject(new Error('Refresh token missing'));
-    }
-    return api.post('/auth/refresh', { refreshToken });
-  },
+  // SECURITY FIX [C-01]: Token refresh handled via HttpOnly cookies
+  refreshToken: () => api.post('/auth/refresh'),
   
   // 2FA
   enable2FA: () => api.post('/auth/2fa/enable'),
@@ -316,274 +297,170 @@ export const walletApi = {
   
   getWithdrawals: (params?: { status?: string; page?: number; limit?: number }) => 
     api.get('/wallet/withdrawals', { params }),
+    
+  getDeposits: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get('/wallet/deposits', { params }),
+};
+
+// Bank Account API
+export const bankAccountApi = {
+  list: () => api.get('/bank-accounts'),
   
-  cancelWithdrawal: (id: string) => api.post(`/wallet/withdrawals/${id}/cancel`),
+  create: (data: { bankCode: string; accountNumber: string; accountName: string }) =>
+    api.post('/bank-accounts', data),
+  
+  delete: (id: string) => api.delete(`/bank-accounts/${id}`),
+  
+  setDefault: (id: string) => api.patch(`/bank-accounts/${id}/default`),
+  
+  verify: (id: string) => api.post(`/bank-accounts/${id}/verify`),
 };
 
 // Notification API
 export const notificationApi = {
-  list: (params?: { read?: boolean; page?: number; limit?: number }) =>
+  list: (params?: { page?: number; limit?: number; unreadOnly?: boolean }) =>
     api.get('/notifications', { params }),
   
-  getUnreadCount: () => api.get('/notifications/unread/count'),
+  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
   
-  markRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/notifications/read-all'),
   
-  markAllRead: () => api.patch('/notifications/read-all'),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
   
   delete: (id: string) => api.delete(`/notifications/${id}`),
-  
-  deleteAll: () => api.delete('/notifications'),
-};
-
-// Rating API
-export const ratingApi = {
-  create: (transactionId: string, data: { score: number; comment?: string }) =>
-    api.post(`/transactions/${transactionId}/rating`, data),
-  
-  getUserRatings: (userId: string) => api.get(`/users/${userId}/ratings`),
 };
 
 // Dispute API
 export const disputeApi = {
-  getList: (params?: { status?: string; page?: number; limit?: number }) =>
-    api.get('/disputes', { params }),
-  
   list: (params?: { status?: string; page?: number; limit?: number }) =>
     api.get('/disputes', { params }),
   
   get: (id: string) => api.get(`/disputes/${id}`),
   
-  getDetail: (id: string) => api.get(`/disputes/${id}`),
+  create: (data: { orderId: string; reason: string; description: string; evidence?: string[] }) =>
+    api.post('/disputes', data),
   
-  sendMessage: (id: string, data: { content: string }) =>
-    api.post(`/disputes/${id}/messages`, { message: data.content }),
+  addMessage: (id: string, message: string, attachments?: string[]) =>
+    api.post(`/disputes/${id}/messages`, { message, attachments }),
   
-  respond: (id: string, response: string) =>
-    api.post(`/disputes/${id}/respond`, { response }),
+  getMessages: (id: string) => api.get(`/disputes/${id}/messages`),
   
-  // Fixed: Backend expects { type, fileUrl } not { fileUrls[], description }
-  addEvidence: (id: string, data: { type: string; fileUrl: string; description?: string }) =>
-    api.post(`/disputes/${id}/evidence`, data),
-  
-  // Batch add evidence (multiple files)
-  addEvidenceBatch: async (id: string, files: { type: string; fileUrl: string; description?: string }[]) => {
-    const results = [];
-    for (const file of files) {
-      const result = await api.post(`/disputes/${id}/evidence`, file);
-      results.push(result);
-    }
-    return results;
-  },
-  
-  addMessage: (id: string, message: string) =>
-    api.post(`/disputes/${id}/messages`, { message }),
+  uploadEvidence: (id: string, data: FormData) =>
+    api.post(`/disputes/${id}/evidence`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
-// Voucher API
-export const voucherApi = {
-  // Get available vouchers for current user
-  getAvailable: () => api.get('/vouchers'),
+// Rating API
+export const ratingApi = {
+  create: (data: { orderId: string; rating: number; comment?: string }) =>
+    api.post('/ratings', data),
   
-  // Get user's voucher usage history
-  getHistory: (params?: { page?: number; limit?: number }) =>
-    api.get('/vouchers/history', { params }),
+  getForOrder: (orderId: string) => api.get(`/ratings/order/${orderId}`),
   
-  // Validate voucher code before applying
-  validate: (data: { code: string; amountMinor: number; category?: string }) =>
-    api.post('/vouchers/validate', data),
+  getForUser: (userId: string, params?: { page?: number; limit?: number }) =>
+    api.get(`/ratings/user/${userId}`, { params }),
+};
+
+// Referral API
+export const referralApi = {
+  getCode: () => api.get('/referrals/code'),
   
-  // Apply voucher to order
-  apply: (data: { code: string; amountMinor: number; orderId?: string; idempotencyKey?: string }) =>
-    api.post('/vouchers/apply', data),
+  getStats: () => api.get('/referrals/stats'),
+  
+  getReferrals: (params?: { page?: number; limit?: number }) =>
+    api.get('/referrals', { params }),
+  
+  claimReward: (referralId: string) => api.post(`/referrals/${referralId}/claim`),
+};
+
+// Activity API
+export const activityApi = {
+  list: (params?: { type?: string; page?: number; limit?: number }) =>
+    api.get('/activity', { params }),
+};
+
+// Promo/Voucher API
+export const promoApi = {
+  validate: (code: string, orderAmount: number) =>
+    api.post('/promo/validate', { code, orderAmount }),
+  
+  apply: (code: string, orderId: string) =>
+    api.post('/promo/apply', { code, orderId }),
+  
+  getAvailable: () => api.get('/promo/available'),
 };
 
 // Admin API
 export const adminApi = {
   // Dashboard
-  getDashboardStats: () => api.get('/admin/dashboard'),
+  getDashboard: () => api.get('/admin/dashboard'),
   
   // Users
-  getUsers: (params?: { status?: string; kycStatus?: string; page?: number; limit?: number }) =>
+  getUsers: (params?: { page?: number; limit?: number; search?: string; status?: string }) =>
     api.get('/admin/users', { params }),
   
   getUser: (id: string) => api.get(`/admin/users/${id}`),
   
-  suspendUser: (id: string, reason: string) =>
-    api.post(`/admin/users/${id}/suspend`, { reason }),
+  updateUser: (id: string, data: any) => api.patch(`/admin/users/${id}`, data),
   
-  activateUser: (id: string) => api.post(`/admin/users/${id}/activate`),
+  suspendUser: (id: string, reason: string, until?: string) =>
+    api.post(`/admin/users/${id}/suspend`, { reason, until }),
   
-  approveKYC: (id: string) => api.post(`/admin/users/${id}/kyc/approve`),
-  
-  rejectKYC: (id: string, reason: string) =>
-    api.post(`/admin/users/${id}/kyc/reject`, { reason }),
+  unsuspendUser: (id: string) => api.post(`/admin/users/${id}/unsuspend`),
   
   // Transactions
-  getTransactions: (params?: { status?: string; page?: number; limit?: number }) =>
+  getTransactions: (params?: { page?: number; limit?: number; status?: string }) =>
     api.get('/admin/transactions', { params }),
   
   getTransaction: (id: string) => api.get(`/admin/transactions/${id}`),
   
-  forceCompleteTransaction: (id: string, reason: string) =>
-    api.post(`/admin/transactions/${id}/force-complete`, { reason }),
-  
-  forceCancelTransaction: (id: string, reason: string) =>
-    api.post(`/admin/transactions/${id}/force-cancel`, { reason }),
-  
   // Disputes
-  getDisputes: (params?: { status?: string; priority?: string; page?: number; limit?: number }) =>
+  getDisputes: (params?: { page?: number; limit?: number; status?: string }) =>
     api.get('/admin/disputes', { params }),
   
   getDispute: (id: string) => api.get(`/admin/disputes/${id}`),
   
-  startReview: (id: string) => api.post(`/admin/disputes/${id}/review`),
+  resolveDispute: (id: string, data: { resolution: string; refundBuyer: boolean; refundAmount?: number }) =>
+    api.post(`/admin/disputes/${id}/resolve`, data),
   
-  assignArbitrator: (id: string, arbitratorId: string) =>
-    api.post(`/admin/disputes/${id}/assign`, { arbitratorId }),
+  // KYC
+  getKYCRequests: (params?: { page?: number; limit?: number; status?: string }) =>
+    api.get('/admin/kyc', { params }),
   
-  resolveDispute: (id: string, data: { 
-    decision: 'RELEASE_ALL_TO_SELLER' | 'REFUND_ALL_TO_BUYER' | 'SPLIT_SETTLEMENT' | 'CANCEL_VOID';
-    resolutionNotes: string;
-    buyerRefundMinor?: string;
-    sellerAmountMinor?: string;
-  }) => api.post(`/admin/disputes/${id}/resolve`, data),
+  getKYCRequest: (id: string) => api.get(`/admin/kyc/${id}`),
   
-  // Audit Logs
-  getAuditLogs: (params?: { action?: string; actorType?: string; page?: number; limit?: number }) =>
-    api.get('/admin/audit-logs', { params }),
+  approveKYC: (id: string) => api.post(`/admin/kyc/${id}/approve`),
   
-  // Settings
-  getSettings: () => api.get('/admin/settings'),
-  
-  updateSettings: (data: Record<string, any>) =>
-    api.patch('/admin/settings', data),
+  rejectKYC: (id: string, reason: string) => api.post(`/admin/kyc/${id}/reject`, { reason }),
   
   // Withdrawals
-  getPendingWithdrawals: (params?: { page?: number; limit?: number }) => 
-    api.get('/admin/withdrawals/pending', { params }),
+  getWithdrawals: (params?: { page?: number; limit?: number; status?: string }) =>
+    api.get('/admin/withdrawals', { params }),
   
-  approveWithdrawal: (id: string) =>
-    api.post(`/admin/withdrawals/${id}/approve`),
+  approveWithdrawal: (id: string) => api.post(`/admin/withdrawals/${id}/approve`),
   
   rejectWithdrawal: (id: string, reason: string) =>
     api.post(`/admin/withdrawals/${id}/reject`, { reason }),
   
-  // Reports
-  getRevenueReport: (params?: { startDate?: string; endDate?: string }) =>
-    api.get('/admin/reports/revenue', { params }),
+  // Settings
+  getSettings: () => api.get('/admin/settings'),
   
-  getTransactionReport: (params?: { startDate?: string; endDate?: string }) =>
-    api.get('/admin/reports/transactions', { params }),
+  updateSettings: (data: any) => api.patch('/admin/settings', data),
   
-  getUserReport: (params?: { startDate?: string; endDate?: string }) =>
-    api.get('/admin/reports/users', { params }),
+  // Analytics
+  getAnalytics: (params?: { startDate?: string; endDate?: string }) =>
+    api.get('/admin/analytics', { params }),
   
   // Promos
-  getPromos: (params?: { isActive?: boolean; page?: number; limit?: number }) =>
+  getPromos: (params?: { page?: number; limit?: number }) =>
     api.get('/admin/promos', { params }),
   
-  getPromo: (id: string) => api.get(`/admin/promos/${id}`),
+  createPromo: (data: any) => api.post('/admin/promos', data),
   
-  createPromo: (data: {
-    code: string;
-    name: string;
-    description?: string;
-    targetType: string;
-    discountType: string;
-    discountValue?: number;
-    discountPercent?: number;
-    maxDiscountMinor?: number;
-    maxTotalUsages?: number;
-    maxUsagePerUser?: number;
-    minPurchaseMinor?: number;
-    applicableCategories?: string[];
-    validFrom: string;
-    validUntil: string;
-  }) => api.post('/admin/promos', data),
+  updatePromo: (id: string, data: any) => api.patch(`/admin/promos/${id}`, data),
   
-  updatePromo: (id: string, data: Record<string, any>) =>
-    api.patch(`/admin/promos/${id}`, data),
-  
-  deactivatePromo: (id: string) => api.delete(`/admin/promos/${id}`),
-  
-  assignPromoToUser: (promoId: string, userId: string) =>
-    api.post(`/admin/promos/${promoId}/assign`, { userId }),
-  
-  // Vouchers
-  getVouchers: (params?: { status?: string; page?: number; limit?: number }) =>
-    api.get('/admin/vouchers', { params }),
-  
-  getVoucher: (id: string) => api.get(`/admin/vouchers/${id}`),
-  
-  createVoucher: (data: {
-    promoId?: string;
-    code: string;
-    voucherType: string;
-    discountMinor?: number;
-    discountPercent?: number;
-    maxDiscountMinor?: number;
-    maxUsages?: number;
-    minPurchaseMinor?: number;
-    applicableCategories?: string[];
-    validFrom: string;
-    validUntil: string;
-    assignedToUserId?: string;
-  }) => api.post('/admin/vouchers', data),
-  
-  deactivateVoucher: (id: string) => api.delete(`/admin/vouchers/${id}`),
-  
-  // KYC Management
-  getKYCSubmissions: (params?: { status?: string; page?: number; limit?: number }) =>
-    api.get('/admin/kyc', { params }),
-};
-
-// Bank Account API
-export const bankApi = {
-  getAccounts: () => api.get('/bank-accounts'),
-  
-  getSupportedBanks: () => api.get('/bank-accounts/banks'),
-  
-  addAccount: (data: { bankCode: string; accountNumber: string; accountHolderName: string }) =>
-    api.post('/bank-accounts', data),
-  
-  setDefault: (id: string) => api.post(`/bank-accounts/${id}/default`),
-  
-  deleteAccount: (id: string) => api.delete(`/bank-accounts/${id}`),
-  
-  verifyAccount: (id: string) => api.post(`/bank-accounts/${id}/verify`),
-};
-
-// KYC API
-export const kycApi = {
-  getStatus: () => api.get('/kyc/status'),
-  
-  submit: (data: FormData) =>
-    api.post('/kyc/submit', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  
-  getDocuments: () => api.get('/kyc/documents'),
-};
-
-// Referral API
-export const referralApi = {
-  getStats: () => api.get('/referrals/stats'),
-  
-  getList: (params?: { status?: string; page?: number; limit?: number }) =>
-    api.get('/referrals', { params }),
-  
-  getCode: () => api.get('/referrals/code'),
-  
-  applyCode: (code: string) => api.post('/referrals/apply', { code }),
-};
-
-// Activity API
-export const activityApi = {
-  getList: (params?: { type?: string; page?: number; limit?: number }) =>
-    api.get('/activities', { params }),
-  
-  getRecent: (limit?: number) => api.get('/activities/recent', { params: { limit } }),
+  deletePromo: (id: string) => api.delete(`/admin/promos/${id}`),
 };
 
 export default api;

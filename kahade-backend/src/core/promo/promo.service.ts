@@ -410,36 +410,93 @@ export class PromoService {
       }
     }
 
-    const validation = await this.validateVoucher(code, userId, orderAmountMinor);
-    if (!validation.valid || !validation.voucher) {
-      throw new BadRequestException(validation.error || 'Invalid voucher');
-    }
+    // SECURITY FIX [H-02]: Use database transaction with pessimistic locking
+    // to prevent race conditions on voucher usage
+    return await this.prisma.$transaction(async (tx) => {
+      // Lock the voucher row using SELECT FOR UPDATE to prevent concurrent modifications
+      const lockedVoucher = await tx.$queryRaw<any[]>`
+        SELECT * FROM "Voucher" 
+        WHERE "code" = ${code.toUpperCase()} 
+        FOR UPDATE
+      `;
 
-    const voucher = validation.voucher;
-
-    // Calculate discount
-    let discountMinor: bigint;
-    if (voucher.voucherType === VoucherType.PERCENTAGE) {
-      const percent = voucher.discountPercent || 0;
-      discountMinor = (orderAmountMinor * BigInt(Math.round(percent * 100))) / 10000n;
-
-      // Apply max discount cap
-      if (voucher.maxDiscountMinor && discountMinor > voucher.maxDiscountMinor) {
-        discountMinor = voucher.maxDiscountMinor;
+      if (!lockedVoucher || lockedVoucher.length === 0) {
+        throw new BadRequestException('Voucher not found');
       }
-    } else {
-      discountMinor = voucher.discountMinor || 0n;
-    }
 
-    // Ensure discount doesn't exceed order amount
-    if (discountMinor > orderAmountMinor) {
-      discountMinor = orderAmountMinor;
-    }
+      const voucher = lockedVoucher[0];
 
-    const finalMinor = orderAmountMinor - discountMinor;
+      // Re-validate voucher within the transaction (after acquiring lock)
+      if (voucher.status !== 'ACTIVE') {
+        throw new BadRequestException('Voucher is not active');
+      }
 
-    // Record usage in transaction
-    await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      if (now < new Date(voucher.validFrom)) {
+        throw new BadRequestException('Voucher is not yet valid');
+      }
+      if (now > new Date(voucher.validUntil)) {
+        throw new BadRequestException('Voucher has expired');
+      }
+
+      // Check usage limit with locked data
+      if (voucher.currentUsages >= voucher.maxUsages) {
+        throw new BadRequestException('Voucher usage limit reached');
+      }
+
+      // Check if assigned to specific user
+      if (voucher.assignedToUserId && voucher.assignedToUserId !== userId) {
+        throw new BadRequestException('Voucher is not available for this user');
+      }
+
+      // Check minimum purchase
+      if (voucher.minPurchaseMinor && orderAmountMinor < BigInt(voucher.minPurchaseMinor)) {
+        throw new BadRequestException(
+          `Minimum purchase is ${Number(voucher.minPurchaseMinor) / 100}`,
+        );
+      }
+
+      // Check user usage count
+      const userUsageCount = await tx.voucherUsage.count({
+        where: { voucherId: voucher.id, userId },
+      });
+
+      // Get max usage per user from promo if linked
+      let maxUsagePerUser = 1;
+      if (voucher.promoId) {
+        const promo = await tx.promo.findUnique({
+          where: { id: voucher.promoId },
+        });
+        if (promo) {
+          maxUsagePerUser = promo.maxUsagePerUser;
+        }
+      }
+
+      if (userUsageCount >= maxUsagePerUser) {
+        throw new BadRequestException('You have already used this voucher');
+      }
+
+      // Calculate discount
+      let discountMinor: bigint;
+      if (voucher.voucherType === 'PERCENTAGE') {
+        const percent = voucher.discountPercent || 0;
+        discountMinor = (orderAmountMinor * BigInt(Math.round(percent * 100))) / 10000n;
+
+        // Apply max discount cap
+        if (voucher.maxDiscountMinor && discountMinor > BigInt(voucher.maxDiscountMinor)) {
+          discountMinor = BigInt(voucher.maxDiscountMinor);
+        }
+      } else {
+        discountMinor = voucher.discountMinor ? BigInt(voucher.discountMinor) : 0n;
+      }
+
+      // Ensure discount doesn't exceed order amount
+      if (discountMinor > orderAmountMinor) {
+        discountMinor = orderAmountMinor;
+      }
+
+      const finalMinor = orderAmountMinor - discountMinor;
+
       // Create usage record
       await tx.voucherUsage.create({
         data: {
@@ -453,7 +510,7 @@ export class PromoService {
         },
       });
 
-      // Increment usage count
+      // Increment usage count (atomic operation within transaction)
       await tx.voucher.update({
         where: { id: voucher.id },
         data: { currentUsages: { increment: 1 } },
@@ -466,17 +523,20 @@ export class PromoService {
           data: { currentUsages: { increment: 1 } },
         });
       }
+
+      this.logger.log(`Applied voucher ${code} for user ${userId}, discount: ${discountMinor}`);
+
+      return {
+        voucherId: voucher.id,
+        code: voucher.code,
+        discountMinor,
+        originalMinor: orderAmountMinor,
+        finalMinor,
+      };
+    }, {
+      isolationLevel: 'Serializable', // Highest isolation level for financial operations
+      timeout: 10000, // 10 second timeout
     });
-
-    this.logger.log(`Applied voucher ${code} for user ${userId}, discount: ${discountMinor}`);
-
-    return {
-      voucherId: voucher.id,
-      code: voucher.code,
-      discountMinor,
-      originalMinor: orderAmountMinor,
-      finalMinor,
-    };
   }
 
   // ============================================================================

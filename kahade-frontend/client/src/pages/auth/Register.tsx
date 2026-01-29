@@ -23,12 +23,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Password strength checker
+/**
+ * Password strength checker
+ * 
+ * SECURITY FIX [M-03]: Synchronized with backend validation requirements
+ * Backend requires: 8+ characters, uppercase, lowercase, number, special character
+ * See: kahade-backend/src/core/auth/auth.service.ts - validatePasswordStrength()
+ */
 const checkPasswordStrength = (password: string): { score: number; feedback: string[]; passed: string[] } => {
   const feedback: string[] = [];
   const passed: string[] = [];
   let score = 0;
 
+  // SECURITY FIX [M-03]: Minimum 8 characters (synced with backend)
   if (password.length >= 8) {
     score += 1;
     passed.push('At least 8 characters');

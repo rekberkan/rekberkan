@@ -1,3 +1,13 @@
+/**
+ * REKBERKAN AUTH CONTEXT - SECURITY ENHANCED
+ * 
+ * SECURITY FIX [C-01]: Migrated from localStorage to HttpOnly cookies
+ * - Tokens are now stored in HttpOnly cookies (set by backend)
+ * - Frontend only stores non-sensitive user data for UI purposes
+ * - CSRF protection via double-submit cookie pattern
+ * - XSS attacks cannot steal authentication tokens
+ */
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '@/lib/api';
 import { APP_URLS, getAppMode, navigateToApp, navigateToAdmin, canAccessAdmin } from '@/config/app.config';
@@ -39,6 +49,10 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// SECURITY FIX [C-01]: Use sessionStorage for non-sensitive user data only
+// Tokens are now handled via HttpOnly cookies
+const USER_CACHE_KEY = 'rekberkan_user_cache';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,16 +77,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchCurrentUser = async () => {
     try {
+      // SECURITY FIX [C-01]: API calls now use cookies automatically (withCredentials: true)
       const response = await authApi.me();
       const userData = response.data.user || response.data;
       const mappedUser = mapUserData(userData);
       setUser(mappedUser);
-      localStorage.setItem('rekberkan_user', JSON.stringify(mappedUser));
+      // Cache user data in sessionStorage (non-sensitive, for UI only)
+      sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
       return mappedUser;
     } catch (error) {
-      localStorage.removeItem('rekberkan_token');
-      localStorage.removeItem('rekberkan_user');
-      localStorage.removeItem('rekberkan_refresh_token');
+      // SECURITY FIX [C-01]: Clear cached user data on auth failure
+      sessionStorage.removeItem(USER_CACHE_KEY);
+      SecureStorage.clearAll();
       setUser(null);
       throw error;
     }
@@ -80,25 +96,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('rekberkan_token');
-      
-      // Also check for cached user data for faster initial render
-      const cachedUser = localStorage.getItem('rekberkan_user');
+      // SECURITY FIX [C-01]: Check cached user data for faster initial render
+      // Actual authentication is verified via HttpOnly cookie on API call
+      const cachedUser = sessionStorage.getItem(USER_CACHE_KEY);
       if (cachedUser) {
         try {
           setUser(JSON.parse(cachedUser));
         } catch (e) {
-          localStorage.removeItem('rekberkan_user');
+          sessionStorage.removeItem(USER_CACHE_KEY);
         }
       }
       
-      if (token) {
-        try {
-          await fetchCurrentUser();
-        } catch (error) {
-          console.error('Auth check failed:', error);
-        }
+      // SECURITY FIX [C-01]: Verify authentication via API call
+      // The HttpOnly cookie will be sent automatically
+      try {
+        await fetchCurrentUser();
+      } catch (error) {
+        // User is not authenticated or session expired
+        console.debug('Auth check: User not authenticated');
       }
+      
       setIsLoading(false);
     };
     
@@ -108,20 +125,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
+      // SECURITY FIX [C-01]: Backend now sets tokens in HttpOnly cookies
+      // Response only contains user data, not tokens
       const response = await authApi.login({ email, password });
-      const { accessToken, token, refreshToken, user: userData } = response.data;
-      
-      const authToken = accessToken || token;
-      localStorage.setItem('rekberkan_token', authToken);
-      if (refreshToken) {
-        localStorage.setItem('rekberkan_refresh_token', refreshToken);
-      }
+      const { user: userData } = response.data;
       
       let mappedUser: User;
       if (userData) {
         mappedUser = mapUserData(userData, email.split('@')[0]);
         setUser(mappedUser);
-        localStorage.setItem('rekberkan_user', JSON.stringify(mappedUser));
+        // Cache user data in sessionStorage (non-sensitive, for UI only)
+        sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
       } else {
         mappedUser = await fetchCurrentUser();
       }
@@ -139,9 +153,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return mappedUser;
     } catch (error: any) {
-      localStorage.removeItem('rekberkan_token');
-      localStorage.removeItem('rekberkan_user');
-      localStorage.removeItem('rekberkan_refresh_token');
+      // SECURITY FIX [C-01]: Clear any cached data on login failure
+      sessionStorage.removeItem(USER_CACHE_KEY);
+      SecureStorage.clearAll();
       throw new Error(error.response?.data?.message || 'Login failed');
     } finally {
       setIsLoading(false);
@@ -151,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterData) => {
     setIsLoading(true);
     try {
+      // SECURITY FIX [C-01]: Backend now sets tokens in HttpOnly cookies
       const response = await authApi.register({
         email: data.email,
         username: data.username,
@@ -158,28 +173,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: data.phone,
       });
       
-      const { accessToken, token, refreshToken, user: userData } = response.data;
+      const { user: userData } = response.data;
       
-      if (accessToken || token) {
-        localStorage.setItem('rekberkan_token', accessToken || token);
-        if (refreshToken) {
-          localStorage.setItem('rekberkan_refresh_token', refreshToken);
-        }
-        
-        if (userData) {
-          const mappedUser = mapUserData(userData, data.username);
-          mappedUser.phone = data.phone;
-          setUser(mappedUser);
-          localStorage.setItem('rekberkan_user', JSON.stringify(mappedUser));
-        } else {
-          await fetchCurrentUser();
-        }
-        
-        // Redirect to app after registration
-        const appMode = getAppMode();
-        if (appMode === 'landing') {
-          navigateToApp();
-        }
+      if (userData) {
+        const mappedUser = mapUserData(userData, data.username);
+        mappedUser.phone = data.phone;
+        setUser(mappedUser);
+        // Cache user data in sessionStorage (non-sensitive, for UI only)
+        sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
+      } else {
+        await fetchCurrentUser();
+      }
+      
+      // Redirect to app after registration
+      const appMode = getAppMode();
+      if (appMode === 'landing') {
+        navigateToApp();
       }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
@@ -190,16 +199,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // SECURITY FIX [C-01]: Backend will clear HttpOnly cookies
       await authApi.logout();
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
-      // Clear all stored tokens and data
-      localStorage.removeItem('rekberkan_token');
-      localStorage.removeItem('rekberkan_user');
-      localStorage.removeItem('rekberkan_refresh_token');
-      
-      // Clear CSRF token from session storage
+      // SECURITY FIX [C-01]: Clear all cached data
+      sessionStorage.removeItem(USER_CACHE_KEY);
       SecureStorage.clearAll();
       
       setUser(null);
@@ -214,7 +220,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
-    localStorage.setItem('rekberkan_user', JSON.stringify(updatedUser));
+    // Cache updated user data in sessionStorage (non-sensitive, for UI only)
+    sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(updatedUser));
   };
 
   const refreshUser = async () => {

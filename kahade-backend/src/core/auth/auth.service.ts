@@ -15,6 +15,7 @@ import { IUserResponse } from '@common/interfaces/user.interface';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { SessionRepository } from './session.repository';
 import { MFAService } from './mfa.service';
+import { BruteForceService } from './brute-force.service';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -57,6 +58,7 @@ export class AuthService {
     private readonly sessionRepository: SessionRepository,
     private readonly mfaService: MFAService,
     private readonly prisma: PrismaService,
+    private readonly bruteForceService: BruteForceService,
   ) {}
 
   // ============================================================================
@@ -111,8 +113,8 @@ export class AuthService {
   async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<IAuthResponse> {
     const email = loginDto.email.toLowerCase();
 
-    // Check if account is locked
-    const lockStatus = this.checkAccountLock(email);
+    // SECURITY FIX [C-02]: Use Redis-based brute force protection for distributed deployments
+    const lockStatus = await this.bruteForceService.checkAccountLock(email);
     if (lockStatus.isLocked) {
       throw new ForbiddenException({
         code: 'ACCOUNT_LOCKED',
@@ -123,8 +125,8 @@ export class AuthService {
 
     const user = await this.validateUser(email, loginDto.password);
     if (!user) {
-      // Record failed attempt
-      this.recordFailedAttempt(email);
+      // SECURITY FIX [C-02]: Record failed attempt using Redis-based service
+      await this.bruteForceService.recordFailedAttempt(email);
 
       // Use constant-time comparison to prevent timing attacks
       await this.dummyPasswordCheck();
@@ -146,8 +148,8 @@ export class AuthService {
       await this.verifyMfaOrThrow(user, loginDto.mfaCode);
     }
 
-    // Clear failed attempts on successful login
-    this.failedAttempts.delete(email);
+    // SECURITY FIX [C-02]: Clear failed attempts using Redis-based service
+    await this.bruteForceService.clearFailedAttempts(email);
 
     // Update last login
     await this.userService.updateLastLogin(user.id);
@@ -405,8 +407,8 @@ export class AuthService {
     await this.sessionRepository.revokeAllByUserId(user.id);
     await this.tokenBlacklistService.revokeAllUserTokens(user.id);
 
-    // Clear any lockouts
-    this.failedAttempts.delete(user.email);
+    // SECURITY FIX [C-02]: Clear any lockouts using Redis-based service
+    await this.bruteForceService.clearFailedAttempts(user.email);
 
     this.logger.log(`Password reset completed for user ${user.id}`);
 

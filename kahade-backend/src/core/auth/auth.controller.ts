@@ -11,7 +11,9 @@ import {
   Headers,
   Delete,
   Param,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -23,16 +25,21 @@ import { MfaVerifyDto, MfaDisableDto } from './dto/mfa-verify.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { CookieUtil } from '@common/utils/cookie.util';
+import { ConfigService } from '@nestjs/config';
 
 // ============================================================================
 // AUTH CONTROLLER - Production Ready
-// Implements: Rate Limiting, Input Validation, Secure Session Handling
+// SECURITY FIX [C-01]: Implements HttpOnly cookie-based authentication
 // ============================================================================
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // ============================================================================
   // REGISTRATION - Strict rate limit to prevent abuse
@@ -45,8 +52,27 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(registerDto);
+    
+    // SECURITY FIX [C-01]: Set tokens in HttpOnly cookies instead of response body
+    const csrfToken = CookieUtil.generateCsrfToken();
+    CookieUtil.setAuthCookies(
+      res,
+      result.accessToken,
+      result.refreshToken,
+      csrfToken,
+      this.configService,
+    );
+    
+    // Set CSRF token in response header for frontend to read
+    res.setHeader('x-csrf-token', csrfToken);
+    
+    // Return user data only (tokens are in cookies)
+    return {
+      user: result.user,
+      expiresIn: result.expiresIn,
+    };
   }
 
   // ============================================================================
@@ -66,8 +92,28 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.login(loginDto, ip, userAgent);
+    const result = await this.authService.login(loginDto, ip, userAgent);
+    
+    // SECURITY FIX [C-01]: Set tokens in HttpOnly cookies instead of response body
+    const csrfToken = CookieUtil.generateCsrfToken();
+    CookieUtil.setAuthCookies(
+      res,
+      result.accessToken,
+      result.refreshToken,
+      csrfToken,
+      this.configService,
+    );
+    
+    // Set CSRF token in response header for frontend to read
+    res.setHeader('x-csrf-token', csrfToken);
+    
+    // Return user data only (tokens are in cookies)
+    return {
+      user: result.user,
+      expiresIn: result.expiresIn,
+    };
   }
 
   // ============================================================================
@@ -81,8 +127,37 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto.refreshToken);
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Request() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // SECURITY FIX [C-01]: Get refresh token from cookie if not in body
+    const refreshToken = refreshTokenDto?.refreshToken || 
+      CookieUtil.getRefreshTokenFromCookie(req.cookies || {});
+    
+    if (!refreshToken) {
+      throw new Error('Refresh token required');
+    }
+    
+    const result = await this.authService.refreshToken(refreshToken);
+    
+    // SECURITY FIX [C-01]: Set new tokens in HttpOnly cookies
+    const csrfToken = CookieUtil.generateCsrfToken();
+    CookieUtil.setAuthCookies(
+      res,
+      result.accessToken,
+      result.refreshToken,
+      csrfToken,
+      this.configService,
+    );
+    
+    // Set CSRF token in response header for frontend to read
+    res.setHeader('x-csrf-token', csrfToken);
+    
+    return {
+      expiresIn: result.expiresIn,
+    };
   }
 
   // ============================================================================
@@ -99,9 +174,22 @@ export class AuthController {
     @CurrentUser('id') userId: string,
     @Request() req: any,
     @Body('refreshToken') refreshToken?: string,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    const accessToken = req.headers.authorization?.split(' ')[1];
-    return this.authService.logout(userId, accessToken, refreshToken);
+    // SECURITY FIX [C-01]: Get tokens from cookies if not in request
+    const accessToken = req.headers.authorization?.split(' ')[1] ||
+      CookieUtil.getAccessTokenFromCookie(req.cookies || {});
+    const actualRefreshToken = refreshToken ||
+      CookieUtil.getRefreshTokenFromCookie(req.cookies || {});
+    
+    const result = await this.authService.logout(userId, accessToken, actualRefreshToken);
+    
+    // SECURITY FIX [C-01]: Clear authentication cookies
+    if (res) {
+      CookieUtil.clearAuthCookies(res, this.configService);
+    }
+    
+    return result;
   }
 
   @Post('logout-all')
@@ -110,9 +198,22 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout from all devices' })
   @ApiResponse({ status: 200, description: 'Logged out from all devices' })
-  async logoutAll(@CurrentUser('id') userId: string, @Request() req: any) {
-    const accessToken = req.headers.authorization?.split(' ')[1];
-    return this.authService.logoutAll(userId, accessToken);
+  async logoutAll(
+    @CurrentUser('id') userId: string,
+    @Request() req: any,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const accessToken = req.headers.authorization?.split(' ')[1] ||
+      CookieUtil.getAccessTokenFromCookie(req.cookies || {});
+    
+    const result = await this.authService.logoutAll(userId, accessToken);
+    
+    // SECURITY FIX [C-01]: Clear authentication cookies
+    if (res) {
+      CookieUtil.clearAuthCookies(res, this.configService);
+    }
+    
+    return result;
   }
 
   // ============================================================================

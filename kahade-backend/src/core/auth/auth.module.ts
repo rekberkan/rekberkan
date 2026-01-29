@@ -11,6 +11,7 @@ import { UserModule } from '../user/user.module';
 
 import { SessionRepository } from './session.repository';
 import { MFAService } from './mfa.service';
+import { BruteForceService } from './brute-force.service';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { MFAService } from './mfa.service';
     LocalStrategy,
     SessionRepository,
     MFAService,
+    BruteForceService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, BruteForceService],
 })
 export class AuthModule {}

@@ -475,7 +475,7 @@ export default function CreateTransaction() {
                 Back
               </Button>
             ) : (
-              <Link href="/app/transactions">
+              <Link href="/transactions">
                 <Button variant="outline">
                   <ArrowLeft className="w-4 h-4 mr-2" weight="bold" />
                   Cancel
