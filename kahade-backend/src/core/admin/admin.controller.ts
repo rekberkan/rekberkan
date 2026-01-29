@@ -20,6 +20,7 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { DisputeService } from '../dispute/dispute.service';
 import { DisputeDecision } from '@prisma/client';
+import { AdminReasonDto, SuspendUserDto } from './dto/admin-action.dto';
 
 // ============================================================================
 // ADMIN CONTROLLER - Production Ready
@@ -209,11 +210,8 @@ export class AdminController {
   async suspendUser(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() dto: { reason: string },
+    @Body() dto: SuspendUserDto,
   ) {
-    if (!dto.reason) {
-      throw new BadRequestException('Suspension reason required');
-    }
 
     const user = await this.prisma.user.findUnique({ where: { id } });
 
@@ -305,11 +303,8 @@ export class AdminController {
   async rejectKYC(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() dto: { reason: string },
+    @Body() dto: AdminReasonDto,
   ) {
-    if (!dto.reason) {
-      throw new BadRequestException('Rejection reason required');
-    }
 
     const user = await this.prisma.user.findUnique({ where: { id } });
 
@@ -429,11 +424,8 @@ export class AdminController {
   async forceCompleteTransaction(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() dto: { reason: string },
+    @Body() dto: AdminReasonDto,
   ) {
-    if (!dto.reason) {
-      throw new BadRequestException('Reason required');
-    }
 
     const transaction = await (this.prisma as any).order.findUnique({
       where: { id },
@@ -468,11 +460,8 @@ export class AdminController {
   async forceCancelTransaction(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() dto: { reason: string },
+    @Body() dto: AdminReasonDto,
   ) {
-    if (!dto.reason) {
-      throw new BadRequestException('Reason required');
-    }
 
     const transaction = await (this.prisma as any).order.findUnique({
       where: { id },
@@ -762,11 +751,8 @@ export class AdminController {
   async rejectWithdrawal(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() dto: { reason: string },
+    @Body() dto: AdminReasonDto,
   ) {
-    if (!dto.reason) {
-      throw new BadRequestException('Rejection reason required');
-    }
 
     const withdrawal = await (this.prisma as any).withdrawal.findUnique({
       where: { id },

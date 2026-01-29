@@ -67,6 +67,18 @@ export class MidtransWebhookController {
     @Body() payload: MidtransNotificationPayload,
     @Req() req: Request,
   ): Promise<{ status: string; message: string }> {
+    // Validate required payload fields
+    if (
+      !payload ||
+      !payload.transaction_id ||
+      !payload.order_id ||
+      !payload.transaction_status ||
+      !payload.signature_key
+    ) {
+      this.logger.warn('Invalid Midtrans webhook payload: missing required fields');
+      throw new BadRequestException('Invalid webhook payload: missing required fields');
+    }
+
     const requestIp = this.getClientIp(req);
     const eventId = payload.transaction_id || `midtrans-${Date.now()}`;
 

@@ -348,6 +348,8 @@ export class EscrowService {
       throw new BadRequestException('Seller wallet not set');
     }
 
+    // Store seller wallet reference after null check for type safety
+    const sellerWallet = escrow.sellerWallet;
     const sellerAmount = escrow.amountMinor - platformFeeMinor;
 
     // Execute release in transaction
@@ -361,7 +363,7 @@ export class EscrowService {
       );
 
       const sellerAccount = await this.ledgerService.getOrCreateUserAccount(
-        escrow.sellerWallet!.id,
+        sellerWallet.id,
         LedgerAccountType.ASSET,
         'IDR',
         tx,
@@ -390,7 +392,7 @@ export class EscrowService {
       // Transfer locked balance from buyer to seller
       await this.walletService.transferLockedBalance(
         escrow.buyerWallet.userId,
-        escrow.sellerWallet!.userId,
+        sellerWallet.userId,
         sellerAmount,
         `Escrow release for order ${escrow.orderId}`,
         tx,

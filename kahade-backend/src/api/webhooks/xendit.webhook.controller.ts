@@ -71,6 +71,12 @@ export class XenditWebhookController {
     @Headers('webhook-id') webhookId: string,
     @Req() req: RawBodyRequest<Request>,
   ): Promise<{ status: string; message: string }> {
+    // Validate required payload fields
+    if (!payload || !payload.id || !payload.external_id || !payload.status) {
+      this.logger.warn('Invalid Xendit webhook payload: missing required fields');
+      throw new BadRequestException('Invalid webhook payload: missing required fields');
+    }
+
     const requestIp = this.getClientIp(req);
     const eventId = webhookId || payload.id || `xendit-${Date.now()}`;
 
