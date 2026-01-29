@@ -39,7 +39,11 @@ export class SecurityMiddleware implements NestMiddleware {
     const forwarded = req.headers['x-forwarded-for'];
     if (forwarded) {
       const ips = typeof forwarded === 'string' ? forwarded.split(',') : forwarded;
-      return ips[0].trim();
+      // Safe array access with fallback
+      const firstIp = ips.length > 0 ? ips[0].trim() : null;
+      if (firstIp) {
+        return firstIp;
+      }
     }
     return req.socket.remoteAddress || 'unknown';
   }

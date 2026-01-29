@@ -127,4 +127,27 @@ export class MoneyUtil {
   static max(a: bigint, b: bigint): bigint {
     return a > b ? a : b;
   }
+
+  /**
+   * Safe conversion from BigInt to Number
+   * JavaScript Number can safely represent integers up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991)
+   * For financial amounts in minor units (sen), this is ~90 trillion IDR
+   * This method logs a warning if the value exceeds safe integer range
+   */
+  static safeToNumber(amount: bigint): number {
+    const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+    if (amount > MAX_SAFE || amount < -MAX_SAFE) {
+      console.warn(
+        `Warning: BigInt value ${amount} exceeds safe integer range. Precision may be lost.`,
+      );
+    }
+    return Number(amount);
+  }
+
+  /**
+   * Safe conversion to IDR with precision check
+   */
+  static safeToIDR(amountMinor: bigint): number {
+    return this.safeToNumber(amountMinor) / 100;
+  }
 }

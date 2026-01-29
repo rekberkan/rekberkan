@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   SetMetadata,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
@@ -27,9 +28,10 @@ export const RateLimit = (ttl: number, limit: number) =>
   SetMetadata(RATE_LIMIT_KEY, { ttl, limit });
 
 @Injectable()
-export class RateLimitGuard implements CanActivate {
+export class RateLimitGuard implements CanActivate, OnModuleDestroy {
   private readonly logger = new Logger(RateLimitGuard.name);
   private readonly storage = new Map<string, RateLimitRecord>();
+  private cleanupInterval: NodeJS.Timeout;
 
   // Default limits
   private readonly defaultTtl = 60000; // 1 minute
@@ -37,7 +39,7 @@ export class RateLimitGuard implements CanActivate {
 
   constructor(private readonly reflector: Reflector) {
     // Cleanup expired records every minute
-    setInterval(() => this.cleanup(), 60000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -128,6 +130,12 @@ export class RateLimitGuard implements CanActivate {
 
     if (cleaned > 0) {
       this.logger.debug(`Cleaned up ${cleaned} expired rate limit records`);
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
     }
   }
 }

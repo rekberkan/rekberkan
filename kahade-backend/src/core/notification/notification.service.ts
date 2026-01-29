@@ -143,7 +143,7 @@ export class NotificationService {
 
     return this.createForUser(
       recipientEmailOrUserId,
-      'ORDER' as any,
+      NotificationType.ORDER,
       'New Order Invitation',
       `You have been invited to join order "${orderTitle}".`,
       { orderNumber, inviteToken },
@@ -158,7 +158,7 @@ export class NotificationService {
   ): Promise<Notification> {
     return this.createForUser(
       userId,
-      'ORDER' as any,
+      NotificationType.ORDER,
       'Order Accepted',
       `${accepterName} has accepted your order.`,
       { orderNumber, accepterName },
@@ -174,7 +174,7 @@ export class NotificationService {
   ): Promise<Notification> {
     return this.createForUser(
       userId,
-      'PAYMENT' as any,
+      NotificationType.PAYMENT,
       'Payment Received',
       `Payment of Rp ${Number(amount).toLocaleString('id-ID')} for "${orderTitle}" has been received.`,
       { orderId, amount: amount.toString() },
@@ -190,7 +190,7 @@ export class NotificationService {
   ): Promise<Notification> {
     return this.createForUser(
       userId,
-      'ESCROW' as any,
+      NotificationType.ESCROW,
       'Escrow Released',
       `Escrow of Rp ${Number(amount).toLocaleString('id-ID')} for "${orderTitle}" has been released.`,
       { orderId, amount: amount.toString() },
@@ -206,7 +206,7 @@ export class NotificationService {
   ): Promise<Notification> {
     return this.createForUser(
       userId,
-      'ORDER' as any,
+      NotificationType.ORDER,
       'Order Cancelled',
       `Order "${orderTitle}" has been cancelled.${reason ? ` Reason: ${reason}` : ''}`,
       { orderId, reason },

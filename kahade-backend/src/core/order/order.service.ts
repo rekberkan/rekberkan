@@ -472,7 +472,8 @@ export class OrderService {
     if (otherPartyId) {
       await this.notificationService.sendOrderCancelled(
         otherPartyId,
-        order.orderNumber,
+        order.id,
+        order.title,
         dto.reason,
       );
     }
