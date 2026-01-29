@@ -1,7 +1,11 @@
 /*
- * REKBERKAN LOGIN PAGE - Enhanced Professional Version
- * Brand color: #000000
- * Features: Modern auth flow, MFA support, social login UI, security badges
+ * REKBERKAN LOGIN PAGE - EXCLUSIVE EDITION
+ * 
+ * Design Philosophy:
+ * - Split-screen premium layout
+ * - Clean, focused form design
+ * - Strong visual hierarchy
+ * - Trust-building elements
  */
 
 import { useState, useEffect } from 'react';
@@ -10,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, Envelope, Lock, Eye, EyeSlash, ArrowRight, Spinner,
   GoogleLogo, AppleLogo, GithubLogo, Warning, CheckCircle,
-  DeviceMobile, Key, ArrowLeft, Info, Lightning, Users, Wallet
+  DeviceMobile, Key, ArrowLeft, Lightning, Users, Wallet
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,28 +116,16 @@ const getErrorMessage = (error: any): { title: string; description: string; acti
   }
 };
 
-const testimonials = [
-  {
-    quote: "Rekberkan made my first online transaction completely stress-free. The escrow system is brilliant!",
-    author: "Sarah M.",
-    role: "Verified Buyer"
-  },
-  {
-    quote: "As a seller, I finally feel protected. No more chargebacks or scams. Highly recommended!",
-    author: "Ahmad K.",
-    role: "Power Seller"
-  },
-  {
-    quote: "The fastest dispute resolution I've ever experienced. Customer support is exceptional.",
-    author: "Dewi R.",
-    role: "Business Owner"
-  }
+const stats = [
+  { value: 'Rp 50M+', label: 'Total Secured' },
+  { value: '10K+', label: 'Active Users' },
+  { value: '99.9%', label: 'Success Rate' }
 ];
 
-const stats = [
-  { value: '50K+', label: 'Active Users' },
-  { value: 'Rp 10B+', label: 'Secured' },
-  { value: '99.9%', label: 'Success Rate' }
+const features = [
+  { icon: ShieldCheck, text: 'Bank-level security' },
+  { icon: Lightning, text: 'Instant transactions' },
+  { icon: Users, text: 'Trusted by thousands' },
 ];
 
 export default function Login() {
@@ -141,7 +133,6 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [showMfaInput, setShowMfaInput] = useState(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [formData, setFormData] = useState({
     email: '',
@@ -150,14 +141,6 @@ export default function Login() {
     remember: false
   });
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-
-  // Rotate testimonials
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -170,7 +153,6 @@ export default function Login() {
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    // SECURITY FIX [M005]: Aligned with backend validation (8 characters minimum)
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
@@ -230,12 +212,80 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Side - Form */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-12 xl:px-20">
-        <div className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0A0A0A] text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-grid opacity-10" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
           {/* Logo */}
-          <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <img 
+              src="/images/logo-white.svg" 
+              alt="Rekberkan" 
+              className="h-8 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/logo.svg';
+                target.style.filter = 'brightness(0) invert(1)';
+              }}
+            />
+          </Link>
+          
+          {/* Main Content */}
+          <div className="max-w-md">
+            <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-6">
+              Secure every transaction with confidence
+            </h1>
+            <p className="text-white/60 text-lg leading-relaxed mb-10">
+              Join thousands of users who trust Rekberkan for their online transactions. 
+              Full protection for buyers and sellers.
+            </p>
+            
+            {/* Features */}
+            <div className="space-y-4">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.text}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 + 0.3 }}
+                  className="flex items-center gap-4"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <feature.icon className="w-5 h-5" weight="bold" />
+                  </div>
+                  <span className="text-white/80">{feature.text}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Stats */}
+          <div className="flex gap-8">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 + 0.5 }}
+              >
+                <div className="text-3xl font-bold">{stat.value}</div>
+                <div className="text-white/40 text-sm">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Right Side - Form */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-12 xl:px-20 bg-white">
+        <div className="w-full max-w-md mx-auto">
+          {/* Mobile Logo */}
+          <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-10">
             <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
           </Link>
           
@@ -247,67 +297,63 @@ export default function Login() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
               >
-                <h1 className="text-3xl font-bold mb-2 text-black">Welcome back</h1>
-                <p className="text-[#6B7280] mb-8">
+                <h1 className="text-3xl xl:text-4xl font-bold mb-3 text-[#0A0A0A]">Welcome back</h1>
+                <p className="text-[#737373] mb-10">
                   Sign in to your account to continue managing your transactions
                 </p>
                 
                 {/* Social Login Buttons */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  <Button 
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  <button 
                     type="button"
-                    variant="outline" 
-                    className="h-12 border-[#E5E5E5] hover:bg-[#F5F5F5]"
+                    className="h-12 border-2 border-[#E8E8E8] rounded-xl flex items-center justify-center hover:border-[#0A0A0A] hover:bg-[#F5F5F5] transition-all"
                     onClick={() => handleSocialLogin('Google')}
                   >
                     <GoogleLogo className="w-5 h-5" weight="bold" />
-                  </Button>
-                  <Button 
+                  </button>
+                  <button 
                     type="button"
-                    variant="outline" 
-                    className="h-12 border-[#E5E5E5] hover:bg-[#F5F5F5]"
+                    className="h-12 border-2 border-[#E8E8E8] rounded-xl flex items-center justify-center hover:border-[#0A0A0A] hover:bg-[#F5F5F5] transition-all"
                     onClick={() => handleSocialLogin('Apple')}
                   >
                     <AppleLogo className="w-5 h-5" weight="fill" />
-                  </Button>
-                  <Button 
+                  </button>
+                  <button 
                     type="button"
-                    variant="outline" 
-                    className="h-12 border-[#E5E5E5] hover:bg-[#F5F5F5]"
+                    className="h-12 border-2 border-[#E8E8E8] rounded-xl flex items-center justify-center hover:border-[#0A0A0A] hover:bg-[#F5F5F5] transition-all"
                     onClick={() => handleSocialLogin('GitHub')}
                   >
                     <GithubLogo className="w-5 h-5" weight="fill" />
-                  </Button>
+                  </button>
                 </div>
 
-                <div className="relative mb-6">
+                <div className="relative mb-8">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#E5E5E5]" />
+                    <div className="w-full border-t border-[#E8E8E8]" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-[#6B7280]">or continue with email</span>
+                    <span className="px-4 bg-white text-[#A3A3A3]">or continue with email</span>
                   </div>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-black font-medium">Email address</Label>
+                    <Label htmlFor="email" className="text-[#0A0A0A] font-semibold">Email address</Label>
                     <div className="relative">
-                      <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="email"
                         type="email"
+                        placeholder="name@example.com"
                         value={formData.email}
-                        onChange={(e) => {
-                          setFormData({ ...formData, email: e.target.value });
-                          if (errors.email) setErrors({ ...errors, email: undefined });
-                        }}
-                        placeholder="you@example.com"
-                        className={`pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.email ? 'border-red-500' : ''}`}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className={`pl-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.email ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
                     </div>
                     {errors.email && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-red-500 flex items-center gap-1.5">
                         <Warning className="w-4 h-4" weight="fill" />
                         {errors.email}
                       </p>
@@ -316,93 +362,73 @@ export default function Login() {
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-black font-medium">Password</Label>
-                      <Link href="/forgot-password" className="text-sm text-black hover:underline font-medium">
+                      <Label htmlFor="password" className="text-[#0A0A0A] font-semibold">Password</Label>
+                      <Link href="/forgot-password" className="text-sm text-[#737373] hover:text-[#0A0A0A] transition-colors">
                         Forgot password?
                       </Link>
                     </div>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter your password"
                         value={formData.password}
-                        onChange={(e) => {
-                          setFormData({ ...formData, password: e.target.value });
-                          if (errors.password) setErrors({ ...errors, password: undefined });
-                        }}
-                        placeholder="••••••••"
-                        className={`pl-10 pr-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.password ? 'border-red-500' : ''}`}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className={`pl-12 pr-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.password ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-black transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors"
                       >
-                        {showPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
+                        {showPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
                     {errors.password && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
+                      <p className="text-sm text-red-500 flex items-center gap-1.5">
                         <Warning className="w-4 h-4" weight="fill" />
                         {errors.password}
                       </p>
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Checkbox
                       id="remember"
                       checked={formData.remember}
                       onCheckedChange={(checked) => setFormData({ ...formData, remember: checked as boolean })}
-                      className="border-[#E5E5E5] data-[state=checked]:bg-black data-[state=checked]:border-black"
+                      className="border-2 border-[#E8E8E8] data-[state=checked]:bg-[#0A0A0A] data-[state=checked]:border-[#0A0A0A]"
                     />
-                    <Label htmlFor="remember" className="text-sm cursor-pointer text-[#6B7280]">
-                      Keep me signed in for 30 days
+                    <Label htmlFor="remember" className="text-sm text-[#737373] cursor-pointer">
+                      Remember me for 30 days
                     </Label>
                   </div>
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-black text-white hover:bg-black/90 font-medium"
+                    className="btn-primary w-full h-12"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
-                        <Spinner className="mr-2 w-5 h-5 animate-spin" weight="bold" />
+                        <Spinner className="w-5 h-5 animate-spin mr-2" />
                         Signing in...
                       </>
                     ) : (
                       <>
-                        Sign in
+                        Sign In
                         <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
                       </>
                     )}
                   </Button>
-
-                  {loginAttempts >= 3 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-4 rounded-lg bg-amber-50 border border-amber-200"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" weight="fill" />
-                        <div>
-                          <p className="text-sm text-amber-800 font-medium">Having trouble signing in?</p>
-                          <p className="text-sm text-amber-700 mt-1">
-                            <Link href="/forgot-password" className="underline">Reset your password</Link> or{' '}
-                            <Link href="/contact" className="underline">contact support</Link> for help.
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
                 </form>
                 
-                <p className="mt-8 text-center text-sm text-[#6B7280]">
+                <p className="mt-8 text-center text-[#737373]">
                   Don't have an account?{' '}
-                  <Link href="/register" className="text-black hover:underline font-semibold">
+                  <Link href="/register" className="font-semibold text-[#0A0A0A] hover:underline">
                     Create account
                   </Link>
                 </p>
@@ -414,217 +440,70 @@ export default function Login() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <button 
+                <button
                   onClick={() => setShowMfaInput(false)}
-                  className="flex items-center gap-2 text-[#6B7280] hover:text-black mb-6 transition-colors"
+                  className="flex items-center gap-2 text-[#737373] hover:text-[#0A0A0A] mb-8 transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" weight="bold" />
+                  <ArrowLeft className="w-5 h-5" weight="bold" />
                   Back to login
                 </button>
-
-                <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mb-6">
-                  <Key className="w-8 h-8 text-white" weight="duotone" />
+                
+                <div className="w-16 h-16 rounded-2xl bg-[#F5F5F5] flex items-center justify-center mb-6">
+                  <DeviceMobile className="w-8 h-8 text-[#0A0A0A]" weight="duotone" />
                 </div>
-
-                <h1 className="text-3xl font-bold mb-2 text-black">Two-factor authentication</h1>
-                <p className="text-[#6B7280] mb-8">
-                  Enter the 6-digit code from your authenticator app to verify your identity
+                
+                <h1 className="text-3xl font-bold mb-3 text-[#0A0A0A]">Two-Factor Authentication</h1>
+                <p className="text-[#737373] mb-8">
+                  Enter the 6-digit code from your authenticator app to continue.
                 </p>
-
+                
                 <form onSubmit={handleMfaSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="mfaCode" className="text-black font-medium">Authentication code</Label>
-                    <Input
-                      id="mfaCode"
-                      type="text"
-                      inputMode="numeric"
-                      value={formData.mfaCode}
-                      onChange={(e) => setFormData({ ...formData, mfaCode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-                      placeholder="000000"
-                      maxLength={6}
-                      className="bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-14 text-center text-2xl tracking-[0.5em] font-mono"
-                      autoFocus
-                    />
+                    <Label htmlFor="mfaCode" className="text-[#0A0A0A] font-semibold">Authentication Code</Label>
+                    <div className="relative">
+                      <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
+                      <Input
+                        id="mfaCode"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        placeholder="000000"
+                        value={formData.mfaCode}
+                        onChange={(e) => setFormData({ ...formData, mfaCode: e.target.value.replace(/\D/g, '') })}
+                        className="pl-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] text-center text-2xl tracking-[0.5em] font-mono transition-all"
+                      />
+                    </div>
                   </div>
-
+                  
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-black text-white hover:bg-black/90 font-medium"
+                    className="btn-primary w-full h-12"
                     disabled={isLoading || formData.mfaCode.length !== 6}
                   >
                     {isLoading ? (
                       <>
-                        <Spinner className="mr-2 w-5 h-5 animate-spin" weight="bold" />
+                        <Spinner className="w-5 h-5 animate-spin mr-2" />
                         Verifying...
                       </>
                     ) : (
                       <>
-                        Verify and sign in
+                        Verify
                         <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
                       </>
                     )}
                   </Button>
-
-                  <div className="p-4 rounded-lg bg-[#F5F5F5]">
-                    <div className="flex items-start gap-3">
-                      <DeviceMobile className="w-5 h-5 text-[#6B7280] shrink-0 mt-0.5" weight="duotone" />
-                      <div>
-                        <p className="text-sm text-[#6B7280]">
-                          Open your authenticator app (Google Authenticator, Authy, etc.) and enter the code displayed for Rekberkan.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </form>
-
-                <p className="mt-6 text-center text-sm text-[#6B7280]">
+                
+                <p className="mt-8 text-center text-[#737373]">
                   Lost access to your authenticator?{' '}
-                  <Link href="/contact" className="text-black hover:underline font-semibold">
+                  <Link href="/support" className="font-semibold text-[#0A0A0A] hover:underline">
                     Contact support
                   </Link>
                 </p>
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Security Notice */}
-          <div className="mt-8 pt-8 border-t border-[#E5E5E5]">
-            <div className="flex items-center justify-center gap-6 text-xs text-[#9CA3AF]">
-              <div className="flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4" weight="fill" />
-                <span>256-bit SSL</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Lock className="w-4 h-4" weight="fill" />
-                <span>Encrypted</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" weight="fill" />
-                <span>Secure</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Right Side - Visual */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-12 bg-black relative overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
-        
-        <div className="relative z-10 w-full max-w-lg">
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 mb-12">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + index * 0.1 }}
-                className="text-center"
-              >
-                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-sm text-white/60">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Main Visual */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10"
-          >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-                <ShieldCheck className="w-8 h-8 text-white" weight="duotone" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Trusted Escrow Platform</h2>
-                <p className="text-white/60">Secure your online transactions</p>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="space-y-4 mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" weight="fill" />
-                </div>
-                <span className="text-white/80">Funds held securely until delivery confirmed</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Lightning className="w-4 h-4 text-blue-400" weight="fill" />
-                </div>
-                <span className="text-white/80">Instant notifications & real-time tracking</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-purple-400" weight="fill" />
-                </div>
-                <span className="text-white/80">24/7 dispute resolution support</span>
-              </div>
-            </div>
-
-            {/* Testimonial */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentTestimonial}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="border-t border-white/10 pt-6"
-              >
-                <p className="text-white/80 italic mb-4">"{testimonials[currentTestimonial].quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-                    {testimonials[currentTestimonial].author.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="text-white font-medium">{testimonials[currentTestimonial].author}</div>
-                    <div className="text-white/50 text-sm">{testimonials[currentTestimonial].role}</div>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Testimonial indicators */}
-            <div className="flex justify-center gap-2 mt-6">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentTestimonial ? 'bg-white' : 'bg-white/30'
-                  }`}
-                />
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Trust badges */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex items-center justify-center gap-8 mt-8"
-          >
-            <div className="flex items-center gap-2 text-white/40 text-sm">
-              <ShieldCheck className="w-5 h-5" weight="fill" />
-              <span>SOC 2 Certified</span>
-            </div>
-            <div className="flex items-center gap-2 text-white/40 text-sm">
-              <Lock className="w-5 h-5" weight="fill" />
-              <span>Bank-Level Security</span>
-            </div>
-          </motion.div>
         </div>
       </div>
     </div>

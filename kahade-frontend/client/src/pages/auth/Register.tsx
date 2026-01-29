@@ -1,7 +1,11 @@
 /*
- * REKBERKAN REGISTER PAGE - Enhanced Professional Version
- * Brand color: #000000
- * Features: Multi-step registration, password strength, social signup, referral code
+ * REKBERKAN REGISTER PAGE - EXCLUSIVE EDITION
+ * 
+ * Design Philosophy:
+ * - Split-screen premium layout
+ * - Multi-step registration flow
+ * - Clean, focused form design
+ * - Trust-building elements
  */
 
 import { useState, useEffect } from 'react';
@@ -10,13 +14,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, Envelope, Lock, Eye, EyeSlash, ArrowRight, Spinner, User, Phone, 
   CheckCircle, WarningCircle, GoogleLogo, AppleLogo, GithubLogo, ArrowLeft,
-  Gift, Lightning, Users, Wallet, Check, X, Info, Confetti
+  Gift, Lightning, Users, Wallet, Check, X, Confetti
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -178,24 +181,24 @@ const benefits = [
   {
     icon: Lightning,
     title: 'Fast Transactions',
-    description: 'Complete transactions in minutes, not days'
+    description: 'Complete transactions in minutes'
   },
   {
     icon: Users,
     title: 'Trusted Community',
-    description: 'Join 50,000+ verified users'
+    description: 'Join 10,000+ verified users'
   },
   {
     icon: Wallet,
     title: 'Low Fees',
-    description: 'Starting from just 2.5% per transaction'
+    description: 'Starting from just 2.5%'
   }
 ];
 
 const stats = [
-  { value: 'Rp 10B+', label: 'Secured' },
-  { value: '50K+', label: 'Users' },
-  { value: '99.9%', label: 'Success' }
+  { value: 'Rp 50M+', label: 'Total Secured' },
+  { value: '10K+', label: 'Active Users' },
+  { value: '99.9%', label: 'Success Rate' }
 ];
 
 export default function Register() {
@@ -203,6 +206,7 @@ export default function Register() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   
@@ -334,153 +338,159 @@ export default function Register() {
     });
   };
 
-  const getPasswordStrengthColor = () => {
+  const getStrengthColor = () => {
     if (passwordStrength.score <= 2) return 'bg-red-500';
-    if (passwordStrength.score <= 3) return 'bg-amber-500';
-    if (passwordStrength.score <= 4) return 'bg-blue-500';
-    return 'bg-emerald-500';
+    if (passwordStrength.score <= 3) return 'bg-orange-500';
+    if (passwordStrength.score <= 4) return 'bg-yellow-500';
+    return 'bg-green-500';
   };
 
-  const getPasswordStrengthLabel = () => {
+  const getStrengthLabel = () => {
     if (passwordStrength.score <= 2) return 'Weak';
     if (passwordStrength.score <= 3) return 'Fair';
     if (passwordStrength.score <= 4) return 'Good';
     return 'Strong';
   };
 
-  // Registration complete screen
+  // Registration Complete Screen
   if (registrationComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-6">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full text-center"
         >
-          <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-            <Confetti className="w-10 h-10 text-emerald-600" weight="duotone" />
-          </div>
-          <h1 className="text-3xl font-bold text-black mb-4">Welcome to Rekberkan!</h1>
-          <p className="text-[#6B7280] mb-8">
-            Your account has been created successfully. Please check your email to verify your account before logging in.
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+            className="w-24 h-24 rounded-3xl bg-green-100 flex items-center justify-center mx-auto mb-8"
+          >
+            <CheckCircle className="w-12 h-12 text-green-600" weight="fill" />
+          </motion.div>
+          
+          <h1 className="text-3xl font-bold mb-4 text-[#0A0A0A]">Welcome to Rekberkan!</h1>
+          <p className="text-[#737373] mb-8">
+            Your account has been created successfully. Please check your email to verify your account.
           </p>
-          <div className="bg-[#F5F5F5] rounded-xl p-4 mb-8">
-            <div className="flex items-center gap-3">
-              <Envelope className="w-6 h-6 text-[#6B7280]" weight="duotone" />
-              <div className="text-left">
-                <div className="font-medium text-black">Verification email sent to</div>
-                <div className="text-[#6B7280]">{formData.email}</div>
-              </div>
-            </div>
+          
+          <div className="space-y-3">
+            <Link href="/login">
+              <Button className="btn-primary w-full">
+                Continue to Login
+                <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button variant="ghost" className="w-full text-[#737373]">
+                Back to Home
+              </Button>
+            </Link>
           </div>
-          <Link href="/login">
-            <Button className="w-full h-12 bg-black text-white hover:bg-black/90">
-              Continue to Login
-              <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
-            </Button>
-          </Link>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Side - Visual */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-12 bg-black relative overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0A0A0A] text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-grid opacity-10" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl" />
         
-        <div className="relative z-10 w-full max-w-lg">
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+          {/* Logo */}
+          <Link href="/" className="inline-flex items-center gap-2">
+            <img 
+              src="/images/logo-white.svg" 
+              alt="Rekberkan" 
+              className="h-8 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/logo.svg';
+                target.style.filter = 'brightness(0) invert(1)';
+              }}
+            />
+          </Link>
+          
+          {/* Main Content */}
+          <div className="max-w-md">
+            <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-6">
+              Start securing your transactions today
+            </h1>
+            <p className="text-white/60 text-lg leading-relaxed mb-10">
+              Create your free account and join thousands of users who trust Rekberkan.
+            </p>
+            
+            {/* Benefits */}
+            <div className="grid grid-cols-2 gap-4">
+              {benefits.map((benefit, index) => (
+                <motion.div
+                  key={benefit.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 + 0.3 }}
+                  className="p-4 rounded-xl bg-white/5 border border-white/10"
+                >
+                  <benefit.icon className="w-6 h-6 mb-2" weight="bold" />
+                  <div className="font-semibold text-sm">{benefit.title}</div>
+                  <div className="text-xs text-white/50">{benefit.description}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 mb-12">
+          <div className="flex gap-8">
             {stats.map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + index * 0.1 }}
-                className="text-center"
+                transition={{ delay: index * 0.1 + 0.5 }}
               >
-                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-sm text-white/60">{stat.label}</div>
+                <div className="text-3xl font-bold">{stat.value}</div>
+                <div className="text-white/40 text-sm">{stat.label}</div>
               </motion.div>
             ))}
           </div>
-
-          {/* Benefits */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10"
-          >
-            <h2 className="text-2xl font-bold text-white mb-6">Why join Rekberkan?</h2>
-            
-            <div className="space-y-5">
-              {benefits.map((benefit, index) => (
-                <motion.div
-                  key={benefit.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className="flex items-start gap-4"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                    <benefit.icon className="w-5 h-5 text-white" weight="duotone" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">{benefit.title}</div>
-                    <div className="text-sm text-white/60">{benefit.description}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Trust badges */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="flex items-center justify-center gap-8 mt-8"
-          >
-            <div className="flex items-center gap-2 text-white/40 text-sm">
-              <ShieldCheck className="w-5 h-5" weight="fill" />
-              <span>SOC 2 Certified</span>
-            </div>
-            <div className="flex items-center gap-2 text-white/40 text-sm">
-              <Lock className="w-5 h-5" weight="fill" />
-              <span>Bank-Level Security</span>
-            </div>
-          </motion.div>
         </div>
       </div>
       
       {/* Right Side - Form */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-12 xl:px-20">
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-12 xl:px-20 bg-white overflow-y-auto">
         <div className="w-full max-w-md mx-auto">
-          {/* Logo */}
-          <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
+          {/* Mobile Logo */}
+          <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-8">
             <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
           </Link>
           
-          {/* Progress indicator */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[#6B7280]">Step {step} of 3</span>
-              <span className="text-sm font-medium text-black">{Math.round((step / 3) * 100)}%</span>
-            </div>
-            <Progress value={(step / 3) * 100} className="h-2" />
+          {/* Progress Steps */}
+          <div className="flex items-center gap-2 mb-8">
+            {[1, 2, 3].map((s) => (
+              <div key={s} className="flex items-center gap-2 flex-1">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  step >= s 
+                    ? 'bg-[#0A0A0A] text-white' 
+                    : 'bg-[#F5F5F5] text-[#A3A3A3]'
+                }`}>
+                  {step > s ? <Check className="w-4 h-4" weight="bold" /> : s}
+                </div>
+                {s < 3 && (
+                  <div className={`flex-1 h-1 rounded-full transition-all ${
+                    step > s ? 'bg-[#0A0A0A]' : 'bg-[#E8E8E8]'
+                  }`} />
+                )}
+              </div>
+            ))}
           </div>
-
+          
           <AnimatePresence mode="wait">
-            {/* Step 1: Basic Info */}
+            {/* Step 1: Account Info */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -488,130 +498,139 @@ export default function Register() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <h1 className="text-3xl font-bold mb-2 text-black">Create your account</h1>
-                <p className="text-[#6B7280] mb-8">
-                  Start with your basic information
+                <h1 className="text-3xl xl:text-4xl font-bold mb-3 text-[#0A0A0A]">Create your account</h1>
+                <p className="text-[#737373] mb-8">
+                  Enter your details to get started with Rekberkan
                 </p>
-
+                
                 {/* Social Signup */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  <Button 
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  <button 
                     type="button"
-                    variant="outline" 
-                    className="h-12 border-[#E5E5E5] hover:bg-[#F5F5F5]"
+                    className="h-12 border-2 border-[#E8E8E8] rounded-xl flex items-center justify-center hover:border-[#0A0A0A] hover:bg-[#F5F5F5] transition-all"
                     onClick={() => handleSocialSignup('Google')}
                   >
                     <GoogleLogo className="w-5 h-5" weight="bold" />
-                  </Button>
-                  <Button 
+                  </button>
+                  <button 
                     type="button"
-                    variant="outline" 
-                    className="h-12 border-[#E5E5E5] hover:bg-[#F5F5F5]"
+                    className="h-12 border-2 border-[#E8E8E8] rounded-xl flex items-center justify-center hover:border-[#0A0A0A] hover:bg-[#F5F5F5] transition-all"
                     onClick={() => handleSocialSignup('Apple')}
                   >
                     <AppleLogo className="w-5 h-5" weight="fill" />
-                  </Button>
-                  <Button 
+                  </button>
+                  <button 
                     type="button"
-                    variant="outline" 
-                    className="h-12 border-[#E5E5E5] hover:bg-[#F5F5F5]"
+                    className="h-12 border-2 border-[#E8E8E8] rounded-xl flex items-center justify-center hover:border-[#0A0A0A] hover:bg-[#F5F5F5] transition-all"
                     onClick={() => handleSocialSignup('GitHub')}
                   >
                     <GithubLogo className="w-5 h-5" weight="fill" />
-                  </Button>
+                  </button>
                 </div>
 
-                <div className="relative mb-6">
+                <div className="relative mb-8">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#E5E5E5]" />
+                    <div className="w-full border-t border-[#E8E8E8]" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-[#6B7280]">or continue with email</span>
+                    <span className="px-4 bg-white text-[#A3A3A3]">or continue with email</span>
                   </div>
                 </div>
-
+                
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-black font-medium">Username</Label>
+                    <Label htmlFor="username" className="text-[#0A0A0A] font-semibold">Username</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="username"
+                        type="text"
+                        placeholder="johndoe"
                         value={formData.username}
                         onChange={(e) => handleChange('username', e.target.value)}
                         onBlur={() => handleBlur('username')}
-                        placeholder="johndoe"
-                        className={`pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.username && touched.username ? 'border-red-500' : ''}`}
+                        className={`pl-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.username && touched.username ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
                     </div>
-                    {errors.username && touched.username ? (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <X className="w-4 h-4" weight="bold" />
+                    {errors.username && touched.username && (
+                      <p className="text-sm text-red-500 flex items-center gap-1.5">
+                        <WarningCircle className="w-4 h-4" weight="fill" />
                         {errors.username}
                       </p>
-                    ) : (
-                      <p className="text-xs text-[#9CA3AF]">3-30 characters, letters, numbers, underscores</p>
                     )}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-black font-medium">Email address</Label>
+                    <Label htmlFor="email" className="text-[#0A0A0A] font-semibold">Email address</Label>
                     <div className="relative">
-                      <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="email"
                         type="email"
+                        placeholder="name@example.com"
                         value={formData.email}
                         onChange={(e) => handleChange('email', e.target.value)}
                         onBlur={() => handleBlur('email')}
-                        placeholder="you@example.com"
-                        className={`pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.email && touched.email ? 'border-red-500' : ''}`}
+                        className={`pl-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.email && touched.email ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
                     </div>
                     {errors.email && touched.email && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <X className="w-4 h-4" weight="bold" />
+                      <p className="text-sm text-red-500 flex items-center gap-1.5">
+                        <WarningCircle className="w-4 h-4" weight="fill" />
                         {errors.email}
                       </p>
                     )}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-black font-medium">
-                      Phone number <span className="text-[#9CA3AF] font-normal">(optional)</span>
+                    <Label htmlFor="phone" className="text-[#0A0A0A] font-semibold">
+                      Phone number <span className="text-[#A3A3A3] font-normal">(optional)</span>
                     </Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="phone"
                         type="tel"
+                        placeholder="+628123456789"
                         value={formData.phone}
                         onChange={(e) => handleChange('phone', e.target.value)}
                         onBlur={() => handleBlur('phone')}
-                        placeholder="+62 812 3456 7890"
-                        className={`pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.phone && touched.phone ? 'border-red-500' : ''}`}
+                        className={`pl-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.phone && touched.phone ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
                     </div>
                     {errors.phone && touched.phone && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <X className="w-4 h-4" weight="bold" />
+                      <p className="text-sm text-red-500 flex items-center gap-1.5">
+                        <WarningCircle className="w-4 h-4" weight="fill" />
                         {errors.phone}
                       </p>
                     )}
                   </div>
-
+                  
                   <Button 
                     type="button"
                     onClick={handleNextStep}
-                    className="w-full h-12 bg-black text-white hover:bg-black/90 font-medium"
+                    className="btn-primary w-full h-12"
                   >
                     Continue
                     <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
                   </Button>
                 </div>
+                
+                <p className="mt-8 text-center text-[#737373]">
+                  Already have an account?{' '}
+                  <Link href="/login" className="font-semibold text-[#0A0A0A] hover:underline">
+                    Sign in
+                  </Link>
+                </p>
               </motion.div>
             )}
-
+            
             {/* Step 2: Password */}
             {step === 2 && (
               <motion.div
@@ -620,110 +639,118 @@ export default function Register() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <button 
+                <button
                   onClick={() => setStep(1)}
-                  className="flex items-center gap-2 text-[#6B7280] hover:text-black mb-6 transition-colors"
+                  className="flex items-center gap-2 text-[#737373] hover:text-[#0A0A0A] mb-6 transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" weight="bold" />
+                  <ArrowLeft className="w-5 h-5" weight="bold" />
                   Back
                 </button>
-
-                <h1 className="text-3xl font-bold mb-2 text-black">Create a password</h1>
-                <p className="text-[#6B7280] mb-8">
-                  Choose a strong password to protect your account
+                
+                <h1 className="text-3xl xl:text-4xl font-bold mb-3 text-[#0A0A0A]">Create password</h1>
+                <p className="text-[#737373] mb-8">
+                  Choose a strong password to secure your account
                 </p>
-
+                
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-black font-medium">Password</Label>
+                    <Label htmlFor="password" className="text-[#0A0A0A] font-semibold">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
+                        placeholder="Create a strong password"
                         value={formData.password}
                         onChange={(e) => handleChange('password', e.target.value)}
                         onBlur={() => handleBlur('password')}
-                        placeholder="••••••••"
-                        className={`pl-10 pr-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.password && touched.password ? 'border-red-500' : ''}`}
+                        className={`pl-12 pr-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.password && touched.password ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-black transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors"
                       >
-                        {showPassword ? <EyeSlash className="w-5 h-5" weight="regular" /> : <Eye className="w-5 h-5" weight="regular" />}
+                        {showPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                  </div>
-
-                  {/* Password strength indicator */}
-                  {formData.password && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-1 flex-1">
-                          {[1, 2, 3, 4, 5].map((level) => (
-                            <div
-                              key={level}
-                              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                                level <= passwordStrength.score ? getPasswordStrengthColor() : 'bg-gray-200'
-                              }`}
+                    
+                    {/* Password Strength */}
+                    {formData.password && (
+                      <div className="space-y-3 mt-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 bg-[#E8E8E8] rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full transition-all ${getStrengthColor()}`}
+                              style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                             />
+                          </div>
+                          <span className={`text-sm font-medium ${
+                            passwordStrength.score <= 2 ? 'text-red-500' :
+                            passwordStrength.score <= 3 ? 'text-orange-500' :
+                            passwordStrength.score <= 4 ? 'text-yellow-600' : 'text-green-500'
+                          }`}>
+                            {getStrengthLabel()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[...passwordStrength.passed, ...passwordStrength.feedback].map((item, i) => (
+                            <div 
+                              key={item}
+                              className={`flex items-center gap-2 text-xs ${
+                                passwordStrength.passed.includes(item) ? 'text-green-600' : 'text-[#A3A3A3]'
+                              }`}
+                            >
+                              {passwordStrength.passed.includes(item) ? (
+                                <Check className="w-3.5 h-3.5" weight="bold" />
+                              ) : (
+                                <X className="w-3.5 h-3.5" />
+                              )}
+                              {item}
+                            </div>
                           ))}
                         </div>
-                        <span className={`ml-3 text-sm font-medium ${
-                          passwordStrength.score <= 2 ? 'text-red-500' :
-                          passwordStrength.score <= 3 ? 'text-amber-500' :
-                          passwordStrength.score <= 4 ? 'text-blue-500' : 'text-emerald-500'
-                        }`}>
-                          {getPasswordStrengthLabel()}
-                        </span>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        {['At least 8 characters', 'Uppercase letter', 'Lowercase letter', 'Number', 'Special character'].map((req) => {
-                          const isPassed = passwordStrength.passed.includes(req);
-                          return (
-                            <div key={req} className={`flex items-center gap-2 text-xs ${isPassed ? 'text-emerald-600' : 'text-[#9CA3AF]'}`}>
-                              {isPassed ? <Check className="w-3 h-3" weight="bold" /> : <X className="w-3 h-3" weight="bold" />}
-                              {req}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-black font-medium">Confirm password</Label>
+                    <Label htmlFor="confirmPassword" className="text-[#0A0A0A] font-semibold">Confirm password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="confirmPassword"
-                        type={showPassword ? 'text' : 'password'}
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm your password"
                         value={formData.confirmPassword}
                         onChange={(e) => handleChange('confirmPassword', e.target.value)}
                         onBlur={() => handleBlur('confirmPassword')}
-                        placeholder="••••••••"
-                        className={`pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : ''}`}
+                        className={`pl-12 pr-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all ${
+                          errors.confirmPassword && touched.confirmPassword ? 'border-red-500 bg-red-50' : ''
+                        }`}
                       />
-                      {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" weight="bold" />
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                     {errors.confirmPassword && touched.confirmPassword && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <X className="w-4 h-4" weight="bold" />
+                      <p className="text-sm text-red-500 flex items-center gap-1.5">
+                        <WarningCircle className="w-4 h-4" weight="fill" />
                         {errors.confirmPassword}
                       </p>
                     )}
                   </div>
-
+                  
                   <Button 
                     type="button"
                     onClick={handleNextStep}
-                    className="w-full h-12 bg-black text-white hover:bg-black/90 font-medium"
-                    disabled={passwordStrength.score < 5 || formData.password !== formData.confirmPassword}
+                    className="btn-primary w-full h-12"
                   >
                     Continue
                     <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
@@ -731,7 +758,7 @@ export default function Register() {
                 </div>
               </motion.div>
             )}
-
+            
             {/* Step 3: Final */}
             {step === 3 && (
               <motion.div
@@ -740,108 +767,99 @@ export default function Register() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <button 
+                <button
                   onClick={() => setStep(2)}
-                  className="flex items-center gap-2 text-[#6B7280] hover:text-black mb-6 transition-colors"
+                  className="flex items-center gap-2 text-[#737373] hover:text-[#0A0A0A] mb-6 transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" weight="bold" />
+                  <ArrowLeft className="w-5 h-5" weight="bold" />
                   Back
                 </button>
-
-                <h1 className="text-3xl font-bold mb-2 text-black">Almost there!</h1>
-                <p className="text-[#6B7280] mb-8">
-                  Review your information and complete registration
+                
+                <h1 className="text-3xl xl:text-4xl font-bold mb-3 text-[#0A0A0A]">Almost there!</h1>
+                <p className="text-[#737373] mb-8">
+                  Review your information and agree to our terms
                 </p>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Summary */}
-                  <div className="bg-[#F5F5F5] rounded-xl p-4 space-y-3">
+                  <div className="p-5 rounded-xl bg-[#F8F8F8] space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-[#6B7280]">Username</span>
-                      <span className="font-medium text-black">{formData.username}</span>
+                      <span className="text-[#737373]">Username</span>
+                      <span className="font-medium text-[#0A0A0A]">{formData.username}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[#6B7280]">Email</span>
-                      <span className="font-medium text-black">{formData.email}</span>
+                      <span className="text-[#737373]">Email</span>
+                      <span className="font-medium text-[#0A0A0A]">{formData.email}</span>
                     </div>
                     {formData.phone && (
                       <div className="flex justify-between">
-                        <span className="text-[#6B7280]">Phone</span>
-                        <span className="font-medium text-black">{formData.phone}</span>
+                        <span className="text-[#737373]">Phone</span>
+                        <span className="font-medium text-[#0A0A0A]">{formData.phone}</span>
                       </div>
                     )}
                   </div>
-
+                  
                   {/* Referral Code */}
                   <div className="space-y-2">
-                    <Label htmlFor="referralCode" className="text-black font-medium">
-                      Referral code <span className="text-[#9CA3AF] font-normal">(optional)</span>
+                    <Label htmlFor="referralCode" className="text-[#0A0A0A] font-semibold">
+                      Referral code <span className="text-[#A3A3A3] font-normal">(optional)</span>
                     </Label>
                     <div className="relative">
-                      <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" weight="regular" />
+                      <Gift className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A3A3]" />
                       <Input
                         id="referralCode"
+                        type="text"
+                        placeholder="Enter referral code"
                         value={formData.referralCode}
                         onChange={(e) => handleChange('referralCode', e.target.value.toUpperCase())}
-                        placeholder="Enter referral code"
-                        className="pl-10 bg-white border-[#E5E5E5] focus:border-black focus:ring-black h-12 uppercase"
+                        className="pl-12 h-12 bg-[#F8F8F8] border-2 border-transparent rounded-xl focus:bg-white focus:border-[#0A0A0A] transition-all uppercase"
                       />
                     </div>
-                    {formData.referralCode && (
-                      <p className="text-sm text-emerald-600 flex items-center gap-1">
-                        <Gift className="w-4 h-4" weight="fill" />
-                        You'll receive a bonus after your first transaction!
-                      </p>
-                    )}
                   </div>
                   
                   {/* Terms */}
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <Checkbox
                         id="agreeTerms"
                         checked={formData.agreeTerms}
                         onCheckedChange={(checked) => handleChange('agreeTerms', checked as boolean)}
-                        className="mt-1 border-[#E5E5E5] data-[state=checked]:bg-black data-[state=checked]:border-black"
+                        className="mt-0.5 border-2 border-[#E8E8E8] data-[state=checked]:bg-[#0A0A0A] data-[state=checked]:border-[#0A0A0A]"
                       />
-                      <Label htmlFor="agreeTerms" className="text-sm cursor-pointer leading-relaxed text-[#6B7280]">
+                      <Label htmlFor="agreeTerms" className="text-sm text-[#737373] cursor-pointer leading-relaxed">
                         I agree to the{' '}
-                        <Link href="/terms" className="text-black hover:underline font-medium">
-                          Terms of Service
-                        </Link>{' '}
-                        and{' '}
-                        <Link href="/privacy" className="text-black hover:underline font-medium">
-                          Privacy Policy
-                        </Link>
+                        <Link href="/terms" className="text-[#0A0A0A] hover:underline">Terms of Service</Link>
+                        {' '}and{' '}
+                        <Link href="/privacy" className="text-[#0A0A0A] hover:underline">Privacy Policy</Link>
                       </Label>
                     </div>
-
+                    
                     <div className="flex items-start gap-3">
                       <Checkbox
                         id="agreeMarketing"
                         checked={formData.agreeMarketing}
                         onCheckedChange={(checked) => handleChange('agreeMarketing', checked as boolean)}
-                        className="mt-1 border-[#E5E5E5] data-[state=checked]:bg-black data-[state=checked]:border-black"
+                        className="mt-0.5 border-2 border-[#E8E8E8] data-[state=checked]:bg-[#0A0A0A] data-[state=checked]:border-[#0A0A0A]"
                       />
-                      <Label htmlFor="agreeMarketing" className="text-sm cursor-pointer leading-relaxed text-[#6B7280]">
-                        Send me updates about new features and promotions
+                      <Label htmlFor="agreeMarketing" className="text-sm text-[#737373] cursor-pointer leading-relaxed">
+                        I want to receive product updates and marketing communications
                       </Label>
                     </div>
                   </div>
                   
                   <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-black text-white hover:bg-black/90 font-medium"
+                    type="submit"
+                    className="btn-primary w-full h-12"
                     disabled={isLoading || !formData.agreeTerms}
                   >
                     {isLoading ? (
                       <>
-                        <Spinner className="mr-2 w-5 h-5 animate-spin" weight="bold" />
+                        <Spinner className="w-5 h-5 animate-spin mr-2" />
                         Creating account...
                       </>
                     ) : (
                       <>
-                        Create account
+                        Create Account
                         <ArrowRight className="ml-2 w-5 h-5" weight="bold" />
                       </>
                     )}
@@ -850,31 +868,6 @@ export default function Register() {
               </motion.div>
             )}
           </AnimatePresence>
-          
-          <p className="mt-8 text-center text-sm text-[#6B7280]">
-            Already have an account?{' '}
-            <Link href="/login" className="text-black hover:underline font-semibold">
-              Sign in
-            </Link>
-          </p>
-
-          {/* Security Notice */}
-          <div className="mt-8 pt-8 border-t border-[#E5E5E5]">
-            <div className="flex items-center justify-center gap-6 text-xs text-[#9CA3AF]">
-              <div className="flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4" weight="fill" />
-                <span>256-bit SSL</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Lock className="w-4 h-4" weight="fill" />
-                <span>Encrypted</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" weight="fill" />
-                <span>Secure</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
