@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
 
 /**
  * Application Service
- * 
+ *
  * QUALITY FIX [M012]: Enhanced health check with detailed dependency status
  */
 @Injectable()
@@ -17,10 +17,10 @@ export class AppService {
    */
   getHealth() {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+      environment: process.env.NODE_ENV || "development",
     };
   }
 
@@ -29,40 +29,46 @@ export class AppService {
    * QUALITY FIX [M012]: Added comprehensive health checks
    */
   async getDetailedHealth(): Promise<{
-    status: 'healthy' | 'degraded' | 'unhealthy';
+    status: "healthy" | "degraded" | "unhealthy";
     timestamp: string;
     uptime: number;
     environment: string;
     version: string;
     dependencies: {
       database: { status: string; latency?: number; error?: string };
-      memory: { status: string; used: number; total: number; percentage: number };
+      memory: {
+        status: string;
+        used: number;
+        total: number;
+        percentage: number;
+      };
     };
   }> {
     const startTime = Date.now();
     const dependencies: any = {};
-    let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    let overallStatus: "healthy" | "degraded" | "unhealthy" = "healthy";
 
     // Check database connection
     try {
       const dbStart = Date.now();
       await this.prisma.$queryRaw`SELECT 1`;
       const dbLatency = Date.now() - dbStart;
-      
+
       dependencies.database = {
-        status: dbLatency < 100 ? 'healthy' : dbLatency < 500 ? 'degraded' : 'slow',
+        status:
+          dbLatency < 100 ? "healthy" : dbLatency < 500 ? "degraded" : "slow",
         latency: dbLatency,
       };
-      
+
       if (dbLatency >= 500) {
-        overallStatus = 'degraded';
+        overallStatus = "degraded";
       }
     } catch (error) {
       dependencies.database = {
-        status: 'unhealthy',
+        status: "unhealthy",
         error: error.message,
       };
-      overallStatus = 'unhealthy';
+      overallStatus = "unhealthy";
       this.logger.error(`Database health check failed: ${error.message}`);
     }
 
@@ -70,25 +76,32 @@ export class AppService {
     const memUsage = process.memoryUsage();
     const memUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
     const memTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
-    const memPercentage = Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100);
+    const memPercentage = Math.round(
+      (memUsage.heapUsed / memUsage.heapTotal) * 100,
+    );
 
     dependencies.memory = {
-      status: memPercentage < 80 ? 'healthy' : memPercentage < 95 ? 'degraded' : 'critical',
+      status:
+        memPercentage < 80
+          ? "healthy"
+          : memPercentage < 95
+            ? "degraded"
+            : "critical",
       used: memUsedMB,
       total: memTotalMB,
       percentage: memPercentage,
     };
 
     if (memPercentage >= 95) {
-      overallStatus = overallStatus === 'unhealthy' ? 'unhealthy' : 'degraded';
+      overallStatus = overallStatus === "unhealthy" ? "unhealthy" : "degraded";
     }
 
     return {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || "development",
+      version: process.env.npm_package_version || "1.0.0",
       dependencies,
     };
   }
@@ -96,7 +109,10 @@ export class AppService {
   /**
    * Readiness check for Kubernetes/container orchestration
    */
-  async getReadiness(): Promise<{ ready: boolean; checks: Record<string, boolean> }> {
+  async getReadiness(): Promise<{
+    ready: boolean;
+    checks: Record<string, boolean>;
+  }> {
     const checks: Record<string, boolean> = {};
 
     // Check database is ready
@@ -124,10 +140,10 @@ export class AppService {
 
   getInfo() {
     return {
-      name: 'Rekberkan API',
-      version: process.env.npm_package_version || '1.0.0',
-      description: 'P2P Escrow Platform Backend API',
-      documentation: '/api/v1/docs',
+      name: "Rekberkan API",
+      version: process.env.npm_package_version || "1.0.0",
+      description: "P2P Escrow Platform Backend API",
+      documentation: "/api/v1/docs",
     };
   }
 }

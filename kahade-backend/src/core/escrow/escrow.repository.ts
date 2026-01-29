@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma, EscrowHoldStatus } from '@prisma/client';
-import { Currency } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma, EscrowHoldStatus } from "@prisma/client";
+import { Currency } from "@prisma/client";
 
 export interface CreateEscrowData {
   orderId: string;
@@ -15,13 +15,13 @@ export interface CreateEscrowData {
 export interface EscrowFilterOptions {
   walletId: string;
   status?: EscrowHoldStatus;
-  role?: 'as_buyer' | 'as_seller';
+  role?: "as_buyer" | "as_seller";
   dateFrom?: Date;
   dateTo?: Date;
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
 }
 
 export interface PaginatedEscrows {
@@ -41,7 +41,10 @@ export class EscrowRepository {
   /**
    * Create a new escrow hold
    */
-  async create(data: CreateEscrowData, tx?: Prisma.TransactionClient): Promise<any> {
+  async create(
+    data: CreateEscrowData,
+    tx?: Prisma.TransactionClient,
+  ): Promise<any> {
     const prisma = tx ?? this.prisma;
     const timeoutAt = new Date(Date.now() + data.timeoutHours * 60 * 60 * 1000);
 
@@ -51,8 +54,8 @@ export class EscrowRepository {
         buyerWalletId: data.buyerWalletId,
         sellerWalletId: data.sellerWalletId,
         amountMinor: data.amountMinor,
-        currency: data.currency || 'IDR',
-        status: 'ACTIVE',
+        currency: data.currency || "IDR",
+        status: "ACTIVE",
         timeoutAt,
       },
       include: {
@@ -85,7 +88,10 @@ export class EscrowRepository {
   /**
    * Find escrow by ID
    */
-  async findById(id: string, tx?: Prisma.TransactionClient): Promise<any | null> {
+  async findById(
+    id: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<any | null> {
     const prisma = tx ?? this.prisma;
 
     return prisma.escrowHold.findUnique({
@@ -163,7 +169,17 @@ export class EscrowRepository {
    * Find escrows with filters and pagination
    */
   async findMany(options: EscrowFilterOptions): Promise<PaginatedEscrows> {
-    const { walletId, status, role, dateFrom, dateTo, page, limit, sortBy, sortOrder } = options;
+    const {
+      walletId,
+      status,
+      role,
+      dateFrom,
+      dateTo,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = options;
 
     const where: Prisma.EscrowHoldWhereInput = {
       OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
@@ -173,10 +189,10 @@ export class EscrowRepository {
       where.status = status;
     }
 
-    if (role === 'as_buyer') {
+    if (role === "as_buyer") {
       where.buyerWalletId = walletId;
       delete where.OR;
-    } else if (role === 'as_seller') {
+    } else if (role === "as_seller") {
       where.sellerWalletId = walletId;
       delete where.OR;
     }
@@ -252,7 +268,11 @@ export class EscrowRepository {
     };
 
     // Set timestamp based on status
-    if (status === 'RELEASED' || status === 'REFUNDED' || status === 'DISPUTED') {
+    if (
+      status === "RELEASED" ||
+      status === "REFUNDED" ||
+      status === "DISPUTED"
+    ) {
       updateData.resolvedAt = new Date();
     }
 
@@ -303,11 +323,13 @@ export class EscrowRepository {
 
     const escrow = await prisma.escrowHold.findUnique({ where: { id } });
     if (!escrow) {
-      throw new Error('Escrow not found');
+      throw new Error("Escrow not found");
     }
 
     const currentTimeout = escrow.timeoutAt || new Date();
-    const newTimeout = new Date(currentTimeout.getTime() + additionalHours * 60 * 60 * 1000);
+    const newTimeout = new Date(
+      currentTimeout.getTime() + additionalHours * 60 * 60 * 1000,
+    );
 
     return prisma.escrowHold.update({
       where: { id },
@@ -323,7 +345,7 @@ export class EscrowRepository {
   async findPendingTimeout(): Promise<any[]> {
     return this.prisma.escrowHold.findMany({
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         timeoutAt: {
           lte: new Date(),
         },
@@ -354,40 +376,41 @@ export class EscrowRepository {
     totalAmountHeld: bigint;
     totalAmountReleased: bigint;
   }> {
-    const [activeCount, completedCount, disputedCount, activeSum, releasedSum] = await Promise.all([
-      this.prisma.escrowHold.count({
-        where: {
-          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
-          status: 'ACTIVE',
-        },
-      }),
-      this.prisma.escrowHold.count({
-        where: {
-          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
-          status: 'RELEASED',
-        },
-      }),
-      this.prisma.escrowHold.count({
-        where: {
-          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
-          status: 'DISPUTED',
-        },
-      }),
-      this.prisma.escrowHold.aggregate({
-        where: {
-          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
-          status: 'ACTIVE',
-        },
-        _sum: { amountMinor: true },
-      }),
-      this.prisma.escrowHold.aggregate({
-        where: {
-          OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
-          status: 'RELEASED',
-        },
-        _sum: { amountMinor: true },
-      }),
-    ]);
+    const [activeCount, completedCount, disputedCount, activeSum, releasedSum] =
+      await Promise.all([
+        this.prisma.escrowHold.count({
+          where: {
+            OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+            status: "ACTIVE",
+          },
+        }),
+        this.prisma.escrowHold.count({
+          where: {
+            OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+            status: "RELEASED",
+          },
+        }),
+        this.prisma.escrowHold.count({
+          where: {
+            OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+            status: "DISPUTED",
+          },
+        }),
+        this.prisma.escrowHold.aggregate({
+          where: {
+            OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+            status: "ACTIVE",
+          },
+          _sum: { amountMinor: true },
+        }),
+        this.prisma.escrowHold.aggregate({
+          where: {
+            OR: [{ buyerWalletId: walletId }, { sellerWalletId: walletId }],
+            status: "RELEASED",
+          },
+          _sum: { amountMinor: true },
+        }),
+      ]);
 
     return {
       totalActive: activeCount,

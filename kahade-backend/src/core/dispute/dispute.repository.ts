@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Dispute, DisputeStatus, DisputeDecision } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Dispute, DisputeStatus, DisputeDecision } from "@prisma/client";
 
 // ============================================================================
 // BANK-GRADE DISPUTE REPOSITORY
@@ -71,10 +71,10 @@ export class DisputeRepository {
           include: {
             submitter: { select: { id: true, username: true } },
           },
-          orderBy: { submittedAt: 'desc' },
+          orderBy: { submittedAt: "desc" },
         },
         timeline: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -92,12 +92,15 @@ export class DisputeRepository {
     });
   }
 
-  async findAll(skip: number, take: number): Promise<{ disputes: Dispute[]; total: number }> {
+  async findAll(
+    skip: number,
+    take: number,
+  ): Promise<{ disputes: Dispute[]; total: number }> {
     const [disputes, total] = await Promise.all([
       this.prisma.dispute.findMany({
         skip,
         take,
-        orderBy: { openedAt: 'desc' },
+        orderBy: { openedAt: "desc" },
         include: {
           opener: { select: { id: true, username: true, email: true } },
           order: {
@@ -125,7 +128,7 @@ export class DisputeRepository {
         where: { status },
         skip,
         take,
-        orderBy: { openedAt: 'desc' },
+        orderBy: { openedAt: "desc" },
         include: {
           opener: { select: { id: true, username: true, email: true } },
           order: true,
@@ -147,7 +150,7 @@ export class DisputeRepository {
         where: { openedBy: userId },
         skip,
         take,
-        orderBy: { openedAt: 'desc' },
+        orderBy: { openedAt: "desc" },
         include: {
           opener: { select: { id: true, username: true, email: true } },
           order: true,

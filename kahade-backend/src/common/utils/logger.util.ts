@@ -1,6 +1,6 @@
-import { Logger } from '@nestjs/common';
+import { Logger } from "@nestjs/common";
 export class AppLogger extends Logger {
-  constructor(context: string = 'App') {
+  constructor(context: string = "App") {
     super(context);
   }
 }

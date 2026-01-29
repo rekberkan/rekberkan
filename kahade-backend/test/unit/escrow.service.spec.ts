@@ -14,7 +14,7 @@ describe('EscrowService', () => {
   let _walletService: jest.Mocked<WalletService>;
   let _ledgerService: jest.Mocked<LedgerService>;
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     escrowHold: {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
@@ -31,7 +31,7 @@ describe('EscrowService', () => {
     dispute: {
       create: jest.fn(),
     },
-    $transaction: jest.fn((callback) => callback(mockPrismaService)),
+    $transaction: jest.fn((callback: (tx: any) => any) => callback(mockPrismaService)),
   };
 
   const mockWalletService = {

@@ -4,21 +4,21 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { UserService } from '../user/user.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { HashUtil } from '@common/utils/hash.util';
-import { IUserResponse } from '@common/interfaces/user.interface';
-import { TokenBlacklistService } from './token-blacklist.service';
-import { SessionRepository } from './session.repository';
-import { MFAService } from './mfa.service';
-import { BruteForceService } from './brute-force.service';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { UserService } from "../user/user.service";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
+import { HashUtil } from "@common/utils/hash.util";
+import { IUserResponse } from "@common/interfaces/user.interface";
+import { TokenBlacklistService } from "./token-blacklist.service";
+import { SessionRepository } from "./session.repository";
+import { MFAService } from "./mfa.service";
+import { BruteForceService } from "./brute-force.service";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import * as bcrypt from "bcrypt";
+import * as crypto from "crypto";
 
 // ============================================================================
 // AUTH SERVICE - Production Ready
@@ -71,7 +71,7 @@ export class AuthService {
 
     const existingUser = await this.userService.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new BadRequestException('Email already exists');
+      throw new BadRequestException("Email already exists");
     }
 
     const hashedPassword = await HashUtil.hash(registerDto.password);
@@ -110,14 +110,18 @@ export class AuthService {
   // LOGIN WITH BRUTE FORCE PROTECTION
   // ============================================================================
 
-  async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<IAuthResponse> {
+  async login(
+    loginDto: LoginDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<IAuthResponse> {
     const email = loginDto.email.toLowerCase();
 
     // SECURITY FIX [C-02]: Use Redis-based brute force protection for distributed deployments
     const lockStatus = await this.bruteForceService.checkAccountLock(email);
     if (lockStatus.isLocked) {
       throw new ForbiddenException({
-        code: 'ACCOUNT_LOCKED',
+        code: "ACCOUNT_LOCKED",
         message: `Too many failed login attempts. Please try again in ${lockStatus.remainingMinutes} minutes.`,
         lockedUntil: lockStatus.lockedUntil,
       });
@@ -131,14 +135,14 @@ export class AuthService {
       // Use constant-time comparison to prevent timing attacks
       await this.dummyPasswordCheck();
 
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Check if user is suspended
     if (user.suspendedAt) {
       throw new ForbiddenException({
-        code: 'ACCOUNT_SUSPENDED',
-        message: 'Your account has been suspended. Please contact support.',
+        code: "ACCOUNT_SUSPENDED",
+        message: "Your account has been suspended. Please contact support.",
         suspendedUntil: user.suspendedUntil,
         suspendReason: user.suspendReason,
       });
@@ -207,36 +211,43 @@ export class AuthService {
   // TOKEN REFRESH WITH ROTATION
   // ============================================================================
 
-  async refreshToken(refreshToken: string): Promise<ITokenPair & { expiresIn: number }> {
+  async refreshToken(
+    refreshToken: string,
+  ): Promise<ITokenPair & { expiresIn: number }> {
     try {
       // Verify token exists in cache/DB before refresh
-      const userId = await this.tokenBlacklistService.validateRefreshToken(refreshToken);
+      const userId =
+        await this.tokenBlacklistService.validateRefreshToken(refreshToken);
       if (!userId) {
-        throw new UnauthorizedException('Invalid or expired refresh token');
+        throw new UnauthorizedException("Invalid or expired refresh token");
       }
 
       // Verify DB session
       const dbSession = await this.sessionRepository.findByToken(refreshToken);
-      if (!dbSession || dbSession.revokedAt || new Date(dbSession.expiresAt) < new Date()) {
-        throw new UnauthorizedException('Session invalid or expired');
+      if (
+        !dbSession ||
+        dbSession.revokedAt ||
+        new Date(dbSession.expiresAt) < new Date()
+      ) {
+        throw new UnauthorizedException("Session invalid or expired");
       }
 
       const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get<string>('jwt.refreshSecret'),
+        secret: this.configService.get<string>("jwt.refreshSecret"),
       });
 
       if (payload.sub !== userId) {
-        throw new UnauthorizedException('Token mismatch');
+        throw new UnauthorizedException("Token mismatch");
       }
 
       const user = await this.userService.findById(payload.sub);
       if (!user) {
-        throw new UnauthorizedException('User not found');
+        throw new UnauthorizedException("User not found");
       }
 
       // Check if user is suspended
       if (user.suspendedAt) {
-        throw new ForbiddenException('Account suspended');
+        throw new ForbiddenException("Account suspended");
       }
 
       // Revoke old refresh token (rotation)
@@ -264,7 +275,7 @@ export class AuthService {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException("Invalid refresh token");
     }
   }
 
@@ -278,10 +289,13 @@ export class AuthService {
     refreshToken?: string,
   ): Promise<{ message: string }> {
     // Blacklist the access token
-    const expiresIn = this.configService.get<string>('jwt.expiresIn', '15m');
+    const expiresIn = this.configService.get<string>("jwt.expiresIn", "15m");
     const expiresInSeconds = this.parseExpirationToSeconds(expiresIn);
 
-    await this.tokenBlacklistService.blacklistToken(accessToken, expiresInSeconds);
+    await this.tokenBlacklistService.blacklistToken(
+      accessToken,
+      expiresInSeconds,
+    );
 
     if (refreshToken) {
       await this.tokenBlacklistService.revokeRefreshToken(refreshToken);
@@ -290,7 +304,7 @@ export class AuthService {
 
     this.logger.log(`User ${userId} logged out`);
 
-    return { message: 'Successfully logged out' };
+    return { message: "Successfully logged out" };
   }
 
   async logoutAll(
@@ -298,18 +312,23 @@ export class AuthService {
     currentAccessToken: string,
   ): Promise<{ message: string; sessionsRevoked: number }> {
     // Blacklist current access token
-    const expiresIn = this.configService.get<string>('jwt.expiresIn', '15m');
+    const expiresIn = this.configService.get<string>("jwt.expiresIn", "15m");
     const expiresInSeconds = this.parseExpirationToSeconds(expiresIn);
-    await this.tokenBlacklistService.blacklistToken(currentAccessToken, expiresInSeconds);
+    await this.tokenBlacklistService.blacklistToken(
+      currentAccessToken,
+      expiresInSeconds,
+    );
 
     // Revoke all sessions for this user
     const revokedCount = await this.sessionRepository.revokeAllByUserId(userId);
     await this.tokenBlacklistService.revokeAllUserTokens(userId);
 
-    this.logger.log(`User ${userId} logged out from all ${revokedCount} sessions`);
+    this.logger.log(
+      `User ${userId} logged out from all ${revokedCount} sessions`,
+    );
 
     return {
-      message: 'Successfully logged out from all devices',
+      message: "Successfully logged out from all devices",
       sessionsRevoked: revokedCount,
     };
   }
@@ -325,22 +344,27 @@ export class AuthService {
   ): Promise<{ message: string }> {
     const user = await this.userService.findById(userId);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException("User not found");
     }
 
     // Verify current password
     const isValid = await HashUtil.compare(currentPassword, user.passwordHash);
     if (!isValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new UnauthorizedException("Current password is incorrect");
     }
 
     // Validate new password strength
     this.validatePasswordStrength(newPassword);
 
     // Ensure new password is different
-    const isSamePassword = await HashUtil.compare(newPassword, user.passwordHash);
+    const isSamePassword = await HashUtil.compare(
+      newPassword,
+      user.passwordHash,
+    );
     if (isSamePassword) {
-      throw new BadRequestException('New password must be different from current password');
+      throw new BadRequestException(
+        "New password must be different from current password",
+      );
     }
 
     // Hash and update password
@@ -353,7 +377,7 @@ export class AuthService {
 
     this.logger.log(`Password changed for user ${userId}`);
 
-    return { message: 'Password changed successfully. Please log in again.' };
+    return { message: "Password changed successfully. Please log in again." };
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
@@ -361,12 +385,18 @@ export class AuthService {
 
     // Always return success to prevent email enumeration
     if (!user) {
-      return { message: 'If an account exists with this email, a reset link has been sent.' };
+      return {
+        message:
+          "If an account exists with this email, a reset link has been sent.",
+      };
     }
 
     // Generate secure reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
     // Store reset token (expires in 1 hour)
     await this.userService.setPasswordResetToken(
@@ -380,17 +410,23 @@ export class AuthService {
 
     this.logger.log(`Password reset requested for ${email}`);
 
-    return { message: 'If an account exists with this email, a reset link has been sent.' };
+    return {
+      message:
+        "If an account exists with this email, a reset link has been sent.",
+    };
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     // Hash the provided token
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     // Find user with valid reset token
     const user = await this.userService.findByPasswordResetToken(tokenHash);
     if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new BadRequestException("Invalid or expired reset token");
     }
 
     // Validate new password
@@ -412,7 +448,10 @@ export class AuthService {
 
     this.logger.log(`Password reset completed for user ${user.id}`);
 
-    return { message: 'Password reset successfully. Please log in with your new password.' };
+    return {
+      message:
+        "Password reset successfully. Please log in with your new password.",
+    };
   }
 
   // ============================================================================
@@ -421,17 +460,17 @@ export class AuthService {
 
   async verifyEmail(token: string): Promise<{ message: string }> {
     // Hash the provided token
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     // Find user with valid verification token
     const user = await this.userService.findByEmailVerificationToken(tokenHash);
     if (!user) {
-      throw new BadRequestException('Invalid or expired verification token');
+      throw new BadRequestException("Invalid or expired verification token");
     }
 
     // Check if already verified
     if (user.emailVerifiedAt) {
-      return { message: 'Email already verified' };
+      return { message: "Email already verified" };
     }
 
     // Mark email as verified
@@ -439,7 +478,7 @@ export class AuthService {
 
     this.logger.log(`Email verified for user ${user.id}`);
 
-    return { message: 'Email verified successfully' };
+    return { message: "Email verified successfully" };
   }
 
   async resendVerificationEmail(email: string): Promise<{ message: string }> {
@@ -448,23 +487,25 @@ export class AuthService {
     // Always return success to prevent email enumeration
     if (!user) {
       return {
-        message: 'If an account exists with this email, a verification link has been sent.',
+        message:
+          "If an account exists with this email, a verification link has been sent.",
       };
     }
 
     // Check if already verified
     if (user.emailVerifiedAt) {
       return {
-        message: 'If an account exists with this email, a verification link has been sent.',
+        message:
+          "If an account exists with this email, a verification link has been sent.",
       };
     }
 
     // Generate secure verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenHash = crypto
-      .createHash('sha256')
+      .createHash("sha256")
       .update(verificationToken)
-      .digest('hex');
+      .digest("hex");
 
     // Store verification token (expires in 24 hours)
     await this.userService.setEmailVerificationToken(
@@ -478,7 +519,10 @@ export class AuthService {
 
     this.logger.log(`Verification email resent to ${email}`);
 
-    return { message: 'If an account exists with this email, a verification link has been sent.' };
+    return {
+      message:
+        "If an account exists with this email, a verification link has been sent.",
+    };
   }
 
   // ============================================================================
@@ -488,11 +532,14 @@ export class AuthService {
   async setupMfa(userId: string) {
     const user = await this.userService.findById(userId);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException("User not found");
     }
 
     const setup = await this.mfaService.setupMFA(user.id, user.email);
-    const backupCodes = setup.backupCodes.map((hash) => ({ hash, used: false }));
+    const backupCodes = setup.backupCodes.map((hash) => ({
+      hash,
+      used: false,
+    }));
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -513,7 +560,7 @@ export class AuthService {
   async enableMfa(userId: string, code: string): Promise<{ message: string }> {
     const user = await this.userService.findById(userId);
     if (!user?.totpSecretEnc) {
-      throw new BadRequestException('MFA setup is required before enabling');
+      throw new BadRequestException("MFA setup is required before enabling");
     }
 
     await this.verifyMfaOrThrow(user, code);
@@ -523,18 +570,22 @@ export class AuthService {
       data: { mfaEnabled: true },
     });
 
-    return { message: 'MFA enabled successfully' };
+    return { message: "MFA enabled successfully" };
   }
 
-  async disableMfa(userId: string, password: string, code: string): Promise<{ message: string }> {
+  async disableMfa(
+    userId: string,
+    password: string,
+    code: string,
+  ): Promise<{ message: string }> {
     const user = await this.userService.findById(userId);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException("User not found");
     }
 
     const isPasswordValid = await HashUtil.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new UnauthorizedException("Current password is incorrect");
     }
 
     await this.verifyMfaOrThrow(user, code);
@@ -548,30 +599,37 @@ export class AuthService {
       },
     });
 
-    return { message: 'MFA disabled successfully' };
+    return { message: "MFA disabled successfully" };
   }
 
   async listSessions(userId: string) {
     return this.sessionRepository.findActiveByUserId(userId);
   }
 
-  async revokeSession(userId: string, sessionId: string): Promise<{ message: string }> {
+  async revokeSession(
+    userId: string,
+    sessionId: string,
+  ): Promise<{ message: string }> {
     const session = await this.sessionRepository.findById(sessionId);
     if (!session || session.userId !== userId) {
-      throw new BadRequestException('Session not found');
+      throw new BadRequestException("Session not found");
     }
 
     await this.sessionRepository.revokeById(sessionId, userId);
-    await this.tokenBlacklistService.revokeRefreshTokenHash(session.refreshHash);
+    await this.tokenBlacklistService.revokeRefreshTokenHash(
+      session.refreshHash,
+    );
 
-    return { message: 'Session revoked' };
+    return { message: "Session revoked" };
   }
 
-  async revokeAllSessions(userId: string): Promise<{ message: string; sessionsRevoked: number }> {
+  async revokeAllSessions(
+    userId: string,
+  ): Promise<{ message: string; sessionsRevoked: number }> {
     const revokedCount = await this.sessionRepository.revokeAllByUserId(userId);
     await this.tokenBlacklistService.revokeAllUserTokens(userId);
 
-    return { message: 'All sessions revoked', sessionsRevoked: revokedCount };
+    return { message: "All sessions revoked", sessionsRevoked: revokedCount };
   }
 
   // ============================================================================
@@ -617,7 +675,10 @@ export class AuthService {
     }
 
     // Reset count if outside attempt window
-    if (now.getTime() - attempts.lastAttempt.getTime() > this.ATTEMPT_WINDOW_MS) {
+    if (
+      now.getTime() - attempts.lastAttempt.getTime() >
+      this.ATTEMPT_WINDOW_MS
+    ) {
       this.failedAttempts.set(email, { count: 1, lastAttempt: now });
       return;
     }
@@ -629,14 +690,19 @@ export class AuthService {
     // Lock account if max attempts reached
     if (attempts.count >= this.MAX_FAILED_ATTEMPTS) {
       attempts.lockedUntil = new Date(now.getTime() + this.LOCKOUT_DURATION_MS);
-      this.logger.warn(`Account ${email} locked due to ${attempts.count} failed attempts`);
+      this.logger.warn(
+        `Account ${email} locked due to ${attempts.count} failed attempts`,
+      );
     }
 
     this.failedAttempts.set(email, attempts);
   }
 
   private async dummyPasswordCheck(): Promise<void> {
-    await bcrypt.compare('dummy', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtYA/VTtYA/VT');
+    await bcrypt.compare(
+      "dummy",
+      "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtYA/VTtYA/VT",
+    );
   }
 
   private validatePasswordStrength(password: string): void {
@@ -652,55 +718,74 @@ export class AuthService {
       errors.push(`Password must be at least ${minLength} characters`);
     }
     if (!hasUppercase) {
-      errors.push('Password must contain at least one uppercase letter');
+      errors.push("Password must contain at least one uppercase letter");
     }
     if (!hasLowercase) {
-      errors.push('Password must contain at least one lowercase letter');
+      errors.push("Password must contain at least one lowercase letter");
     }
     if (!hasNumber) {
-      errors.push('Password must contain at least one number');
+      errors.push("Password must contain at least one number");
     }
     if (!hasSpecial) {
-      errors.push('Password must contain at least one special character');
+      errors.push("Password must contain at least one special character");
     }
 
     // Check for common passwords
-    const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+    const commonPasswords = [
+      "password",
+      "123456",
+      "qwerty",
+      "admin",
+      "letmein",
+    ];
     if (commonPasswords.some((p) => password.toLowerCase().includes(p))) {
-      errors.push('Password is too common');
+      errors.push("Password is too common");
     }
 
     if (errors.length > 0) {
       throw new BadRequestException({
-        code: 'WEAK_PASSWORD',
-        message: 'Password does not meet security requirements',
+        code: "WEAK_PASSWORD",
+        message: "Password does not meet security requirements",
         errors,
       });
     }
   }
 
-  private async generateTokens(userId: string, email: string): Promise<ITokenPair> {
+  private async generateTokens(
+    userId: string,
+    email: string,
+  ): Promise<ITokenPair> {
     const payload = { sub: userId, email };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('jwt.secret'),
-        expiresIn: this.configService.get<string>('jwt.expiresIn', '15m'),
+        secret: this.configService.get<string>("jwt.secret"),
+        expiresIn: this.configService.get<string>("jwt.expiresIn", "15m"),
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('jwt.refreshSecret'),
-        expiresIn: this.configService.get<string>('jwt.refreshExpiresIn', '7d'),
+        secret: this.configService.get<string>("jwt.refreshSecret"),
+        expiresIn: this.configService.get<string>("jwt.refreshExpiresIn", "7d"),
       }),
     ]);
 
     return { accessToken, refreshToken };
   }
 
-  private async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const expiresIn = this.configService.get<string>('jwt.refreshExpiresIn', '7d');
+  private async storeRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    const expiresIn = this.configService.get<string>(
+      "jwt.refreshExpiresIn",
+      "7d",
+    );
     const expiresInSeconds = this.parseExpirationToSeconds(expiresIn);
 
-    await this.tokenBlacklistService.storeRefreshToken(userId, refreshToken, expiresInSeconds);
+    await this.tokenBlacklistService.storeRefreshToken(
+      userId,
+      refreshToken,
+      expiresInSeconds,
+    );
   }
 
   private parseExpirationToSeconds(expiration: string): number {
@@ -708,13 +793,13 @@ export class AuthService {
     const value = parseInt(expiration.slice(0, -1), 10);
 
     switch (unit) {
-      case 's':
+      case "s":
         return value;
-      case 'm':
+      case "m":
         return value * 60;
-      case 'h':
+      case "h":
         return value * 3600;
-      case 'd':
+      case "d":
         return value * 86400;
       default:
         return 900; // 15 minutes default
@@ -722,13 +807,18 @@ export class AuthService {
   }
 
   private async verifyMfaOrThrow(
-    user: { id: string; mfaEnabled: boolean; totpSecretEnc?: string | null; backupCodesHash?: any },
+    user: {
+      id: string;
+      mfaEnabled: boolean;
+      totpSecretEnc?: string | null;
+      backupCodesHash?: any;
+    },
     code?: string,
   ) {
     if (!code) {
       throw new UnauthorizedException({
-        code: 'MFA_TOKEN_REQUIRED',
-        message: 'MFA token required',
+        code: "MFA_TOKEN_REQUIRED",
+        message: "MFA token required",
       });
     }
 
@@ -736,14 +826,19 @@ export class AuthService {
     let valid = false;
 
     if (user.totpSecretEnc) {
-      valid = await this.mfaService.verifyTOTP(user.totpSecretEnc, normalizedCode);
+      valid = await this.mfaService.verifyTOTP(
+        user.totpSecretEnc,
+        normalizedCode,
+      );
     }
 
     if (!valid && user.backupCodesHash) {
-      const backupCodes = user.backupCodesHash as { hash: string; used?: boolean }[] | string[];
+      const backupCodes = user.backupCodesHash as
+        | { hash: string; used?: boolean }[]
+        | string[];
 
       if (Array.isArray(backupCodes) && backupCodes.length > 0) {
-        if (typeof backupCodes[0] === 'string') {
+        if (typeof backupCodes[0] === "string") {
           for (let i = 0; i < backupCodes.length; i++) {
             const isValid = await this.mfaService.verifyBackupCode(
               [backupCodes[i] as string],
@@ -764,9 +859,15 @@ export class AuthService {
           for (let i = 0; i < hashedCodes.length; i++) {
             const entry = hashedCodes[i];
             if (entry.used) continue;
-            let isValid = await this.mfaService.verifyBackupCode([entry.hash], normalizedCode);
+            let isValid = await this.mfaService.verifyBackupCode(
+              [entry.hash],
+              normalizedCode,
+            );
             if (!isValid.valid) {
-              const codeHash = crypto.createHash('sha256').update(normalizedCode).digest('hex');
+              const codeHash = crypto
+                .createHash("sha256")
+                .update(normalizedCode)
+                .digest("hex");
               isValid = { valid: entry.hash === codeHash };
             }
             if (isValid.valid) {
@@ -785,8 +886,8 @@ export class AuthService {
 
     if (!valid) {
       throw new UnauthorizedException({
-        code: 'MFA_INVALID',
-        message: 'Invalid MFA token',
+        code: "MFA_INVALID",
+        message: "Invalid MFA token",
       });
     }
   }

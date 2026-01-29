@@ -1,14 +1,14 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, ServiceUnavailableException } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import {
   HealthCheck,
   HealthCheckService,
   HttpHealthIndicator,
   MemoryHealthIndicator,
   DiskHealthIndicator,
-} from '@nestjs/terminus';
-import { PrismaHealthIndicator } from './prisma-health.indicator';
-import { RedisHealthIndicator } from './redis-health.indicator';
+} from "@nestjs/terminus";
+import { PrismaHealthIndicator } from "./prisma-health.indicator";
+import { RedisHealthIndicator } from "./redis-health.indicator";
 
 // ============================================================================
 // HEALTH CHECK CONTROLLER
@@ -16,8 +16,8 @@ import { RedisHealthIndicator } from './redis-health.indicator';
 // Fix #88: Comprehensive health check endpoint for monitoring
 // ============================================================================
 
-@ApiTags('Health')
-@Controller('health')
+@ApiTags("Health")
+@Controller("health")
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
@@ -33,11 +33,11 @@ export class HealthController {
    * Returns 200 if the application is running
    */
   @Get()
-  @ApiOperation({ summary: 'Basic health check' })
-  @ApiResponse({ status: 200, description: 'Application is healthy' })
+  @ApiOperation({ summary: "Basic health check" })
+  @ApiResponse({ status: 200, description: "Application is healthy" })
   async check() {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
     };
   }
@@ -46,27 +46,30 @@ export class HealthController {
    * Detailed health check - for monitoring systems
    * Checks all dependencies
    */
-  @Get('detailed')
+  @Get("detailed")
   @HealthCheck()
-  @ApiOperation({ summary: 'Detailed health check with all dependencies' })
-  @ApiResponse({ status: 200, description: 'All services are healthy' })
-  @ApiResponse({ status: 503, description: 'One or more services are unhealthy' })
+  @ApiOperation({ summary: "Detailed health check with all dependencies" })
+  @ApiResponse({ status: 200, description: "All services are healthy" })
+  @ApiResponse({
+    status: 503,
+    description: "One or more services are unhealthy",
+  })
   async checkDetailed() {
     return this.health.check([
       // Database health
-      () => this.prisma.isHealthy('database'),
+      () => this.prisma.isHealthy("database"),
 
       // Redis health
-      () => this.redis.isHealthy('redis'),
+      () => this.redis.isHealthy("redis"),
 
       // Memory health (warn if heap > 300MB, fail if > 500MB)
-      () => this.memory.checkHeap('memory_heap', 500 * 1024 * 1024),
-      () => this.memory.checkRSS('memory_rss', 1024 * 1024 * 1024), // 1GB RSS limit
+      () => this.memory.checkHeap("memory_heap", 500 * 1024 * 1024),
+      () => this.memory.checkRSS("memory_rss", 1024 * 1024 * 1024), // 1GB RSS limit
 
       // Disk health (fail if disk usage > 90%)
       () =>
-        this.disk.checkStorage('disk', {
-          path: '/',
+        this.disk.checkStorage("disk", {
+          path: "/",
           thresholdPercent: 0.9,
         }),
     ]);
@@ -76,12 +79,12 @@ export class HealthController {
    * Liveness probe - for Kubernetes
    * Returns 200 if the application process is running
    */
-  @Get('live')
-  @ApiOperation({ summary: 'Liveness probe for Kubernetes' })
-  @ApiResponse({ status: 200, description: 'Application is alive' })
+  @Get("live")
+  @ApiOperation({ summary: "Liveness probe for Kubernetes" })
+  @ApiResponse({ status: 200, description: "Application is alive" })
   async liveness() {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
     };
   }
@@ -90,21 +93,21 @@ export class HealthController {
    * Readiness probe - for Kubernetes
    * Returns 200 if the application is ready to accept traffic
    */
-  @Get('ready')
+  @Get("ready")
   @HealthCheck()
-  @ApiOperation({ summary: 'Readiness probe for Kubernetes' })
-  @ApiResponse({ status: 200, description: 'Application is ready' })
-  @ApiResponse({ status: 503, description: 'Application is not ready' })
+  @ApiOperation({ summary: "Readiness probe for Kubernetes" })
+  @ApiResponse({ status: 200, description: "Application is ready" })
+  @ApiResponse({ status: 503, description: "Application is not ready" })
   async readiness() {
     try {
       const result = await this.health.check([
-        () => this.prisma.isHealthy('database'),
-        () => this.redis.isHealthy('redis'),
+        () => this.prisma.isHealthy("database"),
+        () => this.redis.isHealthy("redis"),
       ]);
 
       return result;
     } catch (error) {
-      throw new ServiceUnavailableException('Application not ready');
+      throw new ServiceUnavailableException("Application not ready");
     }
   }
 
@@ -112,24 +115,24 @@ export class HealthController {
    * Startup probe - for Kubernetes
    * Returns 200 once the application has fully started
    */
-  @Get('startup')
-  @ApiOperation({ summary: 'Startup probe for Kubernetes' })
-  @ApiResponse({ status: 200, description: 'Application has started' })
+  @Get("startup")
+  @ApiOperation({ summary: "Startup probe for Kubernetes" })
+  @ApiResponse({ status: 200, description: "Application has started" })
   async startup() {
     // Check if critical services are initialized
     const checks = await Promise.allSettled([
-      this.prisma.isHealthy('database'),
-      this.redis.isHealthy('redis'),
+      this.prisma.isHealthy("database"),
+      this.redis.isHealthy("redis"),
     ]);
 
-    const allHealthy = checks.every((c) => c.status === 'fulfilled');
+    const allHealthy = checks.every((c) => c.status === "fulfilled");
 
     if (!allHealthy) {
-      throw new ServiceUnavailableException('Application still starting');
+      throw new ServiceUnavailableException("Application still starting");
     }
 
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
     };
   }

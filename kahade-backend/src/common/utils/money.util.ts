@@ -39,7 +39,7 @@ export class MoneyUtil {
   static subtract(a: bigint, b: bigint): bigint {
     const result = a - b;
     if (result < BigInt(0)) {
-      throw new Error('Subtraction resulted in negative amount');
+      throw new Error("Subtraction resulted in negative amount");
     }
     return result;
   }
@@ -72,7 +72,7 @@ export class MoneyUtil {
    */
   static format(amountMinor: bigint, includeSymbol = true): string {
     const idr = this.toIDR(amountMinor);
-    const formatted = idr.toLocaleString('id-ID', {
+    const formatted = idr.toLocaleString("id-ID", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
@@ -85,7 +85,7 @@ export class MoneyUtil {
    */
   static validatePositive(amount: bigint): void {
     if (amount <= BigInt(0)) {
-      throw new Error('Amount must be positive');
+      throw new Error("Amount must be positive");
     }
   }
 
@@ -94,7 +94,7 @@ export class MoneyUtil {
    */
   static validateNonNegative(amount: bigint): void {
     if (amount < BigInt(0)) {
-      throw new Error('Amount cannot be negative');
+      throw new Error("Amount cannot be negative");
     }
   }
 

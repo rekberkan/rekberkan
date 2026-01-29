@@ -1,7 +1,7 @@
-import { Injectable, Inject, Logger, OnModuleDestroy } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { Redis } from 'ioredis';
+import { Injectable, Inject, Logger, OnModuleDestroy } from "@nestjs/common";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
+import { Redis } from "ioredis";
 
 // ============================================================================
 // BANK-GRADE CACHE SERVICE
@@ -116,11 +116,11 @@ export class CacheService implements OnModuleDestroy {
         const result = await this.redisClient.set(
           key,
           JSON.stringify(value),
-          'EX',
+          "EX",
           ttlSeconds,
-          'NX',
+          "NX",
         );
-        return result === 'OK';
+        return result === "OK";
       } catch (error) {
         this.logger.warn(`Redis setnx error: ${error.message}`);
       }
@@ -233,10 +233,10 @@ export class CacheService implements OnModuleDestroy {
         return await this.redisClient.ping();
       }
       // Fallback: try to get/set a test key
-      await this.set('health-check', 'ok', 5);
-      const result = await this.get('health-check');
-      await this.del('health-check');
-      return result === 'ok' ? 'PONG' : 'ERROR';
+      await this.set("health-check", "ok", 5);
+      const result = await this.get("health-check");
+      await this.del("health-check");
+      return result === "ok" ? "PONG" : "ERROR";
     } catch (error) {
       throw new Error(`Redis ping failed: ${error.message}`);
     }
@@ -253,7 +253,7 @@ export class CacheService implements OnModuleDestroy {
 
     try {
       if (this.redisClient && this.redisClient.info) {
-        const info = await this.redisClient.info('stats');
+        const info = await this.redisClient.info("stats");
         stats.redisInfo = info;
       }
     } catch (error) {

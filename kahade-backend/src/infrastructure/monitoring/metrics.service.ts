@@ -1,5 +1,5 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 // ============================================================================
 // METRICS SERVICE
@@ -11,9 +11,9 @@ import { ConfigService } from '@nestjs/config';
  * Metric types
  */
 export enum MetricType {
-  COUNTER = 'counter',
-  GAUGE = 'gauge',
-  HISTOGRAM = 'histogram',
+  COUNTER = "counter",
+  GAUGE = "gauge",
+  HISTOGRAM = "histogram",
 }
 
 /**
@@ -35,14 +35,16 @@ export class MetricsService implements OnModuleInit {
   private readonly labels = new Map<string, Record<string, string>>();
 
   // Default histogram buckets for response times (in ms)
-  private readonly defaultBuckets = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
+  private readonly defaultBuckets = [
+    5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000,
+  ];
 
   constructor(private readonly configService: ConfigService) {}
 
   onModuleInit() {
     // Initialize default metrics
     this.initializeDefaultMetrics();
-    this.logger.log('Metrics service initialized');
+    this.logger.log("Metrics service initialized");
   }
 
   /**
@@ -50,34 +52,38 @@ export class MetricsService implements OnModuleInit {
    */
   private initializeDefaultMetrics(): void {
     // HTTP metrics
-    this.createCounter('http_requests_total', { method: '', path: '', status: '' });
-    this.createHistogram('http_request_duration_ms', { method: '', path: '' });
+    this.createCounter("http_requests_total", {
+      method: "",
+      path: "",
+      status: "",
+    });
+    this.createHistogram("http_request_duration_ms", { method: "", path: "" });
 
     // Database metrics
-    this.createCounter('db_queries_total', { operation: '' });
-    this.createHistogram('db_query_duration_ms', { operation: '' });
-    this.createGauge('db_pool_connections_active', {});
-    this.createGauge('db_pool_connections_idle', {});
+    this.createCounter("db_queries_total", { operation: "" });
+    this.createHistogram("db_query_duration_ms", { operation: "" });
+    this.createGauge("db_pool_connections_active", {});
+    this.createGauge("db_pool_connections_idle", {});
 
     // Cache metrics
-    this.createCounter('cache_hits_total', {});
-    this.createCounter('cache_misses_total', {});
+    this.createCounter("cache_hits_total", {});
+    this.createCounter("cache_misses_total", {});
 
     // Business metrics
-    this.createCounter('orders_created_total', { category: '' });
-    this.createCounter('escrow_released_total', {});
-    this.createCounter('escrow_refunded_total', {});
-    this.createCounter('disputes_opened_total', {});
-    this.createGauge('active_escrows_count', {});
-    this.createGauge('pending_withdrawals_count', {});
+    this.createCounter("orders_created_total", { category: "" });
+    this.createCounter("escrow_released_total", {});
+    this.createCounter("escrow_refunded_total", {});
+    this.createCounter("disputes_opened_total", {});
+    this.createGauge("active_escrows_count", {});
+    this.createGauge("pending_withdrawals_count", {});
 
     // Auth metrics
-    this.createCounter('auth_login_success_total', {});
-    this.createCounter('auth_login_failed_total', {});
-    this.createCounter('auth_register_total', {});
+    this.createCounter("auth_login_success_total", {});
+    this.createCounter("auth_login_failed_total", {});
+    this.createCounter("auth_register_total", {});
 
     // Error metrics
-    this.createCounter('errors_total', { type: '', code: '' });
+    this.createCounter("errors_total", { type: "", code: "" });
   }
 
   /**
@@ -94,7 +100,11 @@ export class MetricsService implements OnModuleInit {
   /**
    * Increment a counter
    */
-  incrementCounter(name: string, labels: Record<string, string> = {}, value = 1): void {
+  incrementCounter(
+    name: string,
+    labels: Record<string, string> = {},
+    value = 1,
+  ): void {
     const key = this.buildKey(name, labels);
     const current = this.counters.get(key) || 0;
     this.counters.set(key, current + value);
@@ -115,7 +125,11 @@ export class MetricsService implements OnModuleInit {
   /**
    * Set a gauge value
    */
-  setGauge(name: string, value: number, labels: Record<string, string> = {}): void {
+  setGauge(
+    name: string,
+    value: number,
+    labels: Record<string, string> = {},
+  ): void {
     const key = this.buildKey(name, labels);
     this.gauges.set(key, value);
     this.labels.set(key, labels);
@@ -124,7 +138,11 @@ export class MetricsService implements OnModuleInit {
   /**
    * Increment a gauge
    */
-  incrementGauge(name: string, labels: Record<string, string> = {}, value = 1): void {
+  incrementGauge(
+    name: string,
+    labels: Record<string, string> = {},
+    value = 1,
+  ): void {
     const key = this.buildKey(name, labels);
     const current = this.gauges.get(key) || 0;
     this.gauges.set(key, current + value);
@@ -133,7 +151,11 @@ export class MetricsService implements OnModuleInit {
   /**
    * Decrement a gauge
    */
-  decrementGauge(name: string, labels: Record<string, string> = {}, value = 1): void {
+  decrementGauge(
+    name: string,
+    labels: Record<string, string> = {},
+    value = 1,
+  ): void {
     const key = this.buildKey(name, labels);
     const current = this.gauges.get(key) || 0;
     this.gauges.set(key, current - value);
@@ -142,7 +164,11 @@ export class MetricsService implements OnModuleInit {
   /**
    * Create a histogram metric
    */
-  createHistogram(name: string, labels: Record<string, string>, buckets?: number[]): void {
+  createHistogram(
+    name: string,
+    labels: Record<string, string>,
+    buckets?: number[],
+  ): void {
     const key = this.buildKey(name, labels);
     if (!this.histograms.has(key)) {
       const b = buckets || this.defaultBuckets;
@@ -159,7 +185,11 @@ export class MetricsService implements OnModuleInit {
   /**
    * Observe a histogram value
    */
-  observeHistogram(name: string, value: number, labels: Record<string, string> = {}): void {
+  observeHistogram(
+    name: string,
+    value: number,
+    labels: Record<string, string> = {},
+  ): void {
     const key = this.buildKey(name, labels);
     let histogram = this.histograms.get(key);
 
@@ -181,18 +211,26 @@ export class MetricsService implements OnModuleInit {
   /**
    * Record HTTP request metrics
    */
-  recordHttpRequest(method: string, path: string, statusCode: number, durationMs: number): void {
+  recordHttpRequest(
+    method: string,
+    path: string,
+    statusCode: number,
+    durationMs: number,
+  ): void {
     const labels = { method, path, status: statusCode.toString() };
-    this.incrementCounter('http_requests_total', labels);
-    this.observeHistogram('http_request_duration_ms', durationMs, { method, path });
+    this.incrementCounter("http_requests_total", labels);
+    this.observeHistogram("http_request_duration_ms", durationMs, {
+      method,
+      path,
+    });
   }
 
   /**
    * Record database query metrics
    */
   recordDbQuery(operation: string, durationMs: number): void {
-    this.incrementCounter('db_queries_total', { operation });
-    this.observeHistogram('db_query_duration_ms', durationMs, { operation });
+    this.incrementCounter("db_queries_total", { operation });
+    this.observeHistogram("db_query_duration_ms", durationMs, { operation });
   }
 
   /**
@@ -200,9 +238,9 @@ export class MetricsService implements OnModuleInit {
    */
   recordCacheAccess(hit: boolean): void {
     if (hit) {
-      this.incrementCounter('cache_hits_total');
+      this.incrementCounter("cache_hits_total");
     } else {
-      this.incrementCounter('cache_misses_total');
+      this.incrementCounter("cache_misses_total");
     }
   }
 
@@ -210,7 +248,7 @@ export class MetricsService implements OnModuleInit {
    * Record error
    */
   recordError(type: string, code: string): void {
-    this.incrementCounter('errors_total', { type, code });
+    this.incrementCounter("errors_total", { type, code });
   }
 
   /**
@@ -222,21 +260,21 @@ export class MetricsService implements OnModuleInit {
 
     // Counters
     for (const [key, value] of this.counters) {
-      const [name] = key.split('{');
+      const [name] = key.split("{");
       const labels = this.labels.get(key) || {};
-      lines.push(this.formatMetric(name, 'counter', value, labels, timestamp));
+      lines.push(this.formatMetric(name, "counter", value, labels, timestamp));
     }
 
     // Gauges
     for (const [key, value] of this.gauges) {
-      const [name] = key.split('{');
+      const [name] = key.split("{");
       const labels = this.labels.get(key) || {};
-      lines.push(this.formatMetric(name, 'gauge', value, labels, timestamp));
+      lines.push(this.formatMetric(name, "gauge", value, labels, timestamp));
     }
 
     // Histograms
     for (const [key, histogram] of this.histograms) {
-      const [name] = key.split('{');
+      const [name] = key.split("{");
       const labels = this.labels.get(key) || {};
 
       // Bucket values
@@ -245,7 +283,7 @@ export class MetricsService implements OnModuleInit {
         lines.push(
           this.formatMetric(
             `${name}_bucket`,
-            'histogram',
+            "histogram",
             histogram.values[i],
             bucketLabels,
             timestamp,
@@ -257,21 +295,35 @@ export class MetricsService implements OnModuleInit {
       lines.push(
         this.formatMetric(
           `${name}_bucket`,
-          'histogram',
+          "histogram",
           histogram.count,
-          { ...labels, le: '+Inf' },
+          { ...labels, le: "+Inf" },
           timestamp,
         ),
       );
 
       // Sum and count
-      lines.push(this.formatMetric(`${name}_sum`, 'histogram', histogram.sum, labels, timestamp));
       lines.push(
-        this.formatMetric(`${name}_count`, 'histogram', histogram.count, labels, timestamp),
+        this.formatMetric(
+          `${name}_sum`,
+          "histogram",
+          histogram.sum,
+          labels,
+          timestamp,
+        ),
+      );
+      lines.push(
+        this.formatMetric(
+          `${name}_count`,
+          "histogram",
+          histogram.count,
+          labels,
+          timestamp,
+        ),
       );
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -281,7 +333,7 @@ export class MetricsService implements OnModuleInit {
     const labelStr = Object.entries(labels)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}="${v}"`)
-      .join(',');
+      .join(",");
     return labelStr ? `${name}{${labelStr}}` : name;
   }
 
@@ -296,10 +348,10 @@ export class MetricsService implements OnModuleInit {
     timestamp: number,
   ): string {
     const labelStr = Object.entries(labels)
-      .filter(([, v]) => v !== '')
+      .filter(([, v]) => v !== "")
       .map(([k, v]) => `${k}="${v}"`)
-      .join(',');
-    const labelPart = labelStr ? `{${labelStr}}` : '';
+      .join(",");
+    const labelPart = labelStr ? `{${labelStr}}` : "";
     return `${name}${labelPart} ${value} ${timestamp}`;
   }
 }

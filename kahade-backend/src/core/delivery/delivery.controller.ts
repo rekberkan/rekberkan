@@ -13,8 +13,8 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiTags,
   ApiBearerAuth,
@@ -23,24 +23,24 @@ import {
   ApiConsumes,
   ApiBody,
   ApiQuery,
-} from '@nestjs/swagger';
-import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { memoryStorage } from 'multer';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
-import { InitiatorRole, OrderStatus } from '@prisma/client';
+} from "@nestjs/swagger";
+import { JwtAuthGuard } from "@common/guards/jwt-auth.guard";
+import { CurrentUser } from "@common/decorators/current-user.decorator";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { memoryStorage } from "multer";
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as path from "path";
+import { InitiatorRole, OrderStatus } from "@prisma/client";
 
 // ============================================================================
 // DELIVERY CONTROLLER - Production Ready
 // Implements: Delivery Proof Upload, Tracking, Confirmation
 // ============================================================================
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const UPLOAD_DIR = process.env.UPLOAD_DEST || './uploads';
+const UPLOAD_DIR = process.env.UPLOAD_DEST || "./uploads";
 
 interface SubmitDeliveryProofDto {
   orderId: string;
@@ -49,8 +49,8 @@ interface SubmitDeliveryProofDto {
   notes?: string;
 }
 
-@ApiTags('delivery')
-@Controller('delivery')
+@ApiTags("delivery")
+@Controller("delivery")
 export class DeliveryController {
   private readonly logger = new Logger(DeliveryController.name);
 
@@ -59,35 +59,38 @@ export class DeliveryController {
   }
 
   private ensureUploadDir(): void {
-    const deliveryDir = path.join(UPLOAD_DIR, 'delivery');
+    const deliveryDir = path.join(UPLOAD_DIR, "delivery");
     if (!fs.existsSync(deliveryDir)) {
       fs.mkdirSync(deliveryDir, { recursive: true });
     }
   }
 
-  @Get('health')
-  @ApiOperation({ summary: 'Health check' })
+  @Get("health")
+  @ApiOperation({ summary: "Health check" })
   health() {
-    return { status: 'ok' };
+    return { status: "ok" };
   }
 
-  @Get('order/:orderId')
+  @Get("order/:orderId")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get delivery proof for an order' })
-  @ApiResponse({ status: 200, description: 'Returns delivery proof info' })
-  async getDeliveryProof(@CurrentUser('id') userId: string, @Param('orderId') orderId: string) {
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get delivery proof for an order" })
+  @ApiResponse({ status: 200, description: "Returns delivery proof info" })
+  async getDeliveryProof(
+    @CurrentUser("id") userId: string,
+    @Param("orderId") orderId: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Verify user is part of order
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You are not part of this order');
+      throw new ForbiddenException("You are not part of this order");
     }
 
     const deliveryProof = await this.prisma.deliveryProof.findUnique({
@@ -110,17 +113,19 @@ export class DeliveryController {
     };
   }
 
-  @Post('submit')
+  @Post("submit")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @ApiBearerAuth("JWT-auth")
   @UseInterceptors(
-    FileInterceptor('file', {
+    FileInterceptor("file", {
       storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE },
       fileFilter: (req, file, callback) => {
         if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
           return callback(
-            new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP'),
+            new BadRequestException(
+              "Invalid file type. Allowed: JPEG, PNG, WebP",
+            ),
             false,
           );
         }
@@ -128,29 +133,29 @@ export class DeliveryController {
       },
     }),
   )
-  @ApiOperation({ summary: 'Submit delivery proof' })
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: "Submit delivery proof" })
+  @ApiConsumes("multipart/form-data")
   @ApiBody({
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        file: { type: 'string', format: 'binary' },
-        orderId: { type: 'string' },
-        courier: { type: 'string' },
-        trackingNumber: { type: 'string' },
-        notes: { type: 'string' },
+        file: { type: "string", format: "binary" },
+        orderId: { type: "string" },
+        courier: { type: "string" },
+        trackingNumber: { type: "string" },
+        notes: { type: "string" },
       },
-      required: ['file', 'orderId'],
+      required: ["file", "orderId"],
     },
   })
-  @ApiResponse({ status: 201, description: 'Delivery proof submitted' })
+  @ApiResponse({ status: 201, description: "Delivery proof submitted" })
   async submitDeliveryProof(
-    @CurrentUser('id') userId: string,
+    @CurrentUser("id") userId: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: SubmitDeliveryProofDto,
   ) {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throw new BadRequestException("File is required");
     }
 
     // Get order
@@ -159,18 +164,26 @@ export class DeliveryController {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Verify user is the seller
-    const sellerId = order.initiatorRole === 'SELLER' ? order.initiatorId : order.counterpartyId;
+    const sellerId =
+      order.initiatorRole === "SELLER"
+        ? order.initiatorId
+        : order.counterpartyId;
     if (userId !== sellerId) {
-      throw new ForbiddenException('Only the seller can submit delivery proof');
+      throw new ForbiddenException("Only the seller can submit delivery proof");
     }
 
     // Verify order status - PAID or ACCEPTED are valid
-    if (order.status !== OrderStatus.PAID && order.status !== OrderStatus.ACCEPTED) {
-      throw new BadRequestException('Order must be paid before submitting delivery proof');
+    if (
+      order.status !== OrderStatus.PAID &&
+      order.status !== OrderStatus.ACCEPTED
+    ) {
+      throw new BadRequestException(
+        "Order must be paid before submitting delivery proof",
+      );
     }
 
     // Check if delivery proof already exists
@@ -179,13 +192,16 @@ export class DeliveryController {
     });
 
     // Save file
-    const deliveryDir = path.join(UPLOAD_DIR, 'delivery', dto.orderId);
+    const deliveryDir = path.join(UPLOAD_DIR, "delivery", dto.orderId);
     if (!fs.existsSync(deliveryDir)) {
       fs.mkdirSync(deliveryDir, { recursive: true });
     }
 
-    const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
-    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileHash = crypto
+      .createHash("sha256")
+      .update(file.buffer)
+      .digest("hex");
+    const fileExt = file.originalname.split(".").pop()?.toLowerCase() || "jpg";
     const fileName = `${Date.now()}_${fileHash.substring(0, 8)}.${fileExt}`;
     const filePath = path.join(deliveryDir, fileName);
     const relativePath = `/uploads/delivery/${dto.orderId}/${fileName}`;
@@ -216,7 +232,7 @@ export class DeliveryController {
           courier: dto.courier,
           trackingNumber: dto.trackingNumber,
           fileUrls: [relativePath],
-          notes: dto.notes || '',
+          notes: dto.notes || "",
         },
       });
     }
@@ -224,7 +240,7 @@ export class DeliveryController {
     this.logger.log(`Delivery proof submitted for order ${dto.orderId}`);
 
     return {
-      message: 'Delivery proof submitted successfully',
+      message: "Delivery proof submitted successfully",
       deliveryProof: {
         id: deliveryProof.id,
         courier: deliveryProof.courier,
@@ -235,14 +251,14 @@ export class DeliveryController {
     };
   }
 
-  @Patch(':orderId')
+  @Patch(":orderId")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Update delivery proof info' })
-  @ApiResponse({ status: 200, description: 'Delivery proof updated' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Update delivery proof info" })
+  @ApiResponse({ status: 200, description: "Delivery proof updated" })
   async updateDeliveryProof(
-    @CurrentUser('id') userId: string,
-    @Param('orderId') orderId: string,
+    @CurrentUser("id") userId: string,
+    @Param("orderId") orderId: string,
     @Body() dto: { courier?: string; trackingNumber?: string; notes?: string },
   ) {
     const order = await this.prisma.order.findUnique({
@@ -250,13 +266,16 @@ export class DeliveryController {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Verify user is the seller
-    const sellerId = order.initiatorRole === 'SELLER' ? order.initiatorId : order.counterpartyId;
+    const sellerId =
+      order.initiatorRole === "SELLER"
+        ? order.initiatorId
+        : order.counterpartyId;
     if (userId !== sellerId) {
-      throw new ForbiddenException('Only the seller can update delivery proof');
+      throw new ForbiddenException("Only the seller can update delivery proof");
     }
 
     const deliveryProof = await this.prisma.deliveryProof.findUnique({
@@ -264,7 +283,7 @@ export class DeliveryController {
     });
 
     if (!deliveryProof) {
-      throw new NotFoundException('Delivery proof not found');
+      throw new NotFoundException("Delivery proof not found");
     }
 
     const updateData: any = {};
@@ -278,7 +297,7 @@ export class DeliveryController {
     });
 
     return {
-      message: 'Delivery proof updated successfully',
+      message: "Delivery proof updated successfully",
       deliveryProof: {
         id: updated.id,
         courier: updated.courier,
@@ -288,28 +307,34 @@ export class DeliveryController {
     };
   }
 
-  @Post(':orderId/confirm')
+  @Post(":orderId/confirm")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Confirm delivery received (buyer)' })
-  @ApiResponse({ status: 200, description: 'Delivery confirmed' })
-  async confirmDelivery(@CurrentUser('id') userId: string, @Param('orderId') orderId: string) {
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Confirm delivery received (buyer)" })
+  @ApiResponse({ status: 200, description: "Delivery confirmed" })
+  async confirmDelivery(
+    @CurrentUser("id") userId: string,
+    @Param("orderId") orderId: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Verify user is the buyer
-    const buyerId = order.initiatorRole === 'BUYER' ? order.initiatorId : order.counterpartyId;
+    const buyerId =
+      order.initiatorRole === "BUYER"
+        ? order.initiatorId
+        : order.counterpartyId;
     if (userId !== buyerId) {
-      throw new ForbiddenException('Only the buyer can confirm delivery');
+      throw new ForbiddenException("Only the buyer can confirm delivery");
     }
 
     if (order.status !== OrderStatus.PAID) {
-      throw new BadRequestException('Order must be paid to confirm delivery');
+      throw new BadRequestException("Order must be paid to confirm delivery");
     }
 
     // Check delivery proof exists
@@ -318,7 +343,7 @@ export class DeliveryController {
     });
 
     if (!deliveryProof) {
-      throw new BadRequestException('No delivery proof submitted yet');
+      throw new BadRequestException("No delivery proof submitted yet");
     }
 
     // Update order status to COMPLETED (triggers escrow release)
@@ -327,25 +352,27 @@ export class DeliveryController {
       data: { status: OrderStatus.COMPLETED, completedAt: new Date() },
     });
 
-    this.logger.log(`Delivery confirmed for order ${orderId} by buyer ${userId}`);
+    this.logger.log(
+      `Delivery confirmed for order ${orderId} by buyer ${userId}`,
+    );
 
     return {
-      message: 'Delivery confirmed successfully',
-      status: 'COMPLETED',
+      message: "Delivery confirmed successfully",
+      status: "COMPLETED",
     };
   }
 
-  @Get('my')
+  @Get("my")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get my delivery proofs (as seller)' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiResponse({ status: 200, description: 'Returns user delivery proofs' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get my delivery proofs (as seller)" })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiResponse({ status: 200, description: "Returns user delivery proofs" })
   async getMyDeliveryProofs(
-    @CurrentUser('id') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @CurrentUser("id") userId: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
   ) {
     const skip = (page - 1) * limit;
 
@@ -365,12 +392,17 @@ export class DeliveryController {
     const [deliveryProofs, total] = await Promise.all([
       this.prisma.deliveryProof.findMany({
         where: { orderId: { in: orderIds } },
-        orderBy: { submittedAt: 'desc' },
+        orderBy: { submittedAt: "desc" },
         skip,
         take: limit,
         include: {
           order: {
-            select: { orderNumber: true, title: true, amountMinor: true, status: true },
+            select: {
+              orderNumber: true,
+              title: true,
+              amountMinor: true,
+              status: true,
+            },
           },
         },
       }),
@@ -393,17 +425,20 @@ export class DeliveryController {
     };
   }
 
-  @Get('pending')
+  @Get("pending")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get orders pending delivery (as buyer)' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiResponse({ status: 200, description: 'Returns orders pending delivery confirmation' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get orders pending delivery (as buyer)" })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiResponse({
+    status: 200,
+    description: "Returns orders pending delivery confirmation",
+  })
   async getPendingDeliveries(
-    @CurrentUser('id') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @CurrentUser("id") userId: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
   ) {
     const skip = (page - 1) * limit;
 
@@ -420,7 +455,7 @@ export class DeliveryController {
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
         include: {
@@ -438,7 +473,10 @@ export class DeliveryController {
         orderNumber: o.orderNumber,
         title: o.title,
         amount: Number(o.amountMinor) / 100,
-        seller: o.initiatorRole === 'SELLER' ? o.initiator?.username : o.counterparty?.username,
+        seller:
+          o.initiatorRole === "SELLER"
+            ? o.initiator?.username
+            : o.counterparty?.username,
         hasDeliveryProof: !!o.deliveryProof,
         deliveryProof: o.deliveryProof
           ? {

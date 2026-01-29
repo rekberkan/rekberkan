@@ -1,7 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable, Inject } from "@nestjs/common";
+import {
+  HealthIndicator,
+  HealthIndicatorResult,
+  HealthCheckError,
+} from "@nestjs/terminus";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
 
 // ============================================================================
 // REDIS HEALTH INDICATOR
@@ -20,7 +24,7 @@ export class RedisHealthIndicator extends HealthIndicator {
 
     try {
       // Try to set and get a test value
-      const testKey = '__health_check__';
+      const testKey = "__health_check__";
       const testValue = Date.now().toString();
 
       await this.cacheManager.set(testKey, testValue, 10000); // 10 seconds TTL
@@ -29,7 +33,7 @@ export class RedisHealthIndicator extends HealthIndicator {
       const responseTime = Date.now() - startTime;
 
       if (retrieved !== testValue) {
-        throw new Error('Redis read/write mismatch');
+        throw new Error("Redis read/write mismatch");
       }
 
       // Clean up
@@ -42,7 +46,7 @@ export class RedisHealthIndicator extends HealthIndicator {
       const responseTime = Date.now() - startTime;
 
       throw new HealthCheckError(
-        'Redis check failed',
+        "Redis check failed",
         this.getStatus(key, false, {
           message: error.message,
           responseTime: `${responseTime}ms`,

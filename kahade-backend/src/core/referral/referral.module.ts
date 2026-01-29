@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ReferralController } from './referral.controller';
-import { ReferralRepository } from './referral.repository';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module } from "@nestjs/common";
+import { ReferralController } from "./referral.controller";
+import { ReferralRepository } from "./referral.repository";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule],

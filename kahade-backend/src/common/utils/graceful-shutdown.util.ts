@@ -1,4 +1,4 @@
-import { INestApplication, Logger } from '@nestjs/common';
+import { INestApplication, Logger } from "@nestjs/common";
 
 // ============================================================================
 // GRACEFUL SHUTDOWN UTILITY
@@ -6,7 +6,7 @@ import { INestApplication, Logger } from '@nestjs/common';
 // Fix #73: Properly handle application shutdown to prevent data loss
 // ============================================================================
 
-const logger = new Logger('GracefulShutdown');
+const logger = new Logger("GracefulShutdown");
 
 /**
  * Shutdown state tracking
@@ -83,12 +83,12 @@ export function setupGracefulShutdown(
       try {
         // Run before shutdown hook
         if (beforeShutdown) {
-          logger.debug('Running beforeShutdown hook...');
+          logger.debug("Running beforeShutdown hook...");
           await beforeShutdown();
         }
 
         // Stop accepting new connections
-        logger.debug('Stopping HTTP server...');
+        logger.debug("Stopping HTTP server...");
 
         // Run registered cleanup handlers
         for (const { name, handler } of cleanupHandlers) {
@@ -97,7 +97,7 @@ export function setupGracefulShutdown(
             await Promise.race([
               handler(),
               new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Cleanup timeout')), 10000),
+                setTimeout(() => reject(new Error("Cleanup timeout")), 10000),
               ),
             ]);
             logger.debug(`Cleanup handler completed: ${name}`);
@@ -107,19 +107,19 @@ export function setupGracefulShutdown(
         }
 
         // Close the NestJS application
-        logger.debug('Closing NestJS application...');
+        logger.debug("Closing NestJS application...");
         await app.close();
 
         // Run after shutdown hook
         if (afterShutdown) {
-          logger.debug('Running afterShutdown hook...');
+          logger.debug("Running afterShutdown hook...");
           await afterShutdown();
         }
 
         const duration = Date.now() - startTime;
         logger.log(`Graceful shutdown completed in ${duration}ms`);
       } catch (error) {
-        logger.error('Error during graceful shutdown:', error);
+        logger.error("Error during graceful shutdown:", error);
         throw error;
       }
     })();
@@ -136,29 +136,29 @@ export function setupGracefulShutdown(
       process.exit(0);
     } catch (error) {
       clearTimeout(forceExitTimeout);
-      logger.error('Shutdown failed:', error);
+      logger.error("Shutdown failed:", error);
       process.exit(1);
     }
   };
 
   // Register signal handlers
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGHUP', () => shutdown('SIGHUP'));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGHUP", () => shutdown("SIGHUP"));
 
   // Handle uncaught exceptions
-  process.on('uncaughtException', (error) => {
-    logger.error('Uncaught exception:', error);
-    shutdown('uncaughtException');
+  process.on("uncaughtException", (error) => {
+    logger.error("Uncaught exception:", error);
+    shutdown("uncaughtException");
   });
 
   // Handle unhandled promise rejections
-  process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+  process.on("unhandledRejection", (reason, promise) => {
+    logger.error("Unhandled rejection at:", promise, "reason:", reason);
     // Don't shutdown on unhandled rejection, just log
   });
 
-  logger.log('Graceful shutdown handlers registered');
+  logger.log("Graceful shutdown handlers registered");
 }
 
 /**
@@ -168,9 +168,9 @@ export function createDatabaseCleanupHandler(prisma: {
   $disconnect: () => Promise<void>;
 }): () => Promise<void> {
   return async () => {
-    logger.debug('Disconnecting from database...');
+    logger.debug("Disconnecting from database...");
     await prisma.$disconnect();
-    logger.debug('Database disconnected');
+    logger.debug("Database disconnected");
   };
 }
 
@@ -181,9 +181,9 @@ export function createRedisCleanupHandler(redis: {
   quit: () => Promise<any>;
 }): () => Promise<void> {
   return async () => {
-    logger.debug('Closing Redis connection...');
+    logger.debug("Closing Redis connection...");
     await redis.quit();
-    logger.debug('Redis connection closed');
+    logger.debug("Redis connection closed");
   };
 }
 
@@ -205,6 +205,6 @@ export function createQueueCleanupHandler(
         }
       }),
     );
-    logger.debug('All queues closed');
+    logger.debug("All queues closed");
   };
 }

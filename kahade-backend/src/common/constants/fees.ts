@@ -12,7 +12,9 @@ export const PLATFORM_FEES = {
 
 export const FEE_CALCULATION = {
   calculateEscrowFee: (amountMinor: bigint): bigint => {
-    const percentage = BigInt(Math.round(PLATFORM_FEES.ESCROW_FEE_PERCENTAGE * 100));
+    const percentage = BigInt(
+      Math.round(PLATFORM_FEES.ESCROW_FEE_PERCENTAGE * 100),
+    );
     const fee = (amountMinor * percentage) / 10000n;
     const minFee = BigInt(PLATFORM_FEES.MIN_ESCROW_FEE_IDR * 100);
     const maxFee = BigInt(PLATFORM_FEES.MAX_ESCROW_FEE_IDR * 100);

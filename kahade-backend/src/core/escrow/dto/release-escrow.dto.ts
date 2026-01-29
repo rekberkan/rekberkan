@@ -1,10 +1,10 @@
-import { IsNumber, IsOptional, Min } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { IsNumber, IsOptional, Min } from "class-validator";
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export class ReleaseEscrowDto {
   @ApiPropertyOptional({
-    description: 'Platform fee in minor units (deducted from escrow)',
+    description: "Platform fee in minor units (deducted from escrow)",
     example: 250000,
   })
   @IsOptional()

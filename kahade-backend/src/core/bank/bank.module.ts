@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { BankController } from './bank.controller';
-import { BankRepository } from './bank.repository';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module } from "@nestjs/common";
+import { BankController } from "./bank.controller";
+import { BankRepository } from "./bank.repository";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule],

@@ -1,9 +1,10 @@
-import { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
+import { Response } from "express";
+import { ConfigService } from "@nestjs/config";
+import * as crypto from "crypto";
 
 /**
  * Cookie Utility for Secure Token Storage
- * 
+ *
  * SECURITY FIX [C-01]: Implements HttpOnly cookies for JWT tokens
  * - Prevents XSS attacks from stealing tokens
  * - Implements secure cookie handling with proper flags
@@ -13,16 +14,16 @@ import { ConfigService } from '@nestjs/config';
 export interface CookieOptions {
   httpOnly: boolean;
   secure: boolean;
-  sameSite: 'strict' | 'lax' | 'none';
+  sameSite: "strict" | "lax" | "none";
   domain?: string;
   path: string;
   maxAge: number;
 }
 
 export class CookieUtil {
-  private static readonly ACCESS_TOKEN_COOKIE = 'rekberkan_access_token';
-  private static readonly REFRESH_TOKEN_COOKIE = 'rekberkan_refresh_token';
-  private static readonly CSRF_TOKEN_COOKIE = 'XSRF-TOKEN';
+  private static readonly ACCESS_TOKEN_COOKIE = "rekberkan_access_token";
+  private static readonly REFRESH_TOKEN_COOKIE = "rekberkan_refresh_token";
+  private static readonly CSRF_TOKEN_COOKIE = "XSRF-TOKEN";
 
   /**
    * Get default cookie options for secure token storage
@@ -32,15 +33,15 @@ export class CookieUtil {
     maxAgeSeconds: number,
     httpOnly: boolean = true,
   ): CookieOptions {
-    const isProduction = configService.get<string>('NODE_ENV') === 'production';
-    const domain = configService.get<string>('COOKIE_DOMAIN');
+    const isProduction = configService.get<string>("NODE_ENV") === "production";
+    const domain = configService.get<string>("COOKIE_DOMAIN");
 
     return {
       httpOnly,
       secure: isProduction, // Only send over HTTPS in production
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: isProduction ? "strict" : "lax",
       domain: domain || undefined,
-      path: '/',
+      path: "/",
       maxAge: maxAgeSeconds * 1000, // Convert to milliseconds
     };
   }
@@ -54,7 +55,11 @@ export class CookieUtil {
     configService: ConfigService,
     expiresInSeconds: number = 900, // 15 minutes default
   ): void {
-    const options = this.getSecureCookieOptions(configService, expiresInSeconds, true);
+    const options = this.getSecureCookieOptions(
+      configService,
+      expiresInSeconds,
+      true,
+    );
     res.cookie(this.ACCESS_TOKEN_COOKIE, token, options);
   }
 
@@ -67,7 +72,11 @@ export class CookieUtil {
     configService: ConfigService,
     expiresInSeconds: number = 604800, // 7 days default
   ): void {
-    const options = this.getSecureCookieOptions(configService, expiresInSeconds, true);
+    const options = this.getSecureCookieOptions(
+      configService,
+      expiresInSeconds,
+      true,
+    );
     res.cookie(this.REFRESH_TOKEN_COOKIE, token, options);
   }
 
@@ -80,7 +89,11 @@ export class CookieUtil {
     configService: ConfigService,
     expiresInSeconds: number = 86400, // 24 hours default
   ): void {
-    const options = this.getSecureCookieOptions(configService, expiresInSeconds, false);
+    const options = this.getSecureCookieOptions(
+      configService,
+      expiresInSeconds,
+      false,
+    );
     res.cookie(this.CSRF_TOKEN_COOKIE, token, options);
   }
 
@@ -103,31 +116,38 @@ export class CookieUtil {
    * Clear all authentication cookies
    */
   static clearAuthCookies(res: Response, configService: ConfigService): void {
-    const domain = configService.get<string>('COOKIE_DOMAIN');
+    const domain = configService.get<string>("COOKIE_DOMAIN");
     const cookieOptions = {
       httpOnly: true,
-      secure: configService.get<string>('NODE_ENV') === 'production',
-      sameSite: 'strict' as const,
+      secure: configService.get<string>("NODE_ENV") === "production",
+      sameSite: "strict" as const,
       domain: domain || undefined,
-      path: '/',
+      path: "/",
     };
 
     res.clearCookie(this.ACCESS_TOKEN_COOKIE, cookieOptions);
     res.clearCookie(this.REFRESH_TOKEN_COOKIE, cookieOptions);
-    res.clearCookie(this.CSRF_TOKEN_COOKIE, { ...cookieOptions, httpOnly: false });
+    res.clearCookie(this.CSRF_TOKEN_COOKIE, {
+      ...cookieOptions,
+      httpOnly: false,
+    });
   }
 
   /**
    * Get access token from cookie
    */
-  static getAccessTokenFromCookie(cookies: Record<string, string>): string | undefined {
+  static getAccessTokenFromCookie(
+    cookies: Record<string, string>,
+  ): string | undefined {
     return cookies[this.ACCESS_TOKEN_COOKIE];
   }
 
   /**
    * Get refresh token from cookie
    */
-  static getRefreshTokenFromCookie(cookies: Record<string, string>): string | undefined {
+  static getRefreshTokenFromCookie(
+    cookies: Record<string, string>,
+  ): string | undefined {
     return cookies[this.REFRESH_TOKEN_COOKIE];
   }
 
@@ -135,7 +155,6 @@ export class CookieUtil {
    * Generate CSRF token
    */
   static generateCsrfToken(): string {
-    const crypto = require('crypto');
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString("hex");
   }
 }

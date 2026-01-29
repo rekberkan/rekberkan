@@ -4,12 +4,12 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Withdrawal, WithdrawalStatus, KYCStatus } from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
-import { WalletService } from '../wallet/wallet.service';
-import { LedgerService } from '../ledger/ledger.service';
+} from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Withdrawal, WithdrawalStatus, KYCStatus } from "@prisma/client";
+import { ConfigService } from "@nestjs/config";
+import { WalletService } from "../wallet/wallet.service";
+import { LedgerService } from "../ledger/ledger.service";
 
 // ============================================================================
 // BANK-GRADE WITHDRAWAL SERVICE
@@ -19,7 +19,7 @@ import { LedgerService } from '../ledger/ledger.service';
 export class WithdrawalLimitExceededError extends BadRequestException {
   constructor(message: string, details?: Record<string, any>) {
     super({
-      code: 'WITHDRAWAL_LIMIT_EXCEEDED',
+      code: "WITHDRAWAL_LIMIT_EXCEEDED",
       message,
       ...details,
     });
@@ -29,7 +29,7 @@ export class WithdrawalLimitExceededError extends BadRequestException {
 export class WithdrawalCoolingPeriodError extends BadRequestException {
   constructor(waitMinutes: number) {
     super({
-      code: 'WITHDRAWAL_COOLING_PERIOD',
+      code: "WITHDRAWAL_COOLING_PERIOD",
       message: `Please wait ${waitMinutes} minutes before next withdrawal`,
       waitMinutes,
     });
@@ -39,8 +39,8 @@ export class WithdrawalCoolingPeriodError extends BadRequestException {
 export class WithdrawalFlaggedError extends ForbiddenException {
   constructor(reason: string) {
     super({
-      code: 'WITHDRAWAL_FLAGGED',
-      message: 'Withdrawal flagged for review',
+      code: "WITHDRAWAL_FLAGGED",
+      message: "Withdrawal flagged for review",
       reason,
     });
   }
@@ -144,8 +144,7 @@ export class WithdrawalService {
       deviceFingerprint,
     } = dto;
 
-    // userAgent is captured for audit but not used in current logic
-    void userAgent;
+    // userAgent and deviceFingerprint are captured for audit trail
 
     // Step 1: Idempotency check
     const existingWithdrawal = await this.prisma.withdrawal.findUnique({
@@ -163,7 +162,7 @@ export class WithdrawalService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     // Step 3: Validate bank account ownership
@@ -177,7 +176,7 @@ export class WithdrawalService {
     });
 
     if (!bankAccount) {
-      throw new BadRequestException('Invalid or inactive bank account');
+      throw new BadRequestException("Invalid or inactive bank account");
     }
 
     // Step 4: Get wallet and validate balance
@@ -186,14 +185,14 @@ export class WithdrawalService {
     });
 
     if (!wallet) {
-      throw new NotFoundException('Wallet not found');
+      throw new NotFoundException("Wallet not found");
     }
 
     const availableBalance = wallet.balanceMinor - wallet.lockedMinor;
     if (availableBalance < amountMinor) {
       throw new BadRequestException({
-        code: 'INSUFFICIENT_BALANCE',
-        message: 'Insufficient balance',
+        code: "INSUFFICIENT_BALANCE",
+        message: "Insufficient balance",
         available: availableBalance.toString(),
         requested: amountMinor.toString(),
       });
@@ -214,7 +213,8 @@ export class WithdrawalService {
     const kycLevel = this.getKYCLevel(user.kycStatus);
     const limits = WITHDRAWAL_LIMITS[kycLevel];
     const requiresApproval = amountMinor >= limits.requiresApprovalThreshold;
-    const isFlagged = velocityData.score >= VELOCITY_THRESHOLDS.velocityScoreWarning;
+    const isFlagged =
+      velocityData.score >= VELOCITY_THRESHOLDS.velocityScoreWarning;
 
     // Step 8: Create withdrawal in transaction
     const withdrawal = await this.prisma.$transaction(async (tx) => {
@@ -222,11 +222,12 @@ export class WithdrawalService {
       await this.walletService.lockBalance({
         userId,
         amount: amountMinor,
-        reason: 'Withdrawal request',
+        reason: "Withdrawal request",
         tx,
       });
 
       // Create withdrawal record
+      // Note: ipAddress, userAgent, deviceFingerprint are logged via audit system
       const newWithdrawal = await tx.withdrawal.create({
         data: {
           walletId: wallet.id,
@@ -235,14 +236,22 @@ export class WithdrawalService {
           amountMinor,
           idempotencyKey,
           status:
-            isFlagged || requiresApproval ? WithdrawalStatus.PENDING : WithdrawalStatus.PENDING,
-          requiresMultipleApprovals: amountMinor >= limits.requiresApprovalThreshold * 2n,
-          requiredApprovals: amountMinor >= limits.requiresApprovalThreshold * 2n ? 2 : 1,
+            isFlagged || requiresApproval
+              ? WithdrawalStatus.PENDING
+              : WithdrawalStatus.PENDING,
+          requiresMultipleApprovals:
+            amountMinor >= limits.requiresApprovalThreshold * 2n,
+          requiredApprovals:
+            amountMinor >= limits.requiresApprovalThreshold * 2n ? 2 : 1,
           velocityScore: velocityData.score,
           isFlaggedBySystem: isFlagged,
           flagReason: isFlagged ? velocityData.flagReason : null,
-          coolingPeriodEndsAt: new Date(Date.now() + limits.coolingPeriodMinutes * 60 * 1000),
-          canProcessAfter: new Date(Date.now() + limits.coolingPeriodMinutes * 60 * 1000),
+          coolingPeriodEndsAt: new Date(
+            Date.now() + limits.coolingPeriodMinutes * 60 * 1000,
+          ),
+          canProcessAfter: new Date(
+            Date.now() + limits.coolingPeriodMinutes * 60 * 1000,
+          ),
         },
       });
 
@@ -271,7 +280,11 @@ export class WithdrawalService {
     const kycLevel = this.getKYCLevel(kycStatus);
     const limits = WITHDRAWAL_LIMITS[kycLevel];
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Get today's withdrawals
@@ -280,7 +293,11 @@ export class WithdrawalService {
         userId,
         requestedAt: { gte: startOfDay },
         status: {
-          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+          in: [
+            WithdrawalStatus.PENDING,
+            WithdrawalStatus.APPROVED,
+            WithdrawalStatus.COMPLETED,
+          ],
         },
       },
       _sum: { amountMinor: true },
@@ -293,7 +310,11 @@ export class WithdrawalService {
         userId,
         requestedAt: { gte: startOfMonth },
         status: {
-          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+          in: [
+            WithdrawalStatus.PENDING,
+            WithdrawalStatus.APPROVED,
+            WithdrawalStatus.COMPLETED,
+          ],
         },
       },
       _sum: { amountMinor: true },
@@ -317,29 +338,35 @@ export class WithdrawalService {
     // Check daily amount limit
     const dailyRemaining = limits.dailyLimit - dailyUsed;
     if (amountMinor > dailyRemaining) {
-      throw new WithdrawalLimitExceededError('Daily withdrawal limit exceeded', {
-        dailyLimit: limits.dailyLimit.toString(),
-        dailyUsed: dailyUsed.toString(),
-        dailyRemaining: dailyRemaining.toString(),
-        requested: amountMinor.toString(),
-      });
+      throw new WithdrawalLimitExceededError(
+        "Daily withdrawal limit exceeded",
+        {
+          dailyLimit: limits.dailyLimit.toString(),
+          dailyUsed: dailyUsed.toString(),
+          dailyRemaining: dailyRemaining.toString(),
+          requested: amountMinor.toString(),
+        },
+      );
     }
 
     // Check monthly amount limit
     const monthlyRemaining = limits.monthlyLimit - monthlyUsed;
     if (amountMinor > monthlyRemaining) {
-      throw new WithdrawalLimitExceededError('Monthly withdrawal limit exceeded', {
-        monthlyLimit: limits.monthlyLimit.toString(),
-        monthlyUsed: monthlyUsed.toString(),
-        monthlyRemaining: monthlyRemaining.toString(),
-        requested: amountMinor.toString(),
-      });
+      throw new WithdrawalLimitExceededError(
+        "Monthly withdrawal limit exceeded",
+        {
+          monthlyLimit: limits.monthlyLimit.toString(),
+          monthlyUsed: monthlyUsed.toString(),
+          monthlyRemaining: monthlyRemaining.toString(),
+          requested: amountMinor.toString(),
+        },
+      );
     }
 
     // Check cooling period
     const lastWithdrawal = await this.prisma.withdrawal.findFirst({
       where: { userId },
-      orderBy: { requestedAt: 'desc' },
+      orderBy: { requestedAt: "desc" },
       select: { requestedAt: true },
     });
 
@@ -348,7 +375,9 @@ export class WithdrawalService {
         (now.getTime() - lastWithdrawal.requestedAt.getTime()) / 60000,
       );
       if (minutesSinceLast < limits.coolingPeriodMinutes) {
-        throw new WithdrawalCoolingPeriodError(limits.coolingPeriodMinutes - minutesSinceLast);
+        throw new WithdrawalCoolingPeriodError(
+          limits.coolingPeriodMinutes - minutesSinceLast,
+        );
       }
     }
   }
@@ -362,13 +391,17 @@ export class WithdrawalService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     const kycLevel = this.getKYCLevel(user.kycStatus);
     const limits = WITHDRAWAL_LIMITS[kycLevel];
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Get today's withdrawals
@@ -377,7 +410,11 @@ export class WithdrawalService {
         userId,
         requestedAt: { gte: startOfDay },
         status: {
-          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+          in: [
+            WithdrawalStatus.PENDING,
+            WithdrawalStatus.APPROVED,
+            WithdrawalStatus.COMPLETED,
+          ],
         },
       },
       _sum: { amountMinor: true },
@@ -390,7 +427,11 @@ export class WithdrawalService {
         userId,
         requestedAt: { gte: startOfMonth },
         status: {
-          in: [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.COMPLETED],
+          in: [
+            WithdrawalStatus.PENDING,
+            WithdrawalStatus.APPROVED,
+            WithdrawalStatus.COMPLETED,
+          ],
         },
       },
       _sum: { amountMinor: true },
@@ -399,7 +440,7 @@ export class WithdrawalService {
     // Get last withdrawal
     const lastWithdrawal = await this.prisma.withdrawal.findFirst({
       where: { userId },
-      orderBy: { requestedAt: 'desc' },
+      orderBy: { requestedAt: "desc" },
       select: { requestedAt: true },
     });
 
@@ -410,7 +451,8 @@ export class WithdrawalService {
     let nextWithdrawalAllowedAt: Date | null = null;
     if (lastWithdrawal) {
       const nextAllowed = new Date(
-        lastWithdrawal.requestedAt.getTime() + limits.coolingPeriodMinutes * 60 * 1000,
+        lastWithdrawal.requestedAt.getTime() +
+          limits.coolingPeriodMinutes * 60 * 1000,
       );
       if (nextAllowed > now) {
         nextWithdrawalAllowedAt = nextAllowed;
@@ -490,7 +532,7 @@ export class WithdrawalService {
     // Hourly count velocity
     if (hourlyCount >= VELOCITY_THRESHOLDS.hourlyCountBlock) {
       score += 40;
-      flagReasons.push('High hourly withdrawal count');
+      flagReasons.push("High hourly withdrawal count");
     } else if (hourlyCount >= VELOCITY_THRESHOLDS.hourlyCountWarning) {
       score += 20;
     }
@@ -498,7 +540,7 @@ export class WithdrawalService {
     // Hourly amount velocity
     if (hourlyAmount >= VELOCITY_THRESHOLDS.hourlyAmountBlock) {
       score += 30;
-      flagReasons.push('High hourly withdrawal amount');
+      flagReasons.push("High hourly withdrawal amount");
     } else if (hourlyAmount >= VELOCITY_THRESHOLDS.hourlyAmountWarning) {
       score += 15;
     }
@@ -506,7 +548,7 @@ export class WithdrawalService {
     // Daily velocity
     if (dailyCount >= 10) {
       score += 20;
-      flagReasons.push('High daily withdrawal count');
+      flagReasons.push("High daily withdrawal count");
     } else if (dailyCount >= 5) {
       score += 10;
     }
@@ -514,12 +556,12 @@ export class WithdrawalService {
     // Weekly velocity
     if (weeklyCount >= 30) {
       score += 10;
-      flagReasons.push('High weekly withdrawal count');
+      flagReasons.push("High weekly withdrawal count");
     }
 
     return {
       score: Math.min(score, 100),
-      flagReason: flagReasons.length > 0 ? flagReasons.join('; ') : null,
+      flagReason: flagReasons.length > 0 ? flagReasons.join("; ") : null,
       hourlyCount,
       dailyCount,
       weeklyCount,
@@ -546,11 +588,13 @@ export class WithdrawalService {
     });
 
     if (!withdrawal) {
-      throw new NotFoundException('Withdrawal not found');
+      throw new NotFoundException("Withdrawal not found");
     }
 
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
-      throw new BadRequestException(`Cannot approve withdrawal in ${withdrawal.status} status`);
+      throw new BadRequestException(
+        `Cannot approve withdrawal in ${withdrawal.status} status`,
+      );
     }
 
     // Check if multiple approvals required
@@ -559,7 +603,8 @@ export class WithdrawalService {
     });
 
     const needsMoreApprovals =
-      withdrawal.requiresMultipleApprovals && currentApprovals + 1 < withdrawal.requiredApprovals;
+      withdrawal.requiresMultipleApprovals &&
+      currentApprovals + 1 < withdrawal.requiredApprovals;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Create approval record
@@ -575,7 +620,9 @@ export class WithdrawalService {
       const updatedWithdrawal = await tx.withdrawal.update({
         where: { id: withdrawalId },
         data: {
-          status: needsMoreApprovals ? WithdrawalStatus.PENDING : WithdrawalStatus.APPROVED,
+          status: needsMoreApprovals
+            ? WithdrawalStatus.PENDING
+            : WithdrawalStatus.APPROVED,
           approvedBy: needsMoreApprovals ? undefined : approverId,
           approvedAt: needsMoreApprovals ? undefined : new Date(),
           adminNotes: notes,
@@ -587,7 +634,7 @@ export class WithdrawalService {
 
     this.logger.log(
       `Withdrawal ${withdrawalId} approved by ${approverId}${
-        needsMoreApprovals ? ' (needs more approvals)' : ''
+        needsMoreApprovals ? " (needs more approvals)" : ""
       }`,
     );
 
@@ -607,11 +654,13 @@ export class WithdrawalService {
     });
 
     if (!withdrawal) {
-      throw new NotFoundException('Withdrawal not found');
+      throw new NotFoundException("Withdrawal not found");
     }
 
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
-      throw new BadRequestException(`Cannot reject withdrawal in ${withdrawal.status} status`);
+      throw new BadRequestException(
+        `Cannot reject withdrawal in ${withdrawal.status} status`,
+      );
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -635,7 +684,9 @@ export class WithdrawalService {
       return updatedWithdrawal;
     });
 
-    this.logger.log(`Withdrawal ${withdrawalId} rejected by ${rejectorId}: ${reason}`);
+    this.logger.log(
+      `Withdrawal ${withdrawalId} rejected by ${rejectorId}: ${reason}`,
+    );
 
     return result;
   }
@@ -643,17 +694,22 @@ export class WithdrawalService {
   /**
    * Complete withdrawal (after bank transfer)
    */
-  async completeWithdrawal(withdrawalId: string, bankReference?: string): Promise<Withdrawal> {
+  async completeWithdrawal(
+    withdrawalId: string,
+    bankReference?: string,
+  ): Promise<Withdrawal> {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id: withdrawalId },
     });
 
     if (!withdrawal) {
-      throw new NotFoundException('Withdrawal not found');
+      throw new NotFoundException("Withdrawal not found");
     }
 
     if (withdrawal.status !== WithdrawalStatus.APPROVED) {
-      throw new BadRequestException(`Cannot complete withdrawal in ${withdrawal.status} status`);
+      throw new BadRequestException(
+        `Cannot complete withdrawal in ${withdrawal.status} status`,
+      );
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -688,14 +744,16 @@ export class WithdrawalService {
   // HELPER METHODS
   // ============================================================================
 
-  private getKYCLevel(kycStatus?: KYCStatus | null): keyof typeof WITHDRAWAL_LIMITS {
+  private getKYCLevel(
+    kycStatus?: KYCStatus | null,
+  ): keyof typeof WITHDRAWAL_LIMITS {
     switch (kycStatus) {
       case KYCStatus.PENDING:
-        return 'BASIC';
+        return "BASIC";
       case KYCStatus.VERIFIED:
-        return 'VERIFIED';
+        return "VERIFIED";
       default:
-        return 'NONE';
+        return "NONE";
     }
   }
 }

@@ -1,5 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-import { Logger } from '@nestjs/common';
+import { PrismaClient, Prisma } from "@prisma/client";
+import { Logger } from "@nestjs/common";
 
 // ============================================================================
 // PRISMA TRANSACTION UTILITIES
@@ -7,7 +7,7 @@ import { Logger } from '@nestjs/common';
 // Fix #74: Proper transaction handling with timeouts and retries
 // ============================================================================
 
-const logger = new Logger('PrismaTransaction');
+const logger = new Logger("PrismaTransaction");
 
 // Define TransactionOptions locally since it's not exported from Prisma
 export interface TransactionOptions {
@@ -70,7 +70,9 @@ export async function executeWithRetry<T>(
         throw error;
       }
 
-      logger.warn(`Transaction attempt ${attempt}/${maxRetries} failed: ${error.message}`);
+      logger.warn(
+        `Transaction attempt ${attempt}/${maxRetries} failed: ${error.message}`,
+      );
 
       if (attempt < maxRetries) {
         // Exponential backoff with jitter
@@ -92,7 +94,12 @@ export async function executeFinancialTransaction<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
   maxRetries = 3,
 ): Promise<T> {
-  return executeWithRetry(prisma, fn, FINANCIAL_TRANSACTION_OPTIONS, maxRetries);
+  return executeWithRetry(
+    prisma,
+    fn,
+    FINANCIAL_TRANSACTION_OPTIONS,
+    maxRetries,
+  );
 }
 
 /**
@@ -101,8 +108,8 @@ export async function executeFinancialTransaction<T>(
 function isRetryableError(error: any): boolean {
   // Prisma error codes that are retryable
   const retryableCodes = [
-    'P2024', // Timed out fetching a new connection from the connection pool
-    'P2034', // Transaction failed due to a write conflict or a deadlock
+    "P2024", // Timed out fetching a new connection from the connection pool
+    "P2034", // Transaction failed due to a write conflict or a deadlock
   ];
 
   if (error.code && retryableCodes.includes(error.code)) {
@@ -111,9 +118,9 @@ function isRetryableError(error: any): boolean {
 
   // PostgreSQL error codes that are retryable
   const pgRetryableCodes = [
-    '40001', // Serialization failure
-    '40P01', // Deadlock detected
-    '57014', // Query cancelled
+    "40001", // Serialization failure
+    "40P01", // Deadlock detected
+    "57014", // Query cancelled
   ];
 
   if (error.meta?.code && pgRetryableCodes.includes(error.meta.code)) {
@@ -121,7 +128,10 @@ function isRetryableError(error: any): boolean {
   }
 
   // Check for timeout errors
-  if (error.message?.includes('timed out') || error.message?.includes('timeout')) {
+  if (
+    error.message?.includes("timed out") ||
+    error.message?.includes("timeout")
+  ) {
     return true;
   }
 
@@ -163,8 +173,8 @@ export async function withOptimisticLock<T extends { version: number }>(
  */
 export async function withPessimisticLock<T>(
   tx: Prisma.TransactionClient,
-  tableName: 'wallet' | 'order' | 'escrowHold' | 'withdrawal', // Whitelist allowed tables
-  idColumn: 'id' | 'userId', // Whitelist allowed columns
+  tableName: "wallet" | "order" | "escrowHold" | "withdrawal", // Whitelist allowed tables
+  idColumn: "id" | "userId", // Whitelist allowed columns
   idValue: string,
   updateFn: (locked: T) => Promise<T>,
 ): Promise<T> {
@@ -185,7 +195,7 @@ export async function withPessimisticLock<T>(
   const safeColumn = columnMap[idColumn];
 
   if (!safeTable || !safeColumn) {
-    throw new Error('Invalid table or column name');
+    throw new Error("Invalid table or column name");
   }
 
   // Use Prisma.sql for safe parameterized query
@@ -194,7 +204,7 @@ export async function withPessimisticLock<T>(
   );
 
   if (!locked) {
-    throw new Error('Record not found for pessimistic lock');
+    throw new Error("Record not found for pessimistic lock");
   }
 
   return updateFn(locked);

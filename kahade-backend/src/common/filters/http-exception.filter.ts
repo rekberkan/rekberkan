@@ -5,9 +5,9 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { ConfigService } from '@nestjs/config';
+} from "@nestjs/common";
+import { Request, Response } from "express";
+import { ConfigService } from "@nestjs/config";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -19,17 +19,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const nodeEnv = this.configService.get<string>('app.nodeEnv', 'development');
+    const nodeEnv = this.configService.get<string>(
+      "app.nodeEnv",
+      "development",
+    );
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string | object = 'Internal server error';
+    let message: string | object = "Internal server error";
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      message = typeof exceptionResponse === 'string' ? exceptionResponse : exceptionResponse;
+      message =
+        typeof exceptionResponse === "string"
+          ? exceptionResponse
+          : exceptionResponse;
     } else if (exception instanceof Error) {
-      message = nodeEnv === 'production' ? 'Internal server error' : exception.message;
+      message =
+        nodeEnv === "production" ? "Internal server error" : exception.message;
     }
 
     const errorResponse = {
@@ -41,7 +48,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     };
 
     if (
-      nodeEnv !== 'production' &&
+      nodeEnv !== "production" &&
       exception instanceof Error &&
       status === HttpStatus.INTERNAL_SERVER_ERROR
     ) {
@@ -50,7 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error(
       `${request.method} ${request.url} ${status} - ${JSON.stringify(message)}`,
-      exception instanceof Error ? exception.stack : '',
+      exception instanceof Error ? exception.stack : "",
     );
 
     response.status(status).json(errorResponse);

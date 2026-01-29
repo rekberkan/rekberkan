@@ -5,10 +5,10 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { ConfigService } from '@nestjs/config';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+} from "@nestjs/common";
+import { Request, Response } from "express";
+import { ConfigService } from "@nestjs/config";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 // ============================================================================
 // BANK-GRADE EXCEPTION FILTER
@@ -33,30 +33,43 @@ export class AllExceptionsFilter implements ExceptionFilter {
   // Patterns to detect and mask sensitive data
   private readonly sensitivePatterns = [
     // Email addresses
-    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, replacement: '[EMAIL]' },
+    {
+      pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+      replacement: "[EMAIL]",
+    },
     // Phone numbers (various formats)
     {
       pattern: /\b(?:\+62|62|0)[\s.-]?\d{2,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}\b/g,
-      replacement: '[PHONE]',
+      replacement: "[PHONE]",
     },
     // Credit card numbers (16 digits)
-    { pattern: /\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b/g, replacement: '[CARD]' },
+    {
+      pattern: /\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b/g,
+      replacement: "[CARD]",
+    },
     // Bank account numbers (10-16 digits)
-    { pattern: /\b\d{10,16}\b/g, replacement: '[ACCOUNT]' },
+    { pattern: /\b\d{10,16}\b/g, replacement: "[ACCOUNT]" },
     // NIK (16 digits Indonesian ID)
-    { pattern: /\b\d{16}\b/g, replacement: '[NIK]' },
+    { pattern: /\b\d{16}\b/g, replacement: "[NIK]" },
     // JWT tokens
-    { pattern: /eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/g, replacement: '[TOKEN]' },
+    {
+      pattern: /eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/g,
+      replacement: "[TOKEN]",
+    },
     // API keys (common patterns)
-    { pattern: /\b(sk_|pk_|api_|key_)[A-Za-z0-9]{20,}\b/g, replacement: '[API_KEY]' },
+    {
+      pattern: /\b(sk_|pk_|api_|key_)[A-Za-z0-9]{20,}\b/g,
+      replacement: "[API_KEY]",
+    },
     // Passwords in URLs
-    { pattern: /password=[^&\s]*/gi, replacement: 'password=[REDACTED]' },
+    { pattern: /password=[^&\s]*/gi, replacement: "password=[REDACTED]" },
     // Secret in URLs
-    { pattern: /secret=[^&\s]*/gi, replacement: 'secret=[REDACTED]' },
+    { pattern: /secret=[^&\s]*/gi, replacement: "secret=[REDACTED]" },
     // Private keys
     {
-      pattern: /-----BEGIN[^-]+PRIVATE KEY-----[\s\S]*?-----END[^-]+PRIVATE KEY-----/g,
-      replacement: '[PRIVATE_KEY]',
+      pattern:
+        /-----BEGIN[^-]+PRIVATE KEY-----[\s\S]*?-----END[^-]+PRIVATE KEY-----/g,
+      replacement: "[PRIVATE_KEY]",
     },
   ];
 
@@ -78,7 +91,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   ];
 
   constructor(private readonly configService: ConfigService) {
-    this.isProduction = configService.get('NODE_ENV') === 'production';
+    this.isProduction = configService.get("NODE_ENV") === "production";
   }
 
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -127,7 +140,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const response = exception.getResponse();
       const status = exception.getStatus();
 
-      if (typeof response === 'object' && response !== null) {
+      if (typeof response === "object" && response !== null) {
         const responseObj = response as any;
         return {
           status,
@@ -138,7 +151,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       return {
         status,
-        message: typeof response === 'string' ? response : exception.message,
+        message: typeof response === "string" ? response : exception.message,
       };
     }
 
@@ -152,15 +165,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return {
         status: HttpStatus.INTERNAL_SERVER_ERROR,
         message: exception.message,
-        code: 'INTERNAL_ERROR',
+        code: "INTERNAL_ERROR",
       };
     }
 
     // Handle unknown errors
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'An unexpected error occurred',
-      code: 'UNKNOWN_ERROR',
+      message: "An unexpected error occurred",
+      code: "UNKNOWN_ERROR",
     };
   }
 
@@ -173,43 +186,43 @@ export class AllExceptionsFilter implements ExceptionFilter {
     code: string;
   } {
     switch (error.code) {
-      case 'P2002':
+      case "P2002":
         // Unique constraint violation
         return {
           status: HttpStatus.CONFLICT,
-          message: 'A record with this value already exists',
-          code: 'DUPLICATE_ENTRY',
+          message: "A record with this value already exists",
+          code: "DUPLICATE_ENTRY",
         };
 
-      case 'P2025':
+      case "P2025":
         // Record not found
         return {
           status: HttpStatus.NOT_FOUND,
-          message: 'The requested resource was not found',
-          code: 'NOT_FOUND',
+          message: "The requested resource was not found",
+          code: "NOT_FOUND",
         };
 
-      case 'P2003':
+      case "P2003":
         // Foreign key constraint violation
         return {
           status: HttpStatus.BAD_REQUEST,
-          message: 'Invalid reference to related resource',
-          code: 'INVALID_REFERENCE',
+          message: "Invalid reference to related resource",
+          code: "INVALID_REFERENCE",
         };
 
-      case 'P2014':
+      case "P2014":
         // Required relation violation
         return {
           status: HttpStatus.BAD_REQUEST,
-          message: 'Required related data is missing',
-          code: 'MISSING_RELATION',
+          message: "Required related data is missing",
+          code: "MISSING_RELATION",
         };
 
       default:
         return {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'A database error occurred',
-          code: 'DATABASE_ERROR',
+          message: "A database error occurred",
+          code: "DATABASE_ERROR",
         };
     }
   }
@@ -220,13 +233,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private sanitizeErrorMessage(message: string, status: number): string {
     // For 5xx errors, always return generic message
     if (status >= 500) {
-      return 'An unexpected error occurred. Please try again later.';
+      return "An unexpected error occurred. Please try again later.";
     }
 
     // Check for internal error patterns
     for (const pattern of this.internalErrorPatterns) {
       if (pattern.test(message)) {
-        return 'An error occurred while processing your request.';
+        return "An error occurred while processing your request.";
       }
     }
 
@@ -238,7 +251,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Truncate very long messages
     if (sanitized.length > 200) {
-      sanitized = sanitized.substring(0, 200) + '...';
+      sanitized = sanitized.substring(0, 200) + "...";
     }
 
     return sanitized;
@@ -260,27 +273,31 @@ export class AllExceptionsFilter implements ExceptionFilter {
    */
   private getErrorName(status: number): string {
     const errorNames: Record<number, string> = {
-      400: 'Bad Request',
-      401: 'Unauthorized',
-      403: 'Forbidden',
-      404: 'Not Found',
-      405: 'Method Not Allowed',
-      409: 'Conflict',
-      422: 'Unprocessable Entity',
-      429: 'Too Many Requests',
-      500: 'Internal Server Error',
-      502: 'Bad Gateway',
-      503: 'Service Unavailable',
-      504: 'Gateway Timeout',
+      400: "Bad Request",
+      401: "Unauthorized",
+      403: "Forbidden",
+      404: "Not Found",
+      405: "Method Not Allowed",
+      409: "Conflict",
+      422: "Unprocessable Entity",
+      429: "Too Many Requests",
+      500: "Internal Server Error",
+      502: "Bad Gateway",
+      503: "Service Unavailable",
+      504: "Gateway Timeout",
     };
 
-    return errorNames[status] || 'Error';
+    return errorNames[status] || "Error";
   }
 
   /**
    * Log error with full details (sanitized)
    */
-  private logError(exception: unknown, request: Request, requestId: string): void {
+  private logError(
+    exception: unknown,
+    request: Request,
+    requestId: string,
+  ): void {
     const errorLog = {
       requestId,
       timestamp: new Date().toISOString(),
@@ -288,7 +305,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
       userId: (request as any).user?.id,
       ip: this.getClientIp(request),
-      userAgent: request.headers['user-agent'],
+      userAgent: request.headers["user-agent"],
     };
 
     if (exception instanceof HttpException) {
@@ -328,11 +345,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
    * Get client IP address
    */
   private getClientIp(request: Request): string {
-    const forwarded = request.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
+    const forwarded = request.headers["x-forwarded-for"];
+    if (typeof forwarded === "string") {
+      return forwarded.split(",")[0].trim();
     }
-    return request.ip || request.socket.remoteAddress || 'unknown';
+    return request.ip || request.socket.remoteAddress || "unknown";
   }
 
   /**

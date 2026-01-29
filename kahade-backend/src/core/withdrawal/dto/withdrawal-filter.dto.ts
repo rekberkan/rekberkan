@@ -1,29 +1,36 @@
-import { IsOptional, IsEnum, IsInt, Min, Max, IsDateString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+  IsDateString,
+} from "class-validator";
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export enum WithdrawalStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum WithdrawalSortField {
-  CREATED_AT = 'createdAt',
-  AMOUNT = 'amountMinor',
-  STATUS = 'status',
+  CREATED_AT = "createdAt",
+  AMOUNT = "amountMinor",
+  STATUS = "status",
 }
 
 export enum SortOrder {
-  ASC = 'asc',
-  DESC = 'desc',
+  ASC = "asc",
+  DESC = "desc",
 }
 
 export class WithdrawalFilterDto {
   @ApiPropertyOptional({
-    description: 'Filter by withdrawal status',
+    description: "Filter by withdrawal status",
     enum: WithdrawalStatus,
   })
   @IsOptional()
@@ -31,23 +38,23 @@ export class WithdrawalFilterDto {
   status?: WithdrawalStatus;
 
   @ApiPropertyOptional({
-    description: 'Filter withdrawals created after this date',
-    example: '2024-01-01',
+    description: "Filter withdrawals created after this date",
+    example: "2024-01-01",
   })
   @IsOptional()
   @IsDateString()
   dateFrom?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter withdrawals created before this date',
-    example: '2024-12-31',
+    description: "Filter withdrawals created before this date",
+    example: "2024-12-31",
   })
   @IsOptional()
   @IsDateString()
   dateTo?: string;
 
   @ApiPropertyOptional({
-    description: 'Page number',
+    description: "Page number",
     default: 1,
   })
   @IsOptional()
@@ -57,7 +64,7 @@ export class WithdrawalFilterDto {
   page?: number = 1;
 
   @ApiPropertyOptional({
-    description: 'Items per page',
+    description: "Items per page",
     default: 10,
     maximum: 100,
   })
@@ -69,7 +76,7 @@ export class WithdrawalFilterDto {
   limit?: number = 10;
 
   @ApiPropertyOptional({
-    description: 'Sort field',
+    description: "Sort field",
     enum: WithdrawalSortField,
     default: WithdrawalSortField.CREATED_AT,
   })
@@ -78,7 +85,7 @@ export class WithdrawalFilterDto {
   sortBy?: WithdrawalSortField = WithdrawalSortField.CREATED_AT;
 
   @ApiPropertyOptional({
-    description: 'Sort order',
+    description: "Sort order",
     enum: SortOrder,
     default: SortOrder.DESC,
   })

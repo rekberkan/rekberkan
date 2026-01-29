@@ -1,5 +1,5 @@
-import { SetMetadata } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { SetMetadata } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 
 // ============================================================================
 // RATE LIMIT DECORATORS
@@ -7,7 +7,7 @@ import { Throttle } from '@nestjs/throttler';
 // Fix #31: Custom rate limiting per endpoint type
 // ============================================================================
 
-export const RATE_LIMIT_KEY = 'rate_limit';
+export const RATE_LIMIT_KEY = "rate_limit";
 
 /**
  * Rate limit configuration interface
@@ -63,12 +63,14 @@ export const AuthRateLimit = () => Throttle({ default: RateLimits.AUTH });
 /**
  * Apply registration rate limit (3 requests per hour)
  */
-export const RegisterRateLimit = () => Throttle({ default: RateLimits.REGISTER });
+export const RegisterRateLimit = () =>
+  Throttle({ default: RateLimits.REGISTER });
 
 /**
  * Apply password reset rate limit (3 requests per hour)
  */
-export const PasswordResetRateLimit = () => Throttle({ default: RateLimits.PASSWORD_RESET });
+export const PasswordResetRateLimit = () =>
+  Throttle({ default: RateLimits.PASSWORD_RESET });
 
 /**
  * Apply standard API rate limit (100 requests per minute)
@@ -121,4 +123,4 @@ export const CustomRateLimit = (ttl: number, limit: number) =>
 /**
  * Skip rate limiting for this endpoint
  */
-export const SkipRateLimit = () => SetMetadata('skipThrottle', true);
+export const SkipRateLimit = () => SetMetadata("skipThrottle", true);

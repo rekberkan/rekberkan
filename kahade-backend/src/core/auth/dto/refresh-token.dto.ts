@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsString, IsNotEmpty, MinLength, MaxLength } from "class-validator";
 
 // ============================================================================
 // REFRESH TOKEN DTO
@@ -7,12 +7,12 @@ import { IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
 
 export class RefreshTokenDto {
   @ApiProperty({
-    description: 'JWT refresh token',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: "JWT refresh token",
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   })
   @IsString()
-  @IsNotEmpty({ message: 'Refresh token is required' })
-  @MinLength(10, { message: 'Invalid refresh token format' })
-  @MaxLength(2048, { message: 'Refresh token too long' })
+  @IsNotEmpty({ message: "Refresh token is required" })
+  @MinLength(10, { message: "Invalid refresh token format" })
+  @MaxLength(2048, { message: "Refresh token too long" })
   refreshToken: string;
 }

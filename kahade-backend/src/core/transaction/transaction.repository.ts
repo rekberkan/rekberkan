@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Transaction } from '../../common/shims/prisma-types.shim';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Transaction } from "../../common/shims/prisma-types.shim";
 
 interface CreateTransactionData {
   orderNumber: string;
@@ -120,15 +120,15 @@ export class TransactionRepository {
 
     // Filter by role
     if (options?.role) {
-      if (options.role === 'buyer') {
+      if (options.role === "buyer") {
         where.OR = [
-          { initiatorId: userId, initiatorRole: 'BUYER' },
-          { counterpartyId: userId, initiatorRole: 'SELLER' },
+          { initiatorId: userId, initiatorRole: "BUYER" },
+          { counterpartyId: userId, initiatorRole: "SELLER" },
         ];
-      } else if (options.role === 'seller') {
+      } else if (options.role === "seller") {
         where.OR = [
-          { initiatorId: userId, initiatorRole: 'SELLER' },
-          { counterpartyId: userId, initiatorRole: 'BUYER' },
+          { initiatorId: userId, initiatorRole: "SELLER" },
+          { counterpartyId: userId, initiatorRole: "BUYER" },
         ];
       }
     }
@@ -138,7 +138,7 @@ export class TransactionRepository {
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           initiator: { select: { id: true, username: true, email: true } },
           counterparty: { select: { id: true, username: true, email: true } },
@@ -190,7 +190,7 @@ export class TransactionRepository {
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           initiator: { select: { id: true, username: true, email: true } },
           counterparty: { select: { id: true, username: true, email: true } },
@@ -204,7 +204,7 @@ export class TransactionRepository {
 
   async countByStatus(): Promise<Record<string, number>> {
     const results = await (this.prisma as any).order.groupBy({
-      by: ['status'],
+      by: ["status"],
       _count: { status: true },
       where: { deletedAt: null },
     });
@@ -218,7 +218,7 @@ export class TransactionRepository {
   async findPendingAutoRelease(): Promise<Transaction[]> {
     return (this.prisma as any).order.findMany({
       where: {
-        status: 'PAID',
+        status: "PAID",
         autoReleaseAt: { lte: new Date() },
         deletedAt: null,
       },

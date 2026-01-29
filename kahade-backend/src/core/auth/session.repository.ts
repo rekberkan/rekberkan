@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import * as crypto from 'crypto';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import * as crypto from "crypto";
 
 // ============================================================================
 // BANK-GRADE SESSION REPOSITORY
@@ -70,7 +70,7 @@ export class SessionRepository {
         revokedAt: null,
         expiresAt: { gt: new Date() },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -86,7 +86,7 @@ export class SessionRepository {
   /**
    * BANK-GRADE: Revoke session by token
    */
-  async revoke(token: string, reason: string = 'revoked') {
+  async revoke(token: string, reason: string = "revoked") {
     const tokenHash = this.hashToken(token);
 
     const result = await this.prisma.session.updateMany({
@@ -131,7 +131,10 @@ export class SessionRepository {
   /**
    * BANK-GRADE: Revoke all sessions for user
    */
-  async revokeAllByUserId(userId: string, reason: string = 'logout_all'): Promise<number> {
+  async revokeAllByUserId(
+    userId: string,
+    reason: string = "logout_all",
+  ): Promise<number> {
     const result = await this.prisma.session.updateMany({
       where: {
         userId,
@@ -142,7 +145,9 @@ export class SessionRepository {
       },
     });
 
-    this.logger.log(`Revoked ${result.count} sessions for user ${userId}: ${reason}`);
+    this.logger.log(
+      `Revoked ${result.count} sessions for user ${userId}: ${reason}`,
+    );
 
     return result.count;
   }
@@ -150,7 +155,10 @@ export class SessionRepository {
   /**
    * BANK-GRADE: Revoke session family (for token rotation security)
    */
-  async revokeSessionFamily(sessionFamilyId: string, reason: string = 'family_revoked') {
+  async revokeSessionFamily(
+    sessionFamilyId: string,
+    reason: string = "family_revoked",
+  ) {
     const result = await this.prisma.session.updateMany({
       where: {
         sessionFamilyId,
@@ -181,7 +189,7 @@ export class SessionRepository {
     });
 
     if (!oldSession) {
-      throw new Error('Session not found for rotation');
+      throw new Error("Session not found for rotation");
     }
 
     // Create new session and revoke old in transaction
@@ -239,7 +247,10 @@ export class SessionRepository {
       );
 
       // Revoke entire session family as security measure
-      await this.revokeSessionFamily(session.sessionFamilyId!, 'token_reuse_detected');
+      await this.revokeSessionFamily(
+        session.sessionFamilyId!,
+        "token_reuse_detected",
+      );
 
       return true;
     }
@@ -258,7 +269,11 @@ export class SessionRepository {
           {
             AND: [
               { revokedAt: { not: null } },
-              { revokedAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } }, // Older than 7 days
+              {
+                revokedAt: {
+                  lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                },
+              }, // Older than 7 days
             ],
           },
         ],
@@ -296,6 +311,6 @@ export class SessionRepository {
    * Hash token for secure storage
    */
   private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
+    return crypto.createHash("sha256").update(token).digest("hex");
   }
 }

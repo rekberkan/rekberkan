@@ -1,6 +1,6 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable, NestMiddleware } from "@nestjs/common";
+import { Request, Response, NextFunction } from "express";
+import { v4 as uuidv4 } from "uuid";
 
 // ============================================================================
 // REQUEST ID MIDDLEWARE
@@ -20,12 +20,14 @@ interface RequestWithId extends Request {
 
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
-  private readonly REQUEST_ID_HEADER = 'X-Request-ID';
+  private readonly REQUEST_ID_HEADER = "X-Request-ID";
 
   use(req: RequestWithId, res: Response, next: NextFunction): void {
     // Use existing request ID from header if provided (for distributed tracing)
     // Otherwise, generate a new one
-    const existingId = req.headers[this.REQUEST_ID_HEADER.toLowerCase()] as string;
+    const existingId = req.headers[
+      this.REQUEST_ID_HEADER.toLowerCase()
+    ] as string;
     const requestId = existingId || this.generateRequestId();
 
     // Attach to request object for use in handlers
@@ -47,7 +49,7 @@ export class RequestIdMiddleware implements NestMiddleware {
    */
   private generateRequestId(): string {
     const timestamp = Date.now().toString(36);
-    const uuid = uuidv4().replace(/-/g, '').substring(0, 12);
+    const uuid = uuidv4().replace(/-/g, "").substring(0, 12);
     return `req_${timestamp}_${uuid}`;
   }
 }
@@ -60,6 +62,6 @@ export class RequestIdMiddleware implements NestMiddleware {
 
 export function generateRequestId(): string {
   const timestamp = Date.now().toString(36);
-  const uuid = uuidv4().replace(/-/g, '').substring(0, 12);
+  const uuid = uuidv4().replace(/-/g, "").substring(0, 12);
   return `req_${timestamp}_${uuid}`;
 }

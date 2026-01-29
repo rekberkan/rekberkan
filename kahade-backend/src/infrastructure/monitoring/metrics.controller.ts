@@ -1,6 +1,6 @@
-import { Controller, Get, Header } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { MetricsService } from './metrics.service';
+import { Controller, Get, Header } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { MetricsService } from "./metrics.service";
 
 // ============================================================================
 // METRICS CONTROLLER
@@ -8,15 +8,18 @@ import { MetricsService } from './metrics.service';
 // Fix #89: Expose Prometheus-compatible metrics endpoint
 // ============================================================================
 
-@ApiTags('Monitoring')
-@Controller('metrics')
+@ApiTags("Monitoring")
+@Controller("metrics")
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 
   @Get()
-  @Header('Content-Type', 'text/plain; charset=utf-8')
-  @ApiOperation({ summary: 'Get Prometheus metrics' })
-  @ApiResponse({ status: 200, description: 'Prometheus metrics in text format' })
+  @Header("Content-Type", "text/plain; charset=utf-8")
+  @ApiOperation({ summary: "Get Prometheus metrics" })
+  @ApiResponse({
+    status: 200,
+    description: "Prometheus metrics in text format",
+  })
   getMetrics(): string {
     return this.metricsService.getPrometheusMetrics();
   }

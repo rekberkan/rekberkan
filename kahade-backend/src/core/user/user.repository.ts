@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { User as PrismaUser } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { User as PrismaUser } from "@prisma/client";
 type User = PrismaUser;
 
 // ============================================================================
@@ -95,12 +95,15 @@ export class UserRepository {
     });
   }
 
-  async findAll(skip: number, take: number): Promise<{ users: User[]; total: number }> {
+  async findAll(
+    skip: number,
+    take: number,
+  ): Promise<{ users: User[]; total: number }> {
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.user.count(),
     ]);

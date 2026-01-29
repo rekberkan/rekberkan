@@ -1,4 +1,4 @@
-import { DisputeStatus } from '@prisma/client';
+import { DisputeStatus } from "@prisma/client";
 
 export interface IDispute {
   id: string;

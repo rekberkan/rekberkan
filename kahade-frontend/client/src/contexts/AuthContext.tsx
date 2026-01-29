@@ -112,8 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await fetchCurrentUser();
       } catch (error) {
-        // User is not authenticated or session expired
-        console.debug('Auth check: User not authenticated');
+        // User is not authenticated or session expired - silent fail
+        // No action needed, user will be redirected to login if required
       }
       
       setIsLoading(false);

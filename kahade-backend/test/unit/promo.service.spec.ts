@@ -9,7 +9,7 @@ describe('PromoService', () => {
   // Mocked service for potential assertions in extended tests
   let _prismaService: jest.Mocked<PrismaService>;
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     promo: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
@@ -34,7 +34,8 @@ describe('PromoService', () => {
       create: jest.fn(),
       count: jest.fn(),
     },
-    $transaction: jest.fn((callback) => callback(mockPrismaService)),
+    $transaction: jest.fn((callback: (tx: any) => any) => callback(mockPrismaService)),
+    $queryRaw: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -182,6 +183,8 @@ describe('PromoService', () => {
       mockPrismaService.voucher.findUnique.mockResolvedValue(mockVoucher);
       mockPrismaService.voucherUsage.count.mockResolvedValue(0);
       mockPrismaService.voucherUsage.findUnique.mockResolvedValue(null);
+      // Mock $queryRaw for SELECT FOR UPDATE in applyVoucher
+      mockPrismaService.$queryRaw.mockResolvedValue([mockVoucher]);
     });
 
     it('should apply percentage voucher correctly', async () => {
@@ -211,12 +214,14 @@ describe('PromoService', () => {
     });
 
     it('should apply fixed amount voucher correctly', async () => {
-      mockPrismaService.voucher.findUnique.mockResolvedValue({
+      const fixedVoucher = {
         ...mockVoucher,
         voucherType: VoucherType.FIXED,
         discountMinor: 25000n,
         discountPercent: null,
-      });
+      };
+      mockPrismaService.voucher.findUnique.mockResolvedValue(fixedVoucher);
+      mockPrismaService.$queryRaw.mockResolvedValue([fixedVoucher]);
 
       const result = await service.applyVoucher(
         'DISCOUNT10',

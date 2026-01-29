@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@prisma/client";
 
 // ============================================================================
 // SQL INJECTION PREVENTION UTILITIES
@@ -11,18 +11,18 @@ import { Prisma } from '@prisma/client';
  * Note: Always prefer parameterized queries over escaping
  */
 export function escapeString(value: string): string {
-  if (!value || typeof value !== 'string') {
-    return '';
+  if (!value || typeof value !== "string") {
+    return "";
   }
 
   return value
-    .replace(/\\/g, '\\\\')
+    .replace(/\\/g, "\\\\")
     .replace(/'/g, "''")
     .replace(/"/g, '\\"')
-    .replace(/\x00/g, '\\0')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\x1a/g, '\\Z');
+    .replace(/\x00/g, "\\0")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\x1a/g, "\\Z");
 }
 
 /**
@@ -30,12 +30,12 @@ export function escapeString(value: string): string {
  * Only allows alphanumeric characters and underscores
  */
 export function sanitizeIdentifier(identifier: string): string {
-  if (!identifier || typeof identifier !== 'string') {
-    throw new Error('Invalid identifier');
+  if (!identifier || typeof identifier !== "string") {
+    throw new Error("Invalid identifier");
   }
 
   // Only allow alphanumeric and underscore
-  const sanitized = identifier.replace(/[^a-zA-Z0-9_]/g, '');
+  const sanitized = identifier.replace(/[^a-zA-Z0-9_]/g, "");
 
   if (sanitized !== identifier) {
     throw new Error(`Invalid characters in identifier: ${identifier}`);
@@ -43,24 +43,24 @@ export function sanitizeIdentifier(identifier: string): string {
 
   // Prevent SQL keywords as identifiers
   const sqlKeywords = [
-    'select',
-    'insert',
-    'update',
-    'delete',
-    'drop',
-    'create',
-    'alter',
-    'truncate',
-    'grant',
-    'revoke',
-    'union',
-    'where',
-    'from',
-    'join',
-    'exec',
-    'execute',
-    'xp_',
-    'sp_',
+    "select",
+    "insert",
+    "update",
+    "delete",
+    "drop",
+    "create",
+    "alter",
+    "truncate",
+    "grant",
+    "revoke",
+    "union",
+    "where",
+    "from",
+    "join",
+    "exec",
+    "execute",
+    "xp_",
+    "sp_",
   ];
 
   if (sqlKeywords.includes(sanitized.toLowerCase())) {
@@ -76,21 +76,24 @@ export function sanitizeIdentifier(identifier: string): string {
  */
 export function safeLikePattern(
   value: string,
-  position: 'start' | 'end' | 'contains' = 'contains',
+  position: "start" | "end" | "contains" = "contains",
 ): string {
-  if (!value || typeof value !== 'string') {
-    return '%';
+  if (!value || typeof value !== "string") {
+    return "%";
   }
 
   // Escape LIKE special characters
-  const escaped = value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+  const escaped = value
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
 
   switch (position) {
-    case 'start':
+    case "start":
       return `${escaped}%`;
-    case 'end':
+    case "end":
       return `%${escaped}`;
-    case 'contains':
+    case "contains":
     default:
       return `%${escaped}%`;
   }
@@ -104,7 +107,7 @@ export function safeOrderBy(
   column: string,
   direction: string,
   allowedColumns: string[],
-): { column: string; direction: 'asc' | 'desc' } {
+): { column: string; direction: "asc" | "desc" } {
   // Validate column
   const sanitizedColumn = sanitizeIdentifier(column);
 
@@ -114,13 +117,13 @@ export function safeOrderBy(
 
   // Validate direction
   const normalizedDirection = direction.toLowerCase();
-  if (normalizedDirection !== 'asc' && normalizedDirection !== 'desc') {
+  if (normalizedDirection !== "asc" && normalizedDirection !== "desc") {
     throw new Error(`Invalid order direction: ${direction}`);
   }
 
   return {
     column: sanitizedColumn,
-    direction: normalizedDirection as 'asc' | 'desc',
+    direction: normalizedDirection as "asc" | "desc",
   };
 }
 
@@ -130,13 +133,13 @@ export function safeOrderBy(
  */
 export function safeInClause(values: (string | number)[]): Prisma.Sql {
   if (!Array.isArray(values) || values.length === 0) {
-    throw new Error('IN clause requires at least one value');
+    throw new Error("IN clause requires at least one value");
   }
 
   // Validate all values are strings or numbers
   for (const value of values) {
-    if (typeof value !== 'string' && typeof value !== 'number') {
-      throw new Error('IN clause values must be strings or numbers');
+    if (typeof value !== "string" && typeof value !== "number") {
+      throw new Error("IN clause values must be strings or numbers");
     }
   }
 
@@ -148,7 +151,10 @@ export function safeInClause(values: (string | number)[]): Prisma.Sql {
  * Build a safe raw query with parameterized values
  * Use this instead of string concatenation
  */
-export function safeRawQuery(template: TemplateStringsArray, ...values: any[]): Prisma.Sql {
+export function safeRawQuery(
+  template: TemplateStringsArray,
+  ...values: any[]
+): Prisma.Sql {
   return Prisma.sql(template, ...values);
 }
 
@@ -160,15 +166,15 @@ export function safePagination(
   limit: number | string,
   maxLimit = 100,
 ): { skip: number; take: number } {
-  const pageNum = typeof page === 'string' ? parseInt(page, 10) : page;
-  const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+  const pageNum = typeof page === "string" ? parseInt(page, 10) : page;
+  const limitNum = typeof limit === "string" ? parseInt(limit, 10) : limit;
 
   if (isNaN(pageNum) || pageNum < 1) {
-    throw new Error('Invalid page number');
+    throw new Error("Invalid page number");
   }
 
   if (isNaN(limitNum) || limitNum < 1) {
-    throw new Error('Invalid limit');
+    throw new Error("Invalid limit");
   }
 
   const safeTake = Math.min(limitNum, maxLimit);
@@ -186,7 +192,7 @@ export function safeSearchWhere(
   searchFields: string[],
   allowedFields: string[],
 ): Prisma.Sql {
-  if (!searchTerm || typeof searchTerm !== 'string') {
+  if (!searchTerm || typeof searchTerm !== "string") {
     return Prisma.sql`TRUE`;
   }
 
@@ -201,20 +207,23 @@ export function safeSearchWhere(
   }
 
   const pattern = safeLikePattern(searchTerm);
-  const conditions = validFields.map((field) => Prisma.sql`${Prisma.raw(field)} ILIKE ${pattern}`);
+  const conditions = validFields.map(
+    (field) => Prisma.sql`${Prisma.raw(field)} ILIKE ${pattern}`,
+  );
 
-  return Prisma.sql`(${Prisma.join(conditions, ' OR ')})`;
+  return Prisma.sql`(${Prisma.join(conditions, " OR ")})`;
 }
 
 /**
  * Validate UUID format
  */
 export function isValidUUID(value: string): boolean {
-  if (!value || typeof value !== 'string') {
+  if (!value || typeof value !== "string") {
     return false;
   }
 
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(value);
 }
 
@@ -223,7 +232,7 @@ export function isValidUUID(value: string): boolean {
  */
 export function sanitizeUUID(value: string): string {
   if (!isValidUUID(value)) {
-    throw new Error('Invalid UUID format');
+    throw new Error("Invalid UUID format");
   }
   return value.toLowerCase();
 }

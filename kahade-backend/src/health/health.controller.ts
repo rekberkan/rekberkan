@@ -1,8 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
-import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
-import { PrismaService } from '@infrastructure/database/prisma.service';
+import { Controller, Get } from "@nestjs/common";
+import { HealthCheckService, HealthCheck } from "@nestjs/terminus";
+import { PrismaService } from "@infrastructure/database/prisma.service";
 
-@Controller('health')
+@Controller("health")
 export class HealthController {
   constructor(
     private health: HealthCheckService,
@@ -18,13 +18,13 @@ export class HealthController {
           await this.prisma.$queryRaw`SELECT 1`;
           return {
             database: {
-              status: 'up',
+              status: "up",
             },
           };
         } catch (error) {
           return {
             database: {
-              status: 'down',
+              status: "down",
               message: error.message,
             },
           };
@@ -33,13 +33,13 @@ export class HealthController {
     ]);
   }
 
-  @Get('ready')
+  @Get("ready")
   async ready() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { status: "ok", timestamp: new Date().toISOString() };
   }
 
-  @Get('live')
+  @Get("live")
   async live() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { status: "ok", timestamp: new Date().toISOString() };
   }
 }

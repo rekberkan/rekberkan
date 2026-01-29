@@ -1,4 +1,4 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance } from "class-transformer";
 import {
   IsEnum,
   IsNumber,
@@ -9,7 +9,7 @@ import {
   validateSync,
   IsBoolean,
   MinLength,
-} from 'class-validator';
+} from "class-validator";
 
 // ============================================================================
 // ENVIRONMENT CONFIGURATION VALIDATION
@@ -19,10 +19,10 @@ import {
 // ============================================================================
 
 enum Environment {
-  Development = 'development',
-  Staging = 'staging',
-  Production = 'production',
-  Test = 'test',
+  Development = "development",
+  Staging = "staging",
+  Production = "production",
+  Test = "test",
 }
 
 class EnvironmentVariables {
@@ -71,7 +71,7 @@ class EnvironmentVariables {
   // REDIS
   // ============================================================================
   @IsString()
-  REDIS_HOST: string = 'localhost';
+  REDIS_HOST: string = "localhost";
 
   @IsNumber()
   @Min(1)
@@ -186,16 +186,20 @@ export function validate(config: Record<string, unknown>) {
 
   if (errors.length > 0) {
     const errorMessages = errors.map((error) => {
-      const constraints = Object.values(error.constraints || {}).join(', ');
+      const constraints = Object.values(error.constraints || {}).join(", ");
       return `${error.property}: ${constraints}`;
     });
 
     // In production, throw error for missing required configs
-    if (config.NODE_ENV === 'production') {
-      throw new Error(`Configuration validation failed:\n${errorMessages.join('\n')}`);
+    if (config.NODE_ENV === "production") {
+      throw new Error(
+        `Configuration validation failed:\n${errorMessages.join("\n")}`,
+      );
     } else {
       // In development, just warn
-      console.warn(`⚠️  Configuration validation warnings:\n${errorMessages.join('\n')}`);
+      console.warn(
+        `⚠️  Configuration validation warnings:\n${errorMessages.join("\n")}`,
+      );
     }
   }
 
@@ -208,31 +212,35 @@ export function validate(config: Record<string, unknown>) {
 // Additional strict validation for production environment
 // ============================================================================
 
-export function validateProductionConfig(config: Record<string, unknown>): void {
-  if (config.NODE_ENV !== 'production') {
+export function validateProductionConfig(
+  config: Record<string, unknown>,
+): void {
+  if (config.NODE_ENV !== "production") {
     return;
   }
 
   const requiredProductionVars = [
-    'DATABASE_URL',
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-    'REDIS_HOST',
-    'REDIS_PASSWORD',
-    'CORS_ORIGIN',
-    'COOKIE_SECRET',
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "JWT_REFRESH_SECRET",
+    "REDIS_HOST",
+    "REDIS_PASSWORD",
+    "CORS_ORIGIN",
+    "COOKIE_SECRET",
   ];
 
-  const missingVars = requiredProductionVars.filter((varName) => !config[varName]);
+  const missingVars = requiredProductionVars.filter(
+    (varName) => !config[varName],
+  );
 
   if (missingVars.length > 0) {
     throw new Error(
-      `CRITICAL: Missing required production environment variables: ${missingVars.join(', ')}`,
+      `CRITICAL: Missing required production environment variables: ${missingVars.join(", ")}`,
     );
   }
 
   // Validate CORS is not wildcard
-  if (config.CORS_ORIGIN === '*') {
+  if (config.CORS_ORIGIN === "*") {
     throw new Error('CRITICAL: CORS_ORIGIN cannot be "*" in production');
   }
 
@@ -241,16 +249,22 @@ export function validateProductionConfig(config: Record<string, unknown>): void 
   const jwtRefreshSecret = config.JWT_REFRESH_SECRET as string;
 
   if (jwtSecret && jwtSecret.length < 64) {
-    throw new Error('CRITICAL: JWT_SECRET must be at least 64 characters in production');
+    throw new Error(
+      "CRITICAL: JWT_SECRET must be at least 64 characters in production",
+    );
   }
 
   if (jwtRefreshSecret && jwtRefreshSecret.length < 64) {
-    throw new Error('CRITICAL: JWT_REFRESH_SECRET must be at least 64 characters in production');
+    throw new Error(
+      "CRITICAL: JWT_REFRESH_SECRET must be at least 64 characters in production",
+    );
   }
 
   // Validate Swagger is disabled
-  if (config.ENABLE_SWAGGER === true || config.ENABLE_SWAGGER === 'true') {
-    throw new Error('CRITICAL: Swagger must be disabled in production (ENABLE_SWAGGER=false)');
+  if (config.ENABLE_SWAGGER === true || config.ENABLE_SWAGGER === "true") {
+    throw new Error(
+      "CRITICAL: Swagger must be disabled in production (ENABLE_SWAGGER=false)",
+    );
   }
 
   // QUALITY FIX [M001]: Removed console.log - validation result is logged by main.ts

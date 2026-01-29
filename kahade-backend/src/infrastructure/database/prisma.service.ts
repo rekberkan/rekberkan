@@ -1,6 +1,11 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient, Prisma } from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from "@nestjs/common";
+import { PrismaClient, Prisma } from "@prisma/client";
+import { ConfigService } from "@nestjs/config";
 
 // ============================================================================
 // BANK-GRADE PRISMA SERVICE
@@ -8,21 +13,24 @@ import { ConfigService } from '@nestjs/config';
 // ============================================================================
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
   private isConnected = false;
 
   constructor(private readonly configService?: ConfigService) {
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+
     super({
       log: isProduction
-        ? [{ emit: 'event', level: 'error' }]
+        ? [{ emit: "event", level: "error" }]
         : [
-            { emit: 'event', level: 'query' },
-            { emit: 'event', level: 'error' },
-            { emit: 'event', level: 'info' },
-            { emit: 'event', level: 'warn' },
+            { emit: "event", level: "query" },
+            { emit: "event", level: "error" },
+            { emit: "event", level: "info" },
+            { emit: "event", level: "warn" },
           ],
       datasources: {
         db: {
@@ -33,7 +41,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     // Set up query logging in development
     if (!isProduction) {
-      (this as any).$on('query', (e: Prisma.QueryEvent) => {
+      (this as any).$on("query", (e: Prisma.QueryEvent) => {
         if (e.duration > 1000) {
           this.logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
         }
@@ -41,7 +49,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
 
     // Log errors
-    (this as any).$on('error', (e: Prisma.LogEvent) => {
+    (this as any).$on("error", (e: Prisma.LogEvent) => {
       this.logger.error(`Database error: ${e.message}`);
     });
   }
@@ -50,9 +58,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     try {
       await this.$connect();
       this.isConnected = true;
-      this.logger.log('Database connected successfully');
+      this.logger.log("Database connected successfully");
     } catch (error) {
-      this.logger.error('Failed to connect to database', error);
+      this.logger.error("Failed to connect to database", error);
       throw error;
     }
   }
@@ -60,7 +68,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
     this.isConnected = false;
-    this.logger.log('Database disconnected');
+    this.logger.log("Database disconnected");
   }
 
   /**
@@ -91,28 +99,28 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     delayMs = 100,
   ): Promise<T> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         // Check if error is retryable (connection issues, deadlocks)
         const isRetryable = this.isRetryableError(error);
-        
+
         if (!isRetryable || attempt === maxRetries) {
           throw error;
         }
-        
+
         this.logger.warn(
           `Database operation failed (attempt ${attempt}/${maxRetries}), retrying in ${delayMs}ms...`,
         );
-        
+
         await this.delay(delayMs * Math.pow(2, attempt - 1));
       }
     }
-    
+
     throw lastError;
   }
 
@@ -125,7 +133,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       // P1002: Database server timed out
       // P2024: Timed out fetching connection from pool
       // P2034: Transaction failed due to write conflict or deadlock
-      const retryableCodes = ['P1001', 'P1002', 'P2024', 'P2034'];
+      const retryableCodes = ["P1001", "P1002", "P2024", "P2034"];
       return retryableCodes.includes(error.code);
     }
     return false;
@@ -142,18 +150,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
    * Clean database (development/testing only)
    */
   async cleanDatabase(): Promise<void> {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Cannot clean database in production');
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Cannot clean database in production");
     }
 
     const models = Object.keys(this).filter(
-      (key) => !key.startsWith('_') && !key.startsWith('$') && key !== 'logger',
+      (key) => !key.startsWith("_") && !key.startsWith("$") && key !== "logger",
     );
 
     await Promise.all(
       models.map(async (modelKey) => {
         const model = (this as Record<string, unknown>)[modelKey];
-        if (model && typeof (model as { deleteMany?: () => Promise<unknown> }).deleteMany === 'function') {
+        if (
+          model &&
+          typeof (model as { deleteMany?: () => Promise<unknown> })
+            .deleteMany === "function"
+        ) {
           await (model as { deleteMany: () => Promise<unknown> }).deleteMany();
         }
       }),

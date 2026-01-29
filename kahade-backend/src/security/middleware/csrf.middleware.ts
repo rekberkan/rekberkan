@@ -1,6 +1,11 @@
-import { Injectable, NestMiddleware, ForbiddenException, Logger } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import * as crypto from 'crypto';
+import {
+  Injectable,
+  NestMiddleware,
+  ForbiddenException,
+  Logger,
+} from "@nestjs/common";
+import { Request, Response, NextFunction } from "express";
+import * as crypto from "crypto";
 
 /**
  * CSRF Protection Middleware
@@ -22,21 +27,21 @@ import * as crypto from 'crypto';
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
   private readonly logger = new Logger(CsrfMiddleware.name);
-  private readonly CSRF_COOKIE_NAME = 'XSRF-TOKEN';
-  private readonly CSRF_HEADER_NAME = 'x-xsrf-token';
+  private readonly CSRF_COOKIE_NAME = "XSRF-TOKEN";
+  private readonly CSRF_HEADER_NAME = "x-xsrf-token";
   private readonly TOKEN_LENGTH = 32;
 
   // Methods that require CSRF protection (state-changing operations)
-  private readonly PROTECTED_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  private readonly PROTECTED_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
 
   // Paths that don't need CSRF protection (e.g., webhooks with signature verification)
   private readonly EXCLUDED_PATHS = [
-    '/webhooks/midtrans',
-    '/webhooks/xendit',
-    '/api/v1/auth/login',
-    '/api/v1/auth/register',
-    '/api/v1/auth/refresh',
-    '/health',
+    "/webhooks/midtrans",
+    "/webhooks/xendit",
+    "/api/v1/auth/login",
+    "/api/v1/auth/register",
+    "/api/v1/auth/refresh",
+    "/health",
   ];
 
   use(req: Request, res: Response, next: NextFunction) {
@@ -59,8 +64,8 @@ export class CsrfMiddleware implements NestMiddleware {
     if (!cookieToken || !headerToken) {
       this.logger.warn(`CSRF token missing for ${req.method} ${req.path}`);
       throw new ForbiddenException({
-        code: 'CSRF_TOKEN_MISSING',
-        message: 'CSRF token is missing',
+        code: "CSRF_TOKEN_MISSING",
+        message: "CSRF token is missing",
       });
     }
 
@@ -68,8 +73,8 @@ export class CsrfMiddleware implements NestMiddleware {
     if (!this.constantTimeCompare(cookieToken, headerToken)) {
       this.logger.warn(`CSRF token mismatch for ${req.method} ${req.path}`);
       throw new ForbiddenException({
-        code: 'CSRF_TOKEN_INVALID',
-        message: 'CSRF token validation failed',
+        code: "CSRF_TOKEN_INVALID",
+        message: "CSRF token validation failed",
       });
     }
 
@@ -104,14 +109,14 @@ export class CsrfMiddleware implements NestMiddleware {
     // Set token in cookie (httpOnly for security)
     res.cookie(this.CSRF_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/',
+      path: "/",
     });
 
     // Also send token in header for frontend to read
-    res.setHeader('X-CSRF-Token', token);
+    res.setHeader("X-CSRF-Token", token);
   }
 
   /**
@@ -125,7 +130,7 @@ export class CsrfMiddleware implements NestMiddleware {
    * Generate cryptographically secure random token
    */
   private generateToken(): string {
-    return crypto.randomBytes(this.TOKEN_LENGTH).toString('hex');
+    return crypto.randomBytes(this.TOKEN_LENGTH).toString("hex");
   }
 
   /**
@@ -137,7 +142,10 @@ export class CsrfMiddleware implements NestMiddleware {
     }
 
     try {
-      return crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+      return crypto.timingSafeEqual(
+        Buffer.from(a, "utf8"),
+        Buffer.from(b, "utf8"),
+      );
     } catch {
       return false;
     }

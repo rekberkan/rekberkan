@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma, Voucher, VoucherUsage, VoucherStatus } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma, Voucher, VoucherUsage, VoucherStatus } from "@prisma/client";
 
 @Injectable()
 export class VoucherRepository {
@@ -57,15 +57,19 @@ export class VoucherRepository {
         validUntil: { gte: now },
         OR: [{ assignedToUserId: userId }, { assignedToUserId: null }],
       },
-      orderBy: { validUntil: 'asc' },
+      orderBy: { validUntil: "asc" },
     });
   }
 
-  async createUsage(data: Prisma.VoucherUsageCreateInput): Promise<VoucherUsage> {
+  async createUsage(
+    data: Prisma.VoucherUsageCreateInput,
+  ): Promise<VoucherUsage> {
     return this.prisma.voucherUsage.create({ data });
   }
 
-  async findUsageByIdempotencyKey(idempotencyKey: string): Promise<VoucherUsage | null> {
+  async findUsageByIdempotencyKey(
+    idempotencyKey: string,
+  ): Promise<VoucherUsage | null> {
     return this.prisma.voucherUsage.findUnique({
       where: { idempotencyKey },
     });
@@ -77,11 +81,15 @@ export class VoucherRepository {
     });
   }
 
-  async findUsagesByUser(userId: string, skip?: number, take?: number): Promise<VoucherUsage[]> {
+  async findUsagesByUser(
+    userId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<VoucherUsage[]> {
     return this.prisma.voucherUsage.findMany({
       where: { userId },
       include: { voucher: true },
-      orderBy: { usedAt: 'desc' },
+      orderBy: { usedAt: "desc" },
       skip,
       take,
     });

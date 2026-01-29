@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma } from "@prisma/client";
 
 /**
  * Ledger Lock Service
@@ -91,7 +91,7 @@ export class LedgerLockService {
     },
     entries: Array<{
       walletId: string;
-      type: 'DEBIT' | 'CREDIT';
+      type: "DEBIT" | "CREDIT";
       amountMinor: bigint;
       balanceAfterMinor: bigint;
     }>,
@@ -99,7 +99,7 @@ export class LedgerLockService {
     // Validate double-entry invariant: sum must be zero
     let sum = 0n;
     for (const entry of entries) {
-      if (entry.type === 'DEBIT') {
+      if (entry.type === "DEBIT") {
         sum += entry.amountMinor;
       } else {
         sum -= entry.amountMinor;
@@ -107,7 +107,9 @@ export class LedgerLockService {
     }
 
     if (sum !== 0n) {
-      throw new Error(`Double-entry invariant violated: sum is ${sum}, expected 0`);
+      throw new Error(
+        `Double-entry invariant violated: sum is ${sum}, expected 0`,
+      );
     }
 
     // Create journal
@@ -117,7 +119,7 @@ export class LedgerLockService {
         description: journalData.description,
         metadata: journalData.metadata,
         totalAmountMinor: entries.reduce(
-          (acc, e) => acc + (e.type === 'DEBIT' ? e.amountMinor : 0n),
+          (acc, e) => acc + (e.type === "DEBIT" ? e.amountMinor : 0n),
           0n,
         ),
       },
@@ -136,7 +138,9 @@ export class LedgerLockService {
       });
     }
 
-    this.logger.debug(`Created ledger journal ${journal.id} with ${entries.length} entries`);
+    this.logger.debug(
+      `Created ledger journal ${journal.id} with ${entries.length} entries`,
+    );
 
     return journal.id;
   }
@@ -165,7 +169,7 @@ export class LedgerLockService {
 
     let expectedBalance = 0n;
     for (const entry of entries) {
-      if (entry.type === 'CREDIT') {
+      if (entry.type === "CREDIT") {
         expectedBalance += entry.amountMinor;
       } else {
         expectedBalance -= entry.amountMinor;

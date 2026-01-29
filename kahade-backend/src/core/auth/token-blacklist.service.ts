@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
-import * as crypto from 'crypto';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import Redis from "ioredis";
+import * as crypto from "crypto";
 
 // ============================================================================
 // BANK-GRADE TOKEN BLACKLIST SERVICE
@@ -21,42 +21,49 @@ export class TokenBlacklistService {
   private redis: Redis | null = null;
 
   // In-memory fallback storage
-  private blacklistSet = new Map<string, { reason: string; expiresAt: number }>();
+  private blacklistSet = new Map<
+    string,
+    { reason: string; expiresAt: number }
+  >();
   private refreshTokens = new Map<string, TokenMetadata>();
 
   // Cleanup interval for memory storage
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    const redisHost = this.configService.get<string>('redis.host');
-    const redisPort = this.configService.get<number>('redis.port');
+    const redisHost = this.configService.get<string>("redis.host");
+    const redisPort = this.configService.get<number>("redis.port");
 
     if (redisHost && redisPort) {
       this.redis = new Redis({
         host: redisHost,
         port: redisPort,
-        password: this.configService.get<string>('redis.password'),
-        db: this.configService.get<number>('redis.db', 0),
+        password: this.configService.get<string>("redis.password"),
+        db: this.configService.get<number>("redis.db", 0),
         lazyConnect: true,
         retryStrategy: (times) => {
           if (times > 3) {
-            this.logger.warn('Redis connection failed after 3 retries. Using memory fallback.');
+            this.logger.warn(
+              "Redis connection failed after 3 retries. Using memory fallback.",
+            );
             return null;
           }
           return Math.min(times * 100, 3000);
         },
       });
 
-      this.redis.on('error', (err) => {
-        this.logger.warn(`Redis error: ${err.message}. Falling back to memory storage.`);
+      this.redis.on("error", (err) => {
+        this.logger.warn(
+          `Redis error: ${err.message}. Falling back to memory storage.`,
+        );
         this.redis = null;
       });
 
-      this.redis.on('connect', () => {
-        this.logger.log('Redis connected successfully');
+      this.redis.on("connect", () => {
+        this.logger.log("Redis connected successfully");
       });
     } else {
-      this.logger.warn('Redis not configured. Using in-memory token storage.');
+      this.logger.warn("Redis not configured. Using in-memory token storage.");
     }
 
     // Start cleanup interval for memory storage
@@ -102,7 +109,7 @@ export class TokenBlacklistService {
   async blacklistToken(
     token: string,
     expiresInSeconds: number,
-    reason: string = 'logout',
+    reason: string = "logout",
   ): Promise<void> {
     const tokenHash = this.hashToken(token);
     const expiresAt = Date.now() + expiresInSeconds * 1000;
@@ -112,10 +119,12 @@ export class TokenBlacklistService {
         await this.redis.set(
           `blacklist:${tokenHash}`,
           JSON.stringify({ reason, blacklistedAt: Date.now() }),
-          'EX',
+          "EX",
           expiresInSeconds,
         );
-        this.logger.debug(`Token blacklisted in Redis: ${tokenHash.substring(0, 8)}...`);
+        this.logger.debug(
+          `Token blacklisted in Redis: ${tokenHash.substring(0, 8)}...`,
+        );
         return;
       } catch (error) {
         this.logger.error(`Redis error blacklisting token: ${error.message}`);
@@ -124,7 +133,9 @@ export class TokenBlacklistService {
     }
 
     this.blacklistSet.set(tokenHash, { reason, expiresAt });
-    this.logger.debug(`Token blacklisted in memory: ${tokenHash.substring(0, 8)}...`);
+    this.logger.debug(
+      `Token blacklisted in memory: ${tokenHash.substring(0, 8)}...`,
+    );
   }
 
   // ============================================================================
@@ -134,7 +145,11 @@ export class TokenBlacklistService {
   /**
    * BANK-GRADE: Store refresh token
    */
-  async storeRefreshToken(userId: string, token: string, expiresInSeconds: number): Promise<void> {
+  async storeRefreshToken(
+    userId: string,
+    token: string,
+    expiresInSeconds: number,
+  ): Promise<void> {
     const tokenHash = this.hashToken(token);
     const expiresAt = Date.now() + expiresInSeconds * 1000;
 
@@ -145,7 +160,12 @@ export class TokenBlacklistService {
           expiresAt,
           createdAt: Date.now(),
         });
-        await this.redis.set(`refresh:${tokenHash}`, data, 'EX', expiresInSeconds);
+        await this.redis.set(
+          `refresh:${tokenHash}`,
+          data,
+          "EX",
+          expiresInSeconds,
+        );
 
         // Also add to user's token set for bulk revocation
         await this.redis.sadd(`user_tokens:${userId}`, tokenHash);
@@ -153,7 +173,9 @@ export class TokenBlacklistService {
 
         return;
       } catch (error) {
-        this.logger.error(`Redis error storing refresh token: ${error.message}`);
+        this.logger.error(
+          `Redis error storing refresh token: ${error.message}`,
+        );
       }
     }
 
@@ -180,7 +202,9 @@ export class TokenBlacklistService {
         }
         return null;
       } catch (error) {
-        this.logger.error(`Redis error validating refresh token: ${error.message}`);
+        this.logger.error(
+          `Redis error validating refresh token: ${error.message}`,
+        );
       }
     }
 
@@ -195,7 +219,10 @@ export class TokenBlacklistService {
   /**
    * BANK-GRADE: Revoke refresh token
    */
-  async revokeRefreshToken(token: string, reason: string = 'revoked'): Promise<void> {
+  async revokeRefreshToken(
+    token: string,
+    reason: string = "revoked",
+  ): Promise<void> {
     const tokenHash = this.hashToken(token);
 
     if (this.redis) {
@@ -212,7 +239,9 @@ export class TokenBlacklistService {
         await this.redis.del(`refresh:${tokenHash}`);
         return;
       } catch (error) {
-        this.logger.error(`Redis error revoking refresh token: ${error.message}`);
+        this.logger.error(
+          `Redis error revoking refresh token: ${error.message}`,
+        );
       }
     }
 
@@ -226,7 +255,10 @@ export class TokenBlacklistService {
   /**
    * BANK-GRADE: Revoke refresh token by hash
    */
-  async revokeRefreshTokenHash(tokenHash: string, reason: string = 'revoked'): Promise<void> {
+  async revokeRefreshTokenHash(
+    tokenHash: string,
+    reason: string = "revoked",
+  ): Promise<void> {
     if (this.redis) {
       try {
         const data = await this.redis.get(`refresh:${tokenHash}`);
@@ -237,7 +269,9 @@ export class TokenBlacklistService {
         await this.redis.del(`refresh:${tokenHash}`);
         return;
       } catch (error) {
-        this.logger.error(`Redis error revoking refresh token by hash: ${error.message}`);
+        this.logger.error(
+          `Redis error revoking refresh token by hash: ${error.message}`,
+        );
       }
     }
 
@@ -251,7 +285,10 @@ export class TokenBlacklistService {
   /**
    * BANK-GRADE: Revoke all refresh tokens for a user
    */
-  async revokeAllUserTokens(userId: string, reason: string = 'logout_all'): Promise<number> {
+  async revokeAllUserTokens(
+    userId: string,
+    reason: string = "logout_all",
+  ): Promise<number> {
     let revokedCount = 0;
 
     if (this.redis) {
@@ -273,7 +310,9 @@ export class TokenBlacklistService {
 
         return revokedCount;
       } catch (error) {
-        this.logger.error(`Redis error revoking all user tokens: ${error.message}`);
+        this.logger.error(
+          `Redis error revoking all user tokens: ${error.message}`,
+        );
       }
     }
 
@@ -297,7 +336,7 @@ export class TokenBlacklistService {
    * Hash token for storage (don't store raw tokens)
    */
   private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
+    return crypto.createHash("sha256").update(token).digest("hex");
   }
 
   /**
@@ -354,8 +393,8 @@ export class TokenBlacklistService {
   }> {
     if (this.redis) {
       try {
-        const blacklistKeys = await this.redis.keys('blacklist:*');
-        const refreshKeys = await this.redis.keys('refresh:*');
+        const blacklistKeys = await this.redis.keys("blacklist:*");
+        const refreshKeys = await this.redis.keys("refresh:*");
         return {
           blacklistSize: blacklistKeys.length,
           refreshTokenCount: refreshKeys.length,

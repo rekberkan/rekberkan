@@ -5,20 +5,23 @@ import {
   UnauthorizedException,
   Logger,
   BadRequestException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { CryptoUtil, HashUtil as BackupCodeHashUtil } from '@common/utils/crypto.util';
-import * as crypto from 'crypto';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import {
+  CryptoUtil,
+  HashUtil as BackupCodeHashUtil,
+} from "@common/utils/crypto.util";
+import * as crypto from "crypto";
 
 // ============================================================================
 // BANK-GRADE MFA GUARD
 // Implements: TOTP Verification, Admin Enforcement, Rate Limiting
 // ============================================================================
 
-export const MFA_REQUIRED_KEY = 'mfa_required';
-export const MFA_ADMIN_ONLY_KEY = 'mfa_admin_only';
+export const MFA_REQUIRED_KEY = "mfa_required";
+export const MFA_ADMIN_ONLY_KEY = "mfa_admin_only";
 
 /**
  * Decorator to require MFA for specific endpoints
@@ -35,7 +38,11 @@ export const RequireMFA = () => {
  */
 export const RequireMFAForAdmin = () => {
   return (target: any, key?: string, descriptor?: PropertyDescriptor) => {
-    Reflect.defineMetadata(MFA_ADMIN_ONLY_KEY, true, descriptor?.value ?? target);
+    Reflect.defineMetadata(
+      MFA_ADMIN_ONLY_KEY,
+      true,
+      descriptor?.value ?? target,
+    );
     return descriptor ?? target;
   };
 };
@@ -62,21 +69,21 @@ export class MfaGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if MFA is required for this endpoint
-    const requiresMFA = this.reflector.getAllAndOverride<boolean>(MFA_REQUIRED_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresMFA = this.reflector.getAllAndOverride<boolean>(
+      MFA_REQUIRED_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-    const adminOnlyMFA = this.reflector.getAllAndOverride<boolean>(MFA_ADMIN_ONLY_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const adminOnlyMFA = this.reflector.getAllAndOverride<boolean>(
+      MFA_ADMIN_ONLY_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
     if (!user) {
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException("Authentication required");
     }
 
     // Check if MFA is required based on decorators
@@ -102,25 +109,25 @@ export class MfaGuard implements CanActivate {
     });
 
     if (!dbUser) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException("User not found");
     }
 
     // BANK-GRADE: Force MFA for admin users on sensitive operations
     if (requiresMFA && dbUser.isAdmin && !dbUser.mfaEnabled) {
       throw new BadRequestException({
-        code: 'MFA_REQUIRED',
-        message: 'MFA must be enabled for admin users to perform this action',
+        code: "MFA_REQUIRED",
+        message: "MFA must be enabled for admin users to perform this action",
       });
     }
 
     // If user has MFA enabled, verify the token
     if (dbUser.mfaEnabled) {
-      const mfaToken = request.headers['x-mfa-token'];
+      const mfaToken = request.headers["x-mfa-token"];
 
       if (!mfaToken) {
         throw new UnauthorizedException({
-          code: 'MFA_TOKEN_REQUIRED',
-          message: 'MFA token required for this operation',
+          code: "MFA_TOKEN_REQUIRED",
+          message: "MFA token required for this operation",
         });
       }
 
@@ -128,7 +135,7 @@ export class MfaGuard implements CanActivate {
       const lockStatus = this.checkMfaRateLimit(user.id);
       if (lockStatus.isLocked) {
         throw new UnauthorizedException({
-          code: 'MFA_LOCKED',
+          code: "MFA_LOCKED",
           message: `Too many failed MFA attempts. Try again in ${lockStatus.remainingMinutes} minutes.`,
         });
       }
@@ -139,8 +146,8 @@ export class MfaGuard implements CanActivate {
       if (!isValid) {
         this.recordFailedMfaAttempt(user.id);
         throw new UnauthorizedException({
-          code: 'MFA_INVALID',
-          message: 'Invalid MFA token',
+          code: "MFA_INVALID",
+          message: "Invalid MFA token",
         });
       }
 
@@ -168,7 +175,11 @@ export class MfaGuard implements CanActivate {
 
     // Try backup code
     if (user.backupCodesHash) {
-      const isValidBackup = await this.verifyBackupCode(user.id, user.backupCodesHash, token);
+      const isValidBackup = await this.verifyBackupCode(
+        user.id,
+        user.backupCodesHash,
+        token,
+      );
       if (isValidBackup) {
         return true;
       }
@@ -210,13 +221,13 @@ export class MfaGuard implements CanActivate {
     buffer.writeBigInt64BE(BigInt(counter));
 
     // Decode base32 secret manually
-    const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    const secretUpper = secret.toUpperCase().replace(/=+$/, '');
-    let bits = '';
+    const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    const secretUpper = secret.toUpperCase().replace(/=+$/, "");
+    let bits = "";
     for (const char of secretUpper) {
       const val = base32Chars.indexOf(char);
       if (val >= 0) {
-        bits += val.toString(2).padStart(5, '0');
+        bits += val.toString(2).padStart(5, "0");
       }
     }
     const bytes: number[] = [];
@@ -225,7 +236,7 @@ export class MfaGuard implements CanActivate {
     }
     const secretBuffer = Buffer.from(bytes);
 
-    const hmac = crypto.createHmac('sha1', secretBuffer);
+    const hmac = crypto.createHmac("sha1", secretBuffer);
     hmac.update(buffer);
     const hash = hmac.digest();
 
@@ -237,7 +248,7 @@ export class MfaGuard implements CanActivate {
         (hash[offset + 3] & 0xff)) %
       1000000;
 
-    return code.toString().padStart(6, '0');
+    return code.toString().padStart(6, "0");
   }
 
   /**
@@ -249,13 +260,15 @@ export class MfaGuard implements CanActivate {
     code: string,
   ): Promise<boolean> {
     try {
-      const codes = backupCodesHash as { hash: string; used?: boolean }[] | string[];
+      const codes = backupCodesHash as
+        | { hash: string; used?: boolean }[]
+        | string[];
 
       if (!Array.isArray(codes) || codes.length === 0) {
         return false;
       }
 
-      if (typeof codes[0] === 'string') {
+      if (typeof codes[0] === "string") {
         for (let i = 0; i < codes.length; i++) {
           const hash = codes[i] as string;
           const isValid = await BackupCodeHashUtil.verify(code, hash);
@@ -280,7 +293,10 @@ export class MfaGuard implements CanActivate {
 
         let isValid = await BackupCodeHashUtil.verify(code, entry.hash);
         if (!isValid) {
-          const codeHash = crypto.createHash('sha256').update(code).digest('hex');
+          const codeHash = crypto
+            .createHash("sha256")
+            .update(code)
+            .digest("hex");
           isValid = entry.hash === codeHash;
         }
 
@@ -306,17 +322,17 @@ export class MfaGuard implements CanActivate {
    * Decrypt TOTP secret
    */
   private decryptSecret(encryptedSecret: string): string {
-    const encryptionKey = this.configService.get<string>('MFA_ENCRYPTION_KEY');
+    const encryptionKey = this.configService.get<string>("MFA_ENCRYPTION_KEY");
 
     if (!encryptionKey) {
-      throw new Error('MFA encryption key not configured');
+      throw new Error("MFA encryption key not configured");
     }
 
     try {
       return CryptoUtil.decrypt(encryptedSecret, encryptionKey);
     } catch (error) {
       this.logger.error(`Secret decryption error: ${error.message}`);
-      throw new Error('Failed to decrypt MFA secret');
+      throw new Error("Failed to decrypt MFA secret");
     }
   }
 
@@ -334,7 +350,10 @@ export class MfaGuard implements CanActivate {
   /**
    * Check MFA rate limiting
    */
-  private checkMfaRateLimit(userId: string): { isLocked: boolean; remainingMinutes?: number } {
+  private checkMfaRateLimit(userId: string): {
+    isLocked: boolean;
+    remainingMinutes?: number;
+  } {
     const attempts = this.mfaAttempts.get(userId);
 
     if (!attempts) {
@@ -371,7 +390,10 @@ export class MfaGuard implements CanActivate {
     }
 
     // Reset if outside window
-    if (now.getTime() - attempts.lastAttempt.getTime() > this.ATTEMPT_WINDOW_MS) {
+    if (
+      now.getTime() - attempts.lastAttempt.getTime() >
+      this.ATTEMPT_WINDOW_MS
+    ) {
       this.mfaAttempts.set(userId, { count: 1, lastAttempt: now });
       return;
     }
@@ -381,7 +403,9 @@ export class MfaGuard implements CanActivate {
 
     if (attempts.count >= this.MAX_ATTEMPTS) {
       attempts.lockedUntil = new Date(now.getTime() + this.LOCKOUT_DURATION_MS);
-      this.logger.warn(`MFA locked for user ${userId} due to ${attempts.count} failed attempts`);
+      this.logger.warn(
+        `MFA locked for user ${userId} due to ${attempts.count} failed attempts`,
+      );
     }
 
     this.mfaAttempts.set(userId, attempts);

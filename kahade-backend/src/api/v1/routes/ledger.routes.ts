@@ -1,17 +1,21 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response } from "express";
 
 const router: Router = Router();
 
-router.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'ledger' });
+router.get("/health", (_req: Request, res: Response) => {
+  res.json({ status: "ok", service: "ledger" });
 });
 
-router.get('/entries', async (req: Request, res: Response) => {
-  res.status(501).json({ message: 'Use NestJS endpoint: GET /api/v1/ledger/entries' });
+router.get("/entries", async (req: Request, res: Response) => {
+  res
+    .status(501)
+    .json({ message: "Use NestJS endpoint: GET /api/v1/ledger/entries" });
 });
 
-router.get('/balance', async (req: Request, res: Response) => {
-  res.status(501).json({ message: 'Use NestJS endpoint: GET /api/v1/ledger/balance' });
+router.get("/balance", async (req: Request, res: Response) => {
+  res
+    .status(501)
+    .json({ message: "Use NestJS endpoint: GET /api/v1/ledger/balance" });
 });
 
 export default router;

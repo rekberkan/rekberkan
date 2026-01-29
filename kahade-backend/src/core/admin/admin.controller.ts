@@ -11,25 +11,30 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
-import { RolesGuard } from '@common/guards/roles.guard';
-import { Roles } from '@common/decorators/roles.decorator';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { DisputeService } from '../dispute/dispute.service';
-import { DisputeDecision } from '@prisma/client';
-import { AdminReasonDto, SuspendUserDto } from './dto/admin-action.dto';
+} from "@nestjs/common";
+import { JwtAuthGuard } from "@common/guards/jwt-auth.guard";
+import { RolesGuard } from "@common/guards/roles.guard";
+import { Roles } from "@common/decorators/roles.decorator";
+import { CurrentUser } from "@common/decorators/current-user.decorator";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from "@nestjs/swagger";
+import { DisputeService } from "../dispute/dispute.service";
+import { DisputeDecision } from "@prisma/client";
+import { AdminReasonDto, SuspendUserDto } from "./dto/admin-action.dto";
 
 // ============================================================================
 // ADMIN CONTROLLER - Production Ready
 // ============================================================================
 
-@ApiTags('admin')
-@Controller('admin')
+@ApiTags("admin")
+@Controller("admin")
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth('JWT-auth')
+@ApiBearerAuth("JWT-auth")
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
@@ -42,9 +47,9 @@ export class AdminController {
   // DASHBOARD
   // ============================================================================
 
-  @Get('dashboard')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get admin dashboard statistics' })
+  @Get("dashboard")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get admin dashboard statistics" })
   async getDashboardStats() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -69,28 +74,28 @@ export class AdminController {
       }),
       (this.prisma as any).order.count({ where: { deletedAt: null } }),
       (this.prisma as any).order.count({
-        where: { status: { in: ['PAID', 'DISPUTED'] }, deletedAt: null },
+        where: { status: { in: ["PAID", "DISPUTED"] }, deletedAt: null },
       }),
       (this.prisma as any).withdrawal.count({
-        where: { status: 'PENDING' },
+        where: { status: "PENDING" },
       }),
-      (this.prisma as any).dispute.count({ where: { status: 'OPEN' } }),
+      (this.prisma as any).dispute.count({ where: { status: "OPEN" } }),
       (this.prisma as any).order.aggregate({
         where: {
-          status: { in: ['PAID', 'COMPLETED'] },
+          status: { in: ["PAID", "COMPLETED"] },
           paidAt: { gte: today },
         },
         _sum: { amountMinor: true },
       }),
       (this.prisma as any).order.aggregate({
         where: {
-          status: { in: ['PAID', 'COMPLETED'] },
+          status: { in: ["PAID", "COMPLETED"] },
         },
         _sum: { amountMinor: true },
       }),
       (this.prisma as any).order.findMany({
         where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: 10,
         include: {
           initiator: { select: { id: true, username: true, email: true } },
@@ -127,25 +132,25 @@ export class AdminController {
   // USER MANAGEMENT
   // ============================================================================
 
-  @Get('users')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get all users' })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'kycStatus', required: false })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
+  @Get("users")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get all users" })
+  @ApiQuery({ name: "status", required: false })
+  @ApiQuery({ name: "kycStatus", required: false })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
   async getUsers(
-    @Query('status') status?: string,
-    @Query('kycStatus') kycStatus?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
+    @Query("status") status?: string,
+    @Query("kycStatus") kycStatus?: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 20,
   ) {
     const skip = (page - 1) * limit;
     const where: any = { deletedAt: null };
 
-    if (status === 'active') {
+    if (status === "active") {
       where.suspendedAt = null;
-    } else if (status === 'suspended') {
+    } else if (status === "suspended") {
       where.suspendedAt = { not: null };
     }
 
@@ -169,7 +174,7 @@ export class AdminController {
           createdAt: true,
           lastLoginAt: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -185,10 +190,10 @@ export class AdminController {
     };
   }
 
-  @Get('users/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get user details' })
-  async getUser(@Param('id') id: string) {
+  @Get("users/:id")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get user details" })
+  async getUser(@Param("id") id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -198,32 +203,32 @@ export class AdminController {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     return user;
   }
 
-  @Post('users/:id/suspend')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Suspend user' })
+  @Post("users/:id/suspend")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Suspend user" })
   async suspendUser(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
     @Body() dto: SuspendUserDto,
   ) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     if (id === adminId) {
-      throw new ForbiddenException('Cannot suspend yourself');
+      throw new ForbiddenException("Cannot suspend yourself");
     }
 
     if (user.isAdmin) {
-      throw new ForbiddenException('Cannot suspend admin users');
+      throw new ForbiddenException("Cannot suspend admin users");
     }
 
     await this.prisma.user.update({
@@ -234,24 +239,27 @@ export class AdminController {
       },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'User', id, {
-      action: 'SUSPENDED',
+    await this.createAuditLog(adminId, "UPDATE", "User", id, {
+      action: "SUSPENDED",
       reason: dto.reason,
     });
 
     this.logger.log(`User ${id} suspended by admin ${adminId}`);
 
-    return { message: 'User suspended successfully' };
+    return { message: "User suspended successfully" };
   }
 
-  @Post('users/:id/activate')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Activate suspended user' })
-  async activateUser(@Param('id') id: string, @CurrentUser('id') adminId: string) {
+  @Post("users/:id/activate")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Activate suspended user" })
+  async activateUser(
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     await this.prisma.user.update({
@@ -263,57 +271,60 @@ export class AdminController {
       },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'User', id, {
-      action: 'ACTIVATED',
+    await this.createAuditLog(adminId, "UPDATE", "User", id, {
+      action: "ACTIVATED",
     });
 
     this.logger.log(`User ${id} activated by admin ${adminId}`);
 
-    return { message: 'User activated successfully' };
+    return { message: "User activated successfully" };
   }
 
-  @Post('users/:id/kyc/approve')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Approve user KYC' })
-  async approveKYC(@Param('id') id: string, @CurrentUser('id') adminId: string) {
+  @Post("users/:id/kyc/approve")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Approve user KYC" })
+  async approveKYC(
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     await this.prisma.user.update({
       where: { id },
-      data: { kycStatus: 'VERIFIED' },
+      data: { kycStatus: "VERIFIED" },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'User', id, {
-      action: 'KYC_APPROVED',
+    await this.createAuditLog(adminId, "UPDATE", "User", id, {
+      action: "KYC_APPROVED",
     });
 
     this.logger.log(`KYC approved for user ${id} by admin ${adminId}`);
 
-    return { message: 'KYC approved successfully' };
+    return { message: "KYC approved successfully" };
   }
 
-  @Post('users/:id/kyc/reject')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Reject user KYC' })
+  @Post("users/:id/kyc/reject")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Reject user KYC" })
   async rejectKYC(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     await this.prisma.user.update({
       where: { id },
       data: {
-        kycStatus: 'REJECTED',
+        kycStatus: "REJECTED",
       },
     });
 
@@ -323,30 +334,30 @@ export class AdminController {
       data: { rejectionReason: dto.reason },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'User', id, {
-      action: 'KYC_REJECTED',
+    await this.createAuditLog(adminId, "UPDATE", "User", id, {
+      action: "KYC_REJECTED",
       reason: dto.reason,
     });
 
     this.logger.log(`KYC rejected for user ${id} by admin ${adminId}`);
 
-    return { message: 'KYC rejected' };
+    return { message: "KYC rejected" };
   }
 
   // ============================================================================
   // TRANSACTION MANAGEMENT
   // ============================================================================
 
-  @Get('transactions')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get all transactions' })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
+  @Get("transactions")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get all transactions" })
+  @ApiQuery({ name: "status", required: false })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
   async getTransactions(
-    @Query('status') status?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
+    @Query("status") status?: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 20,
   ) {
     const skip = (page - 1) * limit;
     const where: any = { deletedAt: null };
@@ -362,7 +373,7 @@ export class AdminController {
           initiator: { select: { id: true, username: true, email: true } },
           counterparty: { select: { id: true, username: true, email: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -390,10 +401,10 @@ export class AdminController {
     };
   }
 
-  @Get('transactions/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get transaction details' })
-  async getTransaction(@Param('id') id: string) {
+  @Get("transactions/:id")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get transaction details" })
+  async getTransaction(@Param("id") id: string) {
     const transaction = await (this.prisma as any).order.findUnique({
       where: { id },
       include: {
@@ -406,7 +417,7 @@ export class AdminController {
     });
 
     if (!transaction) {
-      throw new NotFoundException('Transaction not found');
+      throw new NotFoundException("Transaction not found");
     }
 
     return {
@@ -416,12 +427,12 @@ export class AdminController {
     };
   }
 
-  @Post('transactions/:id/force-complete')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Force complete transaction' })
+  @Post("transactions/:id/force-complete")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Force complete transaction" })
   async forceCompleteTransaction(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
     const transaction = await (this.prisma as any).order.findUnique({
@@ -429,34 +440,34 @@ export class AdminController {
     });
 
     if (!transaction) {
-      throw new NotFoundException('Transaction not found');
+      throw new NotFoundException("Transaction not found");
     }
 
     await (this.prisma as any).order.update({
       where: { id },
       data: {
-        status: 'COMPLETED',
+        status: "COMPLETED",
         completedAt: new Date(),
         adminNotes: dto.reason,
       },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Order', id, {
-      action: 'FORCE_COMPLETED',
+    await this.createAuditLog(adminId, "UPDATE", "Order", id, {
+      action: "FORCE_COMPLETED",
       reason: dto.reason,
     });
 
     this.logger.log(`Transaction ${id} force completed by admin ${adminId}`);
 
-    return { message: 'Transaction force completed' };
+    return { message: "Transaction force completed" };
   }
 
-  @Post('transactions/:id/force-cancel')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Force cancel transaction' })
+  @Post("transactions/:id/force-cancel")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Force cancel transaction" })
   async forceCancelTransaction(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
     const transaction = await (this.prisma as any).order.findUnique({
@@ -464,43 +475,43 @@ export class AdminController {
     });
 
     if (!transaction) {
-      throw new NotFoundException('Transaction not found');
+      throw new NotFoundException("Transaction not found");
     }
 
     await (this.prisma as any).order.update({
       where: { id },
       data: {
-        status: 'CANCELLED',
+        status: "CANCELLED",
         cancelledAt: new Date(),
       },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Order', id, {
-      action: 'FORCE_CANCELLED',
+    await this.createAuditLog(adminId, "UPDATE", "Order", id, {
+      action: "FORCE_CANCELLED",
       reason: dto.reason,
     });
 
     this.logger.log(`Transaction ${id} force cancelled by admin ${adminId}`);
 
-    return { message: 'Transaction force cancelled' };
+    return { message: "Transaction force cancelled" };
   }
 
   // ============================================================================
   // DISPUTE MANAGEMENT
   // ============================================================================
 
-  @Get('disputes')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get all disputes' })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'priority', required: false })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
+  @Get("disputes")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get all disputes" })
+  @ApiQuery({ name: "status", required: false })
+  @ApiQuery({ name: "priority", required: false })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
   async getDisputes(
-    @Query('status') status?: string,
-    @Query('priority') priority?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
+    @Query("status") status?: string,
+    @Query("priority") priority?: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 20,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -516,12 +527,14 @@ export class AdminController {
           order: {
             include: {
               initiator: { select: { id: true, username: true, email: true } },
-              counterparty: { select: { id: true, username: true, email: true } },
+              counterparty: {
+                select: { id: true, username: true, email: true },
+              },
             },
           },
           openedBy: { select: { id: true, username: true, email: true } },
         },
-        orderBy: { openedAt: 'desc' },
+        orderBy: { openedAt: "desc" },
         skip,
         take: limit,
       }),
@@ -537,10 +550,10 @@ export class AdminController {
     };
   }
 
-  @Get('disputes/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get dispute details' })
-  async getDispute(@Param('id') id: string) {
+  @Get("disputes/:id")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get dispute details" })
+  async getDispute(@Param("id") id: string) {
     const dispute = await (this.prisma as any).dispute.findUnique({
       where: { id },
       include: {
@@ -556,48 +569,51 @@ export class AdminController {
     });
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     return dispute;
   }
 
-  @Post('disputes/:id/review')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Start reviewing dispute' })
-  async startReview(@Param('id') id: string, @CurrentUser('id') adminId: string) {
+  @Post("disputes/:id/review")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Start reviewing dispute" })
+  async startReview(
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
+  ) {
     const dispute = await (this.prisma as any).dispute.findUnique({
       where: { id },
     });
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     await (this.prisma as any).dispute.update({
       where: { id },
       data: {
-        status: 'UNDER_ARBITRATION',
+        status: "UNDER_ARBITRATION",
         assignedTo: adminId,
       },
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Dispute', id, {
-      action: 'REVIEW_STARTED',
+    await this.createAuditLog(adminId, "UPDATE", "Dispute", id, {
+      action: "REVIEW_STARTED",
     });
 
-    return { message: 'Dispute review started' };
+    return { message: "Dispute review started" };
   }
 
-  @Post('disputes/:id/resolve')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Resolve dispute' })
+  @Post("disputes/:id/resolve")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Resolve dispute" })
   async resolveDispute(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
     @Body()
     dto: {
-      winner?: 'buyer' | 'seller' | 'split';
+      winner?: "buyer" | "seller" | "split";
       resolution?: string;
       decision?: DisputeDecision;
       resolutionNotes?: string;
@@ -608,15 +624,15 @@ export class AdminController {
     const resolutionNotes = dto.resolutionNotes || dto.resolution;
 
     if (!resolutionNotes) {
-      throw new BadRequestException('Resolution details required');
+      throw new BadRequestException("Resolution details required");
     }
 
     let decision = dto.decision;
 
     if (!decision) {
-      if (dto.winner === 'buyer') {
+      if (dto.winner === "buyer") {
         decision = DisputeDecision.REFUND_ALL_TO_BUYER;
-      } else if (dto.winner === 'seller') {
+      } else if (dto.winner === "seller") {
         decision = DisputeDecision.RELEASE_ALL_TO_SELLER;
       } else {
         decision = DisputeDecision.SPLIT_SETTLEMENT;
@@ -630,58 +646,67 @@ export class AdminController {
       sellerAmountMinor: dto.sellerAmountMinor,
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Dispute', id, {
-      action: 'RESOLVED',
+    await this.createAuditLog(adminId, "UPDATE", "Dispute", id, {
+      action: "RESOLVED",
       decision,
       resolutionNotes,
     });
 
     this.logger.log(`Dispute ${id} resolved by admin ${adminId}`);
 
-    return { message: 'Dispute resolved successfully' };
+    return { message: "Dispute resolved successfully" };
   }
 
-  @Post('disputes/:id/assign')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Assign arbitrator to dispute' })
+  @Post("disputes/:id/assign")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Assign arbitrator to dispute" })
   async assignArbitrator(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-    @Body('arbitratorId') arbitratorId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
+    @Body("arbitratorId") arbitratorId: string,
   ) {
     if (!arbitratorId) {
-      throw new BadRequestException('Arbitrator ID is required');
+      throw new BadRequestException("Arbitrator ID is required");
     }
 
     await this.disputeService.assignArbitrator(id, adminId, arbitratorId);
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Dispute', id, {
-      action: 'ARBITRATOR_ASSIGNED',
+    await this.createAuditLog(adminId, "UPDATE", "Dispute", id, {
+      action: "ARBITRATOR_ASSIGNED",
       arbitratorId,
     });
 
-    return { message: 'Arbitrator assigned successfully' };
+    return { message: "Arbitrator assigned successfully" };
   }
 
   // ============================================================================
   // WITHDRAWAL MANAGEMENT
   // ============================================================================
 
-  @Get('withdrawals/pending')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get pending withdrawals' })
+  @Get("withdrawals/pending")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get pending withdrawals" })
   async getPendingWithdrawals() {
     const withdrawals = await (this.prisma as any).withdrawal.findMany({
-      where: { status: 'PENDING' },
+      where: { status: "PENDING" },
       include: {
         wallet: {
           include: {
-            user: { select: { id: true, username: true, email: true, kycStatus: true } },
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+                kycStatus: true,
+              },
+            },
           },
         },
-        bankAccount: { select: { id: true, bankName: true, accountNumberLast4: true } },
+        bankAccount: {
+          select: { id: true, bankName: true, accountNumberLast4: true },
+        },
       },
-      orderBy: { requestedAt: 'asc' },
+      orderBy: { requestedAt: "asc" },
     });
 
     return withdrawals.map((w: any) => ({
@@ -694,20 +719,23 @@ export class AdminController {
     }));
   }
 
-  @Post('withdrawals/:id/approve')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Approve withdrawal' })
-  async approveWithdrawal(@Param('id') id: string, @CurrentUser('id') adminId: string) {
+  @Post("withdrawals/:id/approve")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Approve withdrawal" })
+  async approveWithdrawal(
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
+  ) {
     const withdrawal = await (this.prisma as any).withdrawal.findUnique({
       where: { id },
     });
 
     if (!withdrawal) {
-      throw new NotFoundException('Withdrawal not found');
+      throw new NotFoundException("Withdrawal not found");
     }
 
-    if (withdrawal.status !== 'PENDING') {
-      throw new BadRequestException('Withdrawal is not pending');
+    if (withdrawal.status !== "PENDING") {
+      throw new BadRequestException("Withdrawal is not pending");
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -715,7 +743,7 @@ export class AdminController {
       await (tx as any).withdrawal.update({
         where: { id },
         data: {
-          status: 'APPROVED',
+          status: "APPROVED",
           approvedBy: adminId,
           approvedAt: new Date(),
         },
@@ -731,22 +759,22 @@ export class AdminController {
       });
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Withdrawal', id, {
-      action: 'APPROVED',
+    await this.createAuditLog(adminId, "UPDATE", "Withdrawal", id, {
+      action: "APPROVED",
       amount: withdrawal.amountMinor.toString(),
     });
 
     this.logger.log(`Withdrawal ${id} approved by admin ${adminId}`);
 
-    return { message: 'Withdrawal approved' };
+    return { message: "Withdrawal approved" };
   }
 
-  @Post('withdrawals/:id/reject')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Reject withdrawal' })
+  @Post("withdrawals/:id/reject")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Reject withdrawal" })
   async rejectWithdrawal(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
+    @Param("id") id: string,
+    @CurrentUser("id") adminId: string,
     @Body() dto: AdminReasonDto,
   ) {
     const withdrawal = await (this.prisma as any).withdrawal.findUnique({
@@ -754,11 +782,11 @@ export class AdminController {
     });
 
     if (!withdrawal) {
-      throw new NotFoundException('Withdrawal not found');
+      throw new NotFoundException("Withdrawal not found");
     }
 
-    if (withdrawal.status !== 'PENDING') {
-      throw new BadRequestException('Withdrawal is not pending');
+    if (withdrawal.status !== "PENDING") {
+      throw new BadRequestException("Withdrawal is not pending");
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -766,7 +794,7 @@ export class AdminController {
       await (tx as any).withdrawal.update({
         where: { id },
         data: {
-          status: 'REJECTED',
+          status: "REJECTED",
           rejectionReason: dto.reason,
         },
       });
@@ -780,32 +808,32 @@ export class AdminController {
       });
     });
 
-    await this.createAuditLog(adminId, 'UPDATE', 'Withdrawal', id, {
-      action: 'REJECTED',
+    await this.createAuditLog(adminId, "UPDATE", "Withdrawal", id, {
+      action: "REJECTED",
       reason: dto.reason,
     });
 
     this.logger.log(`Withdrawal ${id} rejected by admin ${adminId}`);
 
-    return { message: 'Withdrawal rejected' };
+    return { message: "Withdrawal rejected" };
   }
 
   // ============================================================================
   // AUDIT LOGS
   // ============================================================================
 
-  @Get('audit-logs')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get audit logs' })
-  @ApiQuery({ name: 'action', required: false })
-  @ApiQuery({ name: 'actorType', required: false })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
+  @Get("audit-logs")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get audit logs" })
+  @ApiQuery({ name: "action", required: false })
+  @ApiQuery({ name: "actorType", required: false })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
   async getAuditLogs(
-    @Query('action') action?: string,
-    @Query('actorType') actorType?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 50,
+    @Query("action") action?: string,
+    @Query("actorType") actorType?: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 50,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -820,7 +848,7 @@ export class AdminController {
             select: { id: true, username: true, email: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -840,9 +868,9 @@ export class AdminController {
   // SETTINGS
   // ============================================================================
 
-  @Get('settings')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get system settings' })
+  @Get("settings")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get system settings" })
   async getSettings() {
     const settings = await (this.prisma as any).systemConfig.findMany();
 
@@ -852,10 +880,13 @@ export class AdminController {
     }, {});
   }
 
-  @Patch('settings')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update system settings' })
-  async updateSettings(@CurrentUser('id') adminId: string, @Body() dto: Record<string, any>) {
+  @Patch("settings")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Update system settings" })
+  async updateSettings(
+    @CurrentUser("id") adminId: string,
+    @Body() dto: Record<string, any>,
+  ) {
     for (const [key, value] of Object.entries(dto)) {
       await (this.prisma as any).systemConfig.upsert({
         where: { key },
@@ -864,32 +895,34 @@ export class AdminController {
       });
     }
 
-    await this.createAuditLog(adminId, 'UPDATE', 'SystemConfig', 'settings', {
+    await this.createAuditLog(adminId, "UPDATE", "SystemConfig", "settings", {
       updatedKeys: Object.keys(dto),
     });
 
-    return { message: 'Settings updated successfully' };
+    return { message: "Settings updated successfully" };
   }
 
   // ============================================================================
   // REPORTS
   // ============================================================================
 
-  @Get('reports/revenue')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get revenue report' })
-  @ApiQuery({ name: 'startDate', required: false })
-  @ApiQuery({ name: 'endDate', required: false })
+  @Get("reports/revenue")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get revenue report" })
+  @ApiQuery({ name: "startDate", required: false })
+  @ApiQuery({ name: "endDate", required: false })
   async getRevenueReport(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
   ) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
     const completedOrders = await (this.prisma as any).order.findMany({
       where: {
-        status: 'COMPLETED',
+        status: "COMPLETED",
         completedAt: {
           gte: start,
           lte: end,
@@ -912,9 +945,12 @@ export class AdminController {
     );
 
     // Group by date for chart data
-    const dailyRevenue: Record<string, { revenue: number; volume: number; count: number }> = {};
+    const dailyRevenue: Record<
+      string,
+      { revenue: number; volume: number; count: number }
+    > = {};
     completedOrders.forEach((order: any) => {
-      const date = order.completedAt.toISOString().split('T')[0];
+      const date = order.completedAt.toISOString().split("T")[0];
       if (!dailyRevenue[date]) {
         dailyRevenue[date] = { revenue: 0, volume: 0, count: 0 };
       }
@@ -939,21 +975,23 @@ export class AdminController {
     };
   }
 
-  @Get('reports/transactions')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get transactions report' })
-  @ApiQuery({ name: 'startDate', required: false })
-  @ApiQuery({ name: 'endDate', required: false })
+  @Get("reports/transactions")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get transactions report" })
+  @ApiQuery({ name: "startDate", required: false })
+  @ApiQuery({ name: "endDate", required: false })
   async getTransactionReport(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
   ) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
     const [statusCounts, categoryCounts, dailyCounts] = await Promise.all([
       (this.prisma as any).order.groupBy({
-        by: ['status'],
+        by: ["status"],
         where: {
           createdAt: { gte: start, lte: end },
         },
@@ -961,7 +999,7 @@ export class AdminController {
         _sum: { amountMinor: true },
       }),
       (this.prisma as any).order.groupBy({
-        by: ['category'],
+        by: ["category"],
         where: {
           createdAt: { gte: start, lte: end },
         },
@@ -982,7 +1020,7 @@ export class AdminController {
     // Group daily counts
     const dailyData: Record<string, Record<string, number>> = {};
     dailyCounts.forEach((order: any) => {
-      const date = order.createdAt.toISOString().split('T')[0];
+      const date = order.createdAt.toISOString().split("T")[0];
       if (!dailyData[date]) {
         dailyData[date] = { total: 0 };
       }
@@ -1011,41 +1049,49 @@ export class AdminController {
     };
   }
 
-  @Get('reports/users')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get users report' })
-  @ApiQuery({ name: 'startDate', required: false })
-  @ApiQuery({ name: 'endDate', required: false })
-  async getUserReport(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  @Get("reports/users")
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Get users report" })
+  @ApiQuery({ name: "startDate", required: false })
+  @ApiQuery({ name: "endDate", required: false })
+  async getUserReport(
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
+  ) {
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    const [totalUsers, newUsers, verifiedUsers, kycStats, activeUsers] = await Promise.all([
-      this.prisma.user.count({ where: { deletedAt: null } }),
-      this.prisma.user.count({
-        where: {
-          createdAt: { gte: start, lte: end },
-          deletedAt: null,
-        },
-      }),
-      this.prisma.user.count({
-        where: {
-          emailVerifiedAt: { not: null },
-          deletedAt: null,
-        },
-      }),
-      this.prisma.user.groupBy({
-        by: ['kycStatus'],
-        where: { deletedAt: null },
-        _count: { id: true },
-      }),
-      this.prisma.user.count({
-        where: {
-          lastLoginAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-          deletedAt: null,
-        },
-      }),
-    ]);
+    const [totalUsers, newUsers, verifiedUsers, kycStats, activeUsers] =
+      await Promise.all([
+        this.prisma.user.count({ where: { deletedAt: null } }),
+        this.prisma.user.count({
+          where: {
+            createdAt: { gte: start, lte: end },
+            deletedAt: null,
+          },
+        }),
+        this.prisma.user.count({
+          where: {
+            emailVerifiedAt: { not: null },
+            deletedAt: null,
+          },
+        }),
+        this.prisma.user.groupBy({
+          by: ["kycStatus"],
+          where: { deletedAt: null },
+          _count: { id: true },
+        }),
+        this.prisma.user.count({
+          where: {
+            lastLoginAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            },
+            deletedAt: null,
+          },
+        }),
+      ]);
 
     // Get daily registrations
     const dailyRegistrations = await this.prisma.user.findMany({
@@ -1058,7 +1104,7 @@ export class AdminController {
 
     const dailyData: Record<string, number> = {};
     dailyRegistrations.forEach((user: any) => {
-      const date = user.createdAt.toISOString().split('T')[0];
+      const date = user.createdAt.toISOString().split("T")[0];
       dailyData[date] = (dailyData[date] || 0) + 1;
     });
 
@@ -1068,7 +1114,8 @@ export class AdminController {
         newUsers,
         verifiedUsers,
         activeUsers,
-        verificationRate: totalUsers > 0 ? ((verifiedUsers / totalUsers) * 100).toFixed(2) : 0,
+        verificationRate:
+          totalUsers > 0 ? ((verifiedUsers / totalUsers) * 100).toFixed(2) : 0,
       },
       kycBreakdown: kycStats.map((k: any) => ({
         status: k.kycStatus,

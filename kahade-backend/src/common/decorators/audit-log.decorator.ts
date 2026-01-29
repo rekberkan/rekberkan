@@ -1,3 +1,3 @@
-import { SetMetadata } from '@nestjs/common';
+import { SetMetadata } from "@nestjs/common";
 
-export const AuditLog = (...args: unknown[]) => SetMetadata('audit_log', args);
+export const AuditLog = (...args: unknown[]) => SetMetadata("audit_log", args);

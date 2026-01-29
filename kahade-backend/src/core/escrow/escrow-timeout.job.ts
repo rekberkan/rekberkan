@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { EscrowService } from './escrow.service';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { EscrowService } from "./escrow.service";
+import { ConfigService } from "@nestjs/config";
 
 // ============================================================================
 // ESCROW TIMEOUT JOB
@@ -21,8 +21,13 @@ export class EscrowTimeoutJob {
     private readonly escrowService: EscrowService,
     private readonly configService: ConfigService,
   ) {
-    this.batchSize = this.configService.get<number>('ESCROW_TIMEOUT_BATCH_SIZE', 100);
-    this.isEnabled = this.configService.get<string>('ENABLE_ESCROW_TIMEOUT_JOB', 'true') === 'true';
+    this.batchSize = this.configService.get<number>(
+      "ESCROW_TIMEOUT_BATCH_SIZE",
+      100,
+    );
+    this.isEnabled =
+      this.configService.get<string>("ENABLE_ESCROW_TIMEOUT_JOB", "true") ===
+      "true";
   }
 
   /**
@@ -34,7 +39,7 @@ export class EscrowTimeoutJob {
       return;
     }
 
-    this.logger.log('Starting escrow timeout job');
+    this.logger.log("Starting escrow timeout job");
     const startTime = Date.now();
     let processedCount = 0;
     let errorCount = 0;
@@ -43,7 +48,7 @@ export class EscrowTimeoutJob {
       // Find escrows that have timed out
       const expiredEscrows = await this.prisma.escrowHold.findMany({
         where: {
-          status: 'ACTIVE',
+          status: "ACTIVE",
           timeoutAt: {
             lte: new Date(),
           },
@@ -55,16 +60,18 @@ export class EscrowTimeoutJob {
         },
         take: this.batchSize,
         orderBy: {
-          timeoutAt: 'asc',
+          timeoutAt: "asc",
         },
       });
 
       if (expiredEscrows.length === 0) {
-        this.logger.debug('No expired escrows found');
+        this.logger.debug("No expired escrows found");
         return;
       }
 
-      this.logger.log(`Found ${expiredEscrows.length} expired escrows to process`);
+      this.logger.log(
+        `Found ${expiredEscrows.length} expired escrows to process`,
+      );
 
       // Process each expired escrow
       for (const escrow of expiredEscrows) {
@@ -85,7 +92,10 @@ export class EscrowTimeoutJob {
         `Escrow timeout job completed: ${processedCount} processed, ${errorCount} errors, ${duration}ms`,
       );
     } catch (error) {
-      this.logger.error(`Escrow timeout job failed: ${error.message}`, error.stack);
+      this.logger.error(
+        `Escrow timeout job failed: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -93,7 +103,9 @@ export class EscrowTimeoutJob {
    * Process a single expired escrow
    */
   private async processExpiredEscrow(escrow: any): Promise<void> {
-    this.logger.log(`Processing expired escrow ${escrow.id} for order ${escrow.orderId}`);
+    this.logger.log(
+      `Processing expired escrow ${escrow.id} for order ${escrow.orderId}`,
+    );
 
     // Determine action based on order status
     const order = escrow.order;
@@ -104,26 +116,34 @@ export class EscrowTimeoutJob {
     }
 
     // If order is in PAID status and buyer hasn't confirmed, auto-release to seller
-    if (order.status === 'PAID') {
+    if (order.status === "PAID") {
       await this.escrowService.releaseEscrow({
         escrowId: escrow.id,
-        actorId: 'SYSTEM',
+        actorId: "SYSTEM",
         platformFeeMinor: order.platformFeeMinor,
         idempotencyKey: `timeout_release_${escrow.id}_${Date.now()}`,
       });
 
-      this.logger.log(`Auto-released escrow ${escrow.id} to seller due to timeout`);
+      this.logger.log(
+        `Auto-released escrow ${escrow.id} to seller due to timeout`,
+      );
     }
     // If order is still pending payment, refund to buyer
-    else if (['PENDING_ACCEPT', 'ACCEPTED', 'WAITING_COUNTERPARTY'].includes(order.status)) {
+    else if (
+      ["PENDING_ACCEPT", "ACCEPTED", "WAITING_COUNTERPARTY"].includes(
+        order.status,
+      )
+    ) {
       await this.escrowService.refundEscrow({
         escrowId: escrow.id,
-        actorId: 'SYSTEM',
-        reason: 'Order timeout - payment not completed',
+        actorId: "SYSTEM",
+        reason: "Order timeout - payment not completed",
         idempotencyKey: `timeout_refund_${escrow.id}_${Date.now()}`,
       });
 
-      this.logger.log(`Auto-refunded escrow ${escrow.id} to buyer due to timeout`);
+      this.logger.log(
+        `Auto-refunded escrow ${escrow.id} to buyer due to timeout`,
+      );
     }
   }
 
@@ -137,28 +157,33 @@ export class EscrowTimeoutJob {
       return;
     }
 
-    this.logger.log('Starting expired invite cleanup job');
+    this.logger.log("Starting expired invite cleanup job");
 
     try {
       // Cancel orders with expired invites that haven't been accepted
       const result = await this.prisma.order.updateMany({
         where: {
-          status: 'WAITING_COUNTERPARTY',
+          status: "WAITING_COUNTERPARTY",
           inviteExpiresAt: {
             lte: new Date(),
           },
         },
         data: {
-          status: 'CANCELLED',
+          status: "CANCELLED",
           cancelledAt: new Date(),
         },
       });
 
       if (result.count > 0) {
-        this.logger.log(`Cancelled ${result.count} orders with expired invites`);
+        this.logger.log(
+          `Cancelled ${result.count} orders with expired invites`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Expired invite cleanup failed: ${error.message}`, error.stack);
+      this.logger.error(
+        `Expired invite cleanup failed: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -166,24 +191,29 @@ export class EscrowTimeoutJob {
    * Cleanup old completed escrows (for data retention)
    * Runs daily at 3 AM
    */
-  @Cron('0 3 * * *')
+  @Cron("0 3 * * *")
   async handleDataRetention(): Promise<void> {
     if (!this.isEnabled) {
       return;
     }
 
-    const retentionDays = this.configService.get<number>('ESCROW_RETENTION_DAYS', 365);
+    const retentionDays = this.configService.get<number>(
+      "ESCROW_RETENTION_DAYS",
+      365,
+    );
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-    this.logger.log(`Starting data retention job (cutoff: ${cutoffDate.toISOString()})`);
+    this.logger.log(
+      `Starting data retention job (cutoff: ${cutoffDate.toISOString()})`,
+    );
 
     try {
       // Archive old escrows (soft delete or move to archive table)
       // This is a placeholder - actual implementation depends on data retention policy
       const oldEscrows = await this.prisma.escrowHold.count({
         where: {
-          status: { in: ['RELEASED', 'REFUNDED'] },
+          status: { in: ["RELEASED", "REFUNDED"] },
           resolvedAt: {
             lte: cutoffDate,
           },
@@ -197,7 +227,7 @@ export class EscrowTimeoutJob {
       if (oldEscrows > 0) {
         await this.prisma.escrowHold.updateMany({
           where: {
-            status: { in: ['RELEASED', 'REFUNDED'] },
+            status: { in: ["RELEASED", "REFUNDED"] },
             resolvedAt: { lte: cutoffDate },
             isArchived: false,
           },
@@ -209,7 +239,10 @@ export class EscrowTimeoutJob {
         this.logger.log(`Archived ${oldEscrows} old escrows`);
       }
     } catch (error) {
-      this.logger.error(`Data retention job failed: ${error.message}`, error.stack);
+      this.logger.error(
+        `Data retention job failed: ${error.message}`,
+        error.stack,
+      );
     }
   }
 }

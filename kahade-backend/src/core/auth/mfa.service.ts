@@ -1,8 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
-import * as QRCode from 'qrcode';
-import { CryptoUtil, HashUtil } from '@common/utils/crypto.util';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as crypto from "crypto";
+import * as QRCode from "qrcode";
+import { CryptoUtil, HashUtil } from "@common/utils/crypto.util";
 
 export interface IMFASetup {
   secret: string; // Encrypted secret to store in DB
@@ -13,7 +13,7 @@ export interface IMFASetup {
 
 /**
  * MFA (Multi-Factor Authentication) Service
- * 
+ *
  * SECURITY FIX [C001]: Removed hardcoded default encryption key.
  * The service now requires MFA_ENCRYPTION_KEY to be explicitly configured
  * and validates it at startup in production environments.
@@ -25,24 +25,25 @@ export class MFAService implements OnModuleInit {
   private readonly isProduction: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.isProduction = this.configService.get<string>('NODE_ENV') === 'production';
-    
+    this.isProduction =
+      this.configService.get<string>("NODE_ENV") === "production";
+
     // SECURITY FIX [C001]: No default fallback - key must be explicitly configured
-    const key = this.configService.get<string>('MFA_ENCRYPTION_KEY');
-    
+    const key = this.configService.get<string>("MFA_ENCRYPTION_KEY");
+
     if (!key) {
       if (this.isProduction) {
         throw new Error(
-          'CRITICAL: MFA_ENCRYPTION_KEY must be configured in production. ' +
-          'Generate one using: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+          "CRITICAL: MFA_ENCRYPTION_KEY must be configured in production. " +
+            "Generate one using: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
         );
       }
       // In development, use a deterministic key for testing (logged as warning)
       this.logger.warn(
-        'MFA_ENCRYPTION_KEY not configured. Using development-only key. ' +
-        'DO NOT use this in production!'
+        "MFA_ENCRYPTION_KEY not configured. Using development-only key. " +
+          "DO NOT use this in production!",
       );
-      this.encryptionKey = 'dev-only-mfa-key-not-for-production-use';
+      this.encryptionKey = "dev-only-mfa-key-not-for-production-use";
     } else {
       this.encryptionKey = key;
     }
@@ -54,21 +55,22 @@ export class MFAService implements OnModuleInit {
   onModuleInit() {
     // Validate key length (should be at least 32 characters for AES-256)
     if (this.encryptionKey.length < 32) {
-      const message = 'MFA_ENCRYPTION_KEY should be at least 32 characters for adequate security';
+      const message =
+        "MFA_ENCRYPTION_KEY should be at least 32 characters for adequate security";
       if (this.isProduction) {
         throw new Error(`CRITICAL: ${message}`);
       }
       this.logger.warn(message);
     }
-    
-    this.logger.log('MFA Service initialized with encryption key configured');
+
+    this.logger.log("MFA Service initialized with encryption key configured");
   }
 
   /**
    * Generate MFA secret and QR code for user setup
    */
   async setupMFA(userId: string, userEmail: string): Promise<IMFASetup> {
-    const appName = this.configService.get<string>('app.name', 'Rekberkan');
+    const appName = this.configService.get<string>("app.name", "Rekberkan");
 
     // Generate TOTP secret (base32 encoded)
     const secret = CryptoUtil.generateTotpSecret();
@@ -80,7 +82,9 @@ export class MFAService implements OnModuleInit {
     const qrCodeDataURL = await this.generateQRCodeDataURL(otpauthUrl);
 
     // Generate 10 backup codes
-    const backupCodesPlain = Array.from({ length: 10 }, () => this.generateBackupCode());
+    const backupCodesPlain = Array.from({ length: 10 }, () =>
+      this.generateBackupCode(),
+    );
 
     // Hash backup codes for storage
     const backupCodesHashed = await Promise.all(
@@ -101,7 +105,11 @@ export class MFAService implements OnModuleInit {
   /**
    * Verify TOTP token
    */
-  async verifyTOTP(encryptedSecret: string, token: string, window = 1): Promise<boolean> {
+  async verifyTOTP(
+    encryptedSecret: string,
+    token: string,
+    window = 1,
+  ): Promise<boolean> {
     try {
       // Decrypt secret
       const secret = CryptoUtil.decrypt(encryptedSecret, this.encryptionKey);
@@ -128,13 +136,13 @@ export class MFAService implements OnModuleInit {
    */
   private generateTOTP(secret: string, counter: number): string {
     // Decode base32 secret
-    const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    const secretUpper = secret.toUpperCase().replace(/=+$/, '');
-    let bits = '';
+    const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    const secretUpper = secret.toUpperCase().replace(/=+$/, "");
+    let bits = "";
     for (const char of secretUpper) {
       const val = base32Chars.indexOf(char);
       if (val >= 0) {
-        bits += val.toString(2).padStart(5, '0');
+        bits += val.toString(2).padStart(5, "0");
       }
     }
     const bytes: number[] = [];
@@ -148,7 +156,7 @@ export class MFAService implements OnModuleInit {
     counterBuffer.writeBigInt64BE(BigInt(counter));
 
     // Generate HMAC-SHA1
-    const hmac = crypto.createHmac('sha1', secretBuffer);
+    const hmac = crypto.createHmac("sha1", secretBuffer);
     hmac.update(counterBuffer);
     const hash = hmac.digest();
 
@@ -161,7 +169,7 @@ export class MFAService implements OnModuleInit {
         (hash[offset + 3] & 0xff)) %
       1000000;
 
-    return code.toString().padStart(6, '0');
+    return code.toString().padStart(6, "0");
   }
 
   /**
@@ -185,11 +193,11 @@ export class MFAService implements OnModuleInit {
    * Generate secure backup code (8 chars: XXXX-XXXX)
    */
   private generateBackupCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
 
     for (let i = 0; i < 8; i++) {
-      if (i === 4) code += '-';
+      if (i === 4) code += "-";
       const randomIndex = crypto.randomInt(chars.length);
       code += chars[randomIndex];
     }
@@ -204,7 +212,9 @@ export class MFAService implements OnModuleInit {
     backupCodes: string[];
     backupCodesPlain: string[];
   }> {
-    const backupCodesPlain = Array.from({ length: 10 }, () => this.generateBackupCode());
+    const backupCodesPlain = Array.from({ length: 10 }, () =>
+      this.generateBackupCode(),
+    );
 
     const backupCodesHashed = await Promise.all(
       backupCodesPlain.map((code) => HashUtil.hash(code)),
@@ -222,20 +232,20 @@ export class MFAService implements OnModuleInit {
   private async generateQRCodeDataURL(data: string): Promise<string> {
     try {
       const qrCodeDataURL = await QRCode.toDataURL(data, {
-        errorCorrectionLevel: 'M',
-        type: 'image/png',
+        errorCorrectionLevel: "M",
+        type: "image/png",
         margin: 2,
         width: 256,
         color: {
-          dark: '#000000',
-          light: '#FFFFFF',
+          dark: "#000000",
+          light: "#FFFFFF",
         },
       });
       return qrCodeDataURL;
     } catch (error) {
       this.logger.error(`QR code generation error: ${error.message}`);
       // Fallback: return otpauth URL as base64 encoded text
-      const encoded = Buffer.from(data).toString('base64');
+      const encoded = Buffer.from(data).toString("base64");
       return `data:text/plain;base64,${encoded}`;
     }
   }

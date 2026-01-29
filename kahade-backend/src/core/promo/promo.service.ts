@@ -4,9 +4,14 @@ import {
   BadRequestException,
   NotFoundException,
   ConflictException,
-} from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma, VoucherStatus, VoucherType, PromoTargetType } from '@prisma/client';
+} from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import {
+  Prisma,
+  VoucherStatus,
+  VoucherType,
+  PromoTargetType,
+} from "@prisma/client";
 
 // ============================================================================
 // PROMO & VOUCHER SERVICE - Production Ready
@@ -70,7 +75,7 @@ export class PromoService {
     });
 
     if (existing) {
-      throw new ConflictException('Promo code already exists');
+      throw new ConflictException("Promo code already exists");
     }
 
     const promo = await this.prisma.promo.create({
@@ -82,10 +87,14 @@ export class PromoService {
         discountType: dto.discountType,
         discountValue: dto.discountValue ? BigInt(dto.discountValue) : null,
         discountPercent: dto.discountPercent,
-        maxDiscountMinor: dto.maxDiscountMinor ? BigInt(dto.maxDiscountMinor) : null,
+        maxDiscountMinor: dto.maxDiscountMinor
+          ? BigInt(dto.maxDiscountMinor)
+          : null,
         maxTotalUsages: dto.maxTotalUsages,
         maxUsagePerUser: dto.maxUsagePerUser || 1,
-        minPurchaseMinor: dto.minPurchaseMinor ? BigInt(dto.minPurchaseMinor) : null,
+        minPurchaseMinor: dto.minPurchaseMinor
+          ? BigInt(dto.minPurchaseMinor)
+          : null,
         applicableCategories: dto.applicableCategories,
         validFrom: dto.validFrom,
         validUntil: dto.validUntil,
@@ -97,7 +106,11 @@ export class PromoService {
     return promo;
   }
 
-  async listPromos(options: { isActive?: boolean; page?: number; limit?: number }) {
+  async listPromos(options: {
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }) {
     const { isActive, page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
@@ -109,7 +122,7 @@ export class PromoService {
     const [promos, total] = await Promise.all([
       this.prisma.promo.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -135,13 +148,15 @@ export class PromoService {
       include: {
         vouchers: true,
         assignments: {
-          include: { user: { select: { id: true, username: true, email: true } } },
+          include: {
+            user: { select: { id: true, username: true, email: true } },
+          },
         },
       },
     });
 
     if (!promo) {
-      throw new NotFoundException('Promo not found');
+      throw new NotFoundException("Promo not found");
     }
 
     return promo;
@@ -150,7 +165,7 @@ export class PromoService {
   async updatePromo(id: string, dto: Partial<CreatePromoDto>) {
     const promo = await this.prisma.promo.findUnique({ where: { id } });
     if (!promo) {
-      throw new NotFoundException('Promo not found');
+      throw new NotFoundException("Promo not found");
     }
 
     return this.prisma.promo.update({
@@ -158,12 +173,18 @@ export class PromoService {
       data: {
         name: dto.name,
         description: dto.description,
-        discountValue: dto.discountValue ? BigInt(dto.discountValue) : undefined,
+        discountValue: dto.discountValue
+          ? BigInt(dto.discountValue)
+          : undefined,
         discountPercent: dto.discountPercent,
-        maxDiscountMinor: dto.maxDiscountMinor ? BigInt(dto.maxDiscountMinor) : undefined,
+        maxDiscountMinor: dto.maxDiscountMinor
+          ? BigInt(dto.maxDiscountMinor)
+          : undefined,
         maxTotalUsages: dto.maxTotalUsages,
         maxUsagePerUser: dto.maxUsagePerUser,
-        minPurchaseMinor: dto.minPurchaseMinor ? BigInt(dto.minPurchaseMinor) : undefined,
+        minPurchaseMinor: dto.minPurchaseMinor
+          ? BigInt(dto.minPurchaseMinor)
+          : undefined,
         applicableCategories: dto.applicableCategories,
         validFrom: dto.validFrom,
         validUntil: dto.validUntil,
@@ -179,9 +200,11 @@ export class PromoService {
   }
 
   async assignPromoToUser(promoId: string, userId: string) {
-    const promo = await this.prisma.promo.findUnique({ where: { id: promoId } });
+    const promo = await this.prisma.promo.findUnique({
+      where: { id: promoId },
+    });
     if (!promo) {
-      throw new NotFoundException('Promo not found');
+      throw new NotFoundException("Promo not found");
     }
 
     // Check if already assigned
@@ -190,7 +213,7 @@ export class PromoService {
     });
 
     if (existing) {
-      throw new ConflictException('Promo already assigned to user');
+      throw new ConflictException("Promo already assigned to user");
     }
 
     return this.prisma.promoAssignment.create({
@@ -213,7 +236,7 @@ export class PromoService {
     });
 
     if (existing) {
-      throw new ConflictException('Voucher code already exists');
+      throw new ConflictException("Voucher code already exists");
     }
 
     const voucher = await this.prisma.voucher.create({
@@ -223,9 +246,13 @@ export class PromoService {
         voucherType: dto.voucherType,
         discountMinor: dto.discountMinor ? BigInt(dto.discountMinor) : null,
         discountPercent: dto.discountPercent,
-        maxDiscountMinor: dto.maxDiscountMinor ? BigInt(dto.maxDiscountMinor) : null,
+        maxDiscountMinor: dto.maxDiscountMinor
+          ? BigInt(dto.maxDiscountMinor)
+          : null,
         maxUsages: dto.maxUsages || 1,
-        minPurchaseMinor: dto.minPurchaseMinor ? BigInt(dto.minPurchaseMinor) : null,
+        minPurchaseMinor: dto.minPurchaseMinor
+          ? BigInt(dto.minPurchaseMinor)
+          : null,
         applicableCategories: dto.applicableCategories,
         validFrom: dto.validFrom,
         validUntil: dto.validUntil,
@@ -261,7 +288,7 @@ export class PromoService {
     const [vouchers, total] = await Promise.all([
       this.prisma.voucher.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -287,13 +314,15 @@ export class PromoService {
       include: {
         promo: true,
         usages: {
-          include: { user: { select: { id: true, username: true, email: true } } },
+          include: {
+            user: { select: { id: true, username: true, email: true } },
+          },
         },
       },
     });
 
     if (!voucher) {
-      throw new NotFoundException('Voucher not found');
+      throw new NotFoundException("Voucher not found");
     }
 
     return voucher;
@@ -321,35 +350,38 @@ export class PromoService {
     });
 
     if (!voucher) {
-      return { valid: false, error: 'Voucher not found' };
+      return { valid: false, error: "Voucher not found" };
     }
 
     // Check status
     if (voucher.status !== VoucherStatus.ACTIVE) {
-      return { valid: false, error: 'Voucher is not active' };
+      return { valid: false, error: "Voucher is not active" };
     }
 
     // Check validity period
     const now = new Date();
     if (now < voucher.validFrom) {
-      return { valid: false, error: 'Voucher is not yet valid' };
+      return { valid: false, error: "Voucher is not yet valid" };
     }
     if (now > voucher.validUntil) {
-      return { valid: false, error: 'Voucher has expired' };
+      return { valid: false, error: "Voucher has expired" };
     }
 
     // Check usage limit
     if (voucher.currentUsages >= voucher.maxUsages) {
-      return { valid: false, error: 'Voucher usage limit reached' };
+      return { valid: false, error: "Voucher usage limit reached" };
     }
 
     // Check if assigned to specific user
     if (voucher.assignedToUserId && voucher.assignedToUserId !== userId) {
-      return { valid: false, error: 'Voucher is not available for this user' };
+      return { valid: false, error: "Voucher is not available for this user" };
     }
 
     // Check minimum purchase
-    if (voucher.minPurchaseMinor && orderAmountMinor < voucher.minPurchaseMinor) {
+    if (
+      voucher.minPurchaseMinor &&
+      orderAmountMinor < voucher.minPurchaseMinor
+    ) {
       return {
         valid: false,
         error: `Minimum purchase is ${Number(voucher.minPurchaseMinor) / 100}`,
@@ -360,7 +392,10 @@ export class PromoService {
     if (voucher.applicableCategories && orderCategory) {
       const categories = voucher.applicableCategories as string[];
       if (!categories.includes(orderCategory)) {
-        return { valid: false, error: 'Voucher not applicable for this category' };
+        return {
+          valid: false,
+          error: "Voucher not applicable for this category",
+        };
       }
     }
 
@@ -381,7 +416,7 @@ export class PromoService {
     }
 
     if (userUsageCount >= maxUsagePerUser) {
-      return { valid: false, error: 'You have already used this voucher' };
+      return { valid: false, error: "You have already used this voucher" };
     }
 
     return { valid: true, voucher };
@@ -412,131 +447,147 @@ export class PromoService {
 
     // SECURITY FIX [H-02]: Use database transaction with pessimistic locking
     // to prevent race conditions on voucher usage
-    return await this.prisma.$transaction(async (tx) => {
-      // Lock the voucher row using SELECT FOR UPDATE to prevent concurrent modifications
-      const lockedVoucher = await tx.$queryRaw<any[]>`
+    return await this.prisma.$transaction(
+      async (tx) => {
+        // Lock the voucher row using SELECT FOR UPDATE to prevent concurrent modifications
+        const lockedVoucher = await tx.$queryRaw<any[]>`
         SELECT * FROM "Voucher" 
         WHERE "code" = ${code.toUpperCase()} 
         FOR UPDATE
       `;
 
-      if (!lockedVoucher || lockedVoucher.length === 0) {
-        throw new BadRequestException('Voucher not found');
-      }
+        if (!lockedVoucher || lockedVoucher.length === 0) {
+          throw new BadRequestException("Voucher not found");
+        }
 
-      const voucher = lockedVoucher[0];
+        const voucher = lockedVoucher[0];
 
-      // Re-validate voucher within the transaction (after acquiring lock)
-      if (voucher.status !== 'ACTIVE') {
-        throw new BadRequestException('Voucher is not active');
-      }
+        // Re-validate voucher within the transaction (after acquiring lock)
+        if (voucher.status !== "ACTIVE") {
+          throw new BadRequestException("Voucher is not active");
+        }
 
-      const now = new Date();
-      if (now < new Date(voucher.validFrom)) {
-        throw new BadRequestException('Voucher is not yet valid');
-      }
-      if (now > new Date(voucher.validUntil)) {
-        throw new BadRequestException('Voucher has expired');
-      }
+        const now = new Date();
+        if (now < new Date(voucher.validFrom)) {
+          throw new BadRequestException("Voucher is not yet valid");
+        }
+        if (now > new Date(voucher.validUntil)) {
+          throw new BadRequestException("Voucher has expired");
+        }
 
-      // Check usage limit with locked data
-      if (voucher.currentUsages >= voucher.maxUsages) {
-        throw new BadRequestException('Voucher usage limit reached');
-      }
+        // Check usage limit with locked data
+        if (voucher.currentUsages >= voucher.maxUsages) {
+          throw new BadRequestException("Voucher usage limit reached");
+        }
 
-      // Check if assigned to specific user
-      if (voucher.assignedToUserId && voucher.assignedToUserId !== userId) {
-        throw new BadRequestException('Voucher is not available for this user');
-      }
+        // Check if assigned to specific user
+        if (voucher.assignedToUserId && voucher.assignedToUserId !== userId) {
+          throw new BadRequestException(
+            "Voucher is not available for this user",
+          );
+        }
 
-      // Check minimum purchase
-      if (voucher.minPurchaseMinor && orderAmountMinor < BigInt(voucher.minPurchaseMinor)) {
-        throw new BadRequestException(
-          `Minimum purchase is ${Number(voucher.minPurchaseMinor) / 100}`,
-        );
-      }
+        // Check minimum purchase
+        if (
+          voucher.minPurchaseMinor &&
+          orderAmountMinor < BigInt(voucher.minPurchaseMinor)
+        ) {
+          throw new BadRequestException(
+            `Minimum purchase is ${Number(voucher.minPurchaseMinor) / 100}`,
+          );
+        }
 
-      // Check user usage count
-      const userUsageCount = await tx.voucherUsage.count({
-        where: { voucherId: voucher.id, userId },
-      });
-
-      // Get max usage per user from promo if linked
-      let maxUsagePerUser = 1;
-      if (voucher.promoId) {
-        const promo = await tx.promo.findUnique({
-          where: { id: voucher.promoId },
+        // Check user usage count
+        const userUsageCount = await tx.voucherUsage.count({
+          where: { voucherId: voucher.id, userId },
         });
-        if (promo) {
-          maxUsagePerUser = promo.maxUsagePerUser;
+
+        // Get max usage per user from promo if linked
+        let maxUsagePerUser = 1;
+        if (voucher.promoId) {
+          const promo = await tx.promo.findUnique({
+            where: { id: voucher.promoId },
+          });
+          if (promo) {
+            maxUsagePerUser = promo.maxUsagePerUser;
+          }
         }
-      }
 
-      if (userUsageCount >= maxUsagePerUser) {
-        throw new BadRequestException('You have already used this voucher');
-      }
-
-      // Calculate discount
-      let discountMinor: bigint;
-      if (voucher.voucherType === 'PERCENTAGE') {
-        const percent = voucher.discountPercent || 0;
-        discountMinor = (orderAmountMinor * BigInt(Math.round(percent * 100))) / 10000n;
-
-        // Apply max discount cap
-        if (voucher.maxDiscountMinor && discountMinor > BigInt(voucher.maxDiscountMinor)) {
-          discountMinor = BigInt(voucher.maxDiscountMinor);
+        if (userUsageCount >= maxUsagePerUser) {
+          throw new BadRequestException("You have already used this voucher");
         }
-      } else {
-        discountMinor = voucher.discountMinor ? BigInt(voucher.discountMinor) : 0n;
-      }
 
-      // Ensure discount doesn't exceed order amount
-      if (discountMinor > orderAmountMinor) {
-        discountMinor = orderAmountMinor;
-      }
+        // Calculate discount
+        let discountMinor: bigint;
+        if (voucher.voucherType === "PERCENTAGE") {
+          const percent = voucher.discountPercent || 0;
+          discountMinor =
+            (orderAmountMinor * BigInt(Math.round(percent * 100))) / 10000n;
 
-      const finalMinor = orderAmountMinor - discountMinor;
+          // Apply max discount cap
+          if (
+            voucher.maxDiscountMinor &&
+            discountMinor > BigInt(voucher.maxDiscountMinor)
+          ) {
+            discountMinor = BigInt(voucher.maxDiscountMinor);
+          }
+        } else {
+          discountMinor = voucher.discountMinor
+            ? BigInt(voucher.discountMinor)
+            : 0n;
+        }
 
-      // Create usage record
-      await tx.voucherUsage.create({
-        data: {
-          voucherId: voucher.id,
-          userId,
-          orderId,
-          originalMinor: orderAmountMinor,
-          discountMinor,
-          finalMinor,
-          idempotencyKey,
-        },
-      });
+        // Ensure discount doesn't exceed order amount
+        if (discountMinor > orderAmountMinor) {
+          discountMinor = orderAmountMinor;
+        }
 
-      // Increment usage count (atomic operation within transaction)
-      await tx.voucher.update({
-        where: { id: voucher.id },
-        data: { currentUsages: { increment: 1 } },
-      });
+        const finalMinor = orderAmountMinor - discountMinor;
 
-      // Update promo usage if linked
-      if (voucher.promoId) {
-        await tx.promo.update({
-          where: { id: voucher.promoId },
+        // Create usage record
+        await tx.voucherUsage.create({
+          data: {
+            voucherId: voucher.id,
+            userId,
+            orderId,
+            originalMinor: orderAmountMinor,
+            discountMinor,
+            finalMinor,
+            idempotencyKey,
+          },
+        });
+
+        // Increment usage count (atomic operation within transaction)
+        await tx.voucher.update({
+          where: { id: voucher.id },
           data: { currentUsages: { increment: 1 } },
         });
-      }
 
-      this.logger.log(`Applied voucher ${code} for user ${userId}, discount: ${discountMinor}`);
+        // Update promo usage if linked
+        if (voucher.promoId) {
+          await tx.promo.update({
+            where: { id: voucher.promoId },
+            data: { currentUsages: { increment: 1 } },
+          });
+        }
 
-      return {
-        voucherId: voucher.id,
-        code: voucher.code,
-        discountMinor,
-        originalMinor: orderAmountMinor,
-        finalMinor,
-      };
-    }, {
-      isolationLevel: 'Serializable', // Highest isolation level for financial operations
-      timeout: 10000, // 10 second timeout
-    });
+        this.logger.log(
+          `Applied voucher ${code} for user ${userId}, discount: ${discountMinor}`,
+        );
+
+        return {
+          voucherId: voucher.id,
+          code: voucher.code,
+          discountMinor,
+          originalMinor: orderAmountMinor,
+          finalMinor,
+        };
+      },
+      {
+        isolationLevel: "Serializable", // Highest isolation level for financial operations
+        timeout: 10000, // 10 second timeout
+      },
+    );
   }
 
   // ============================================================================
@@ -553,7 +604,7 @@ export class PromoService {
         validUntil: { gte: now },
         OR: [{ assignedToUserId: userId }, { assignedToUserId: null }],
       },
-      orderBy: { validUntil: 'asc' },
+      orderBy: { validUntil: "asc" },
     });
 
     // Filter out vouchers user has already used to max
@@ -573,7 +624,10 @@ export class PromoService {
         }
       }
 
-      if (userUsageCount < maxUsagePerUser && voucher.currentUsages < voucher.maxUsages) {
+      if (
+        userUsageCount < maxUsagePerUser &&
+        voucher.currentUsages < voucher.maxUsages
+      ) {
         result.push({
           ...voucher,
           discountMinor: voucher.discountMinor?.toString(),
@@ -595,7 +649,7 @@ export class PromoService {
       this.prisma.voucherUsage.findMany({
         where: { userId },
         include: { voucher: true },
-        orderBy: { usedAt: 'desc' },
+        orderBy: { usedAt: "desc" },
         skip,
         take: limit,
       }),

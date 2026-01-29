@@ -3,18 +3,18 @@ import {
   Logger,
   BadRequestException,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
+} from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma } from "@prisma/client";
 import {
   LedgerJournal,
   LedgerEntry,
   LedgerAccount,
   JournalType,
   LedgerAccountType,
-} from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
+} from "@prisma/client";
+import { ConfigService } from "@nestjs/config";
+import * as crypto from "crypto";
 
 // ============================================================================
 // BANK-GRADE LEDGER SERVICE
@@ -24,8 +24,9 @@ import * as crypto from 'crypto';
 export class LedgerInvariantError extends InternalServerErrorException {
   constructor(journalId: string, sum: bigint) {
     super({
-      code: 'LEDGER_INVARIANT_VIOLATION',
-      message: 'Critical: Double-entry invariant violated. Sum of entries must be zero.',
+      code: "LEDGER_INVARIANT_VIOLATION",
+      message:
+        "Critical: Double-entry invariant violated. Sum of entries must be zero.",
       journalId,
       sum: sum.toString(),
     });
@@ -35,8 +36,8 @@ export class LedgerInvariantError extends InternalServerErrorException {
 export class DuplicateIdempotencyKeyError extends BadRequestException {
   constructor(key: string) {
     super({
-      code: 'DUPLICATE_IDEMPOTENCY_KEY',
-      message: 'This operation has already been processed',
+      code: "DUPLICATE_IDEMPOTENCY_KEY",
+      message: "This operation has already been processed",
       idempotencyKey: key,
     });
   }
@@ -85,8 +86,18 @@ export class LedgerService {
    * BANK-GRADE: Create journal entry with double-entry validation
    * CRITICAL: Sum of all entries MUST equal zero (balanced)
    */
-  async createJournal(options: CreateJournalOptions): Promise<JournalWithEntries> {
-    const { type, amountMinor, description, entries, idempotencyKey, tx, ...linkIds } = options;
+  async createJournal(
+    options: CreateJournalOptions,
+  ): Promise<JournalWithEntries> {
+    const {
+      type,
+      amountMinor,
+      description,
+      entries,
+      idempotencyKey,
+      tx,
+      ...linkIds
+    } = options;
 
     const prisma = tx ?? this.prisma;
 
@@ -96,7 +107,7 @@ export class LedgerService {
       this.logger.error(
         `Double-entry invariant violation: sum=${sum}, entries=${JSON.stringify(entries)}`,
       );
-      throw new LedgerInvariantError('pre-validation', sum);
+      throw new LedgerInvariantError("pre-validation", sum);
     }
 
     // Step 2: Check idempotency
@@ -138,13 +149,20 @@ export class LedgerService {
     }
 
     // Step 5: Post-validation (paranoid check)
-    const postSum = journal.entries.reduce((acc, entry) => acc + entry.amountMinor, 0n);
+    const postSum = journal.entries.reduce(
+      (acc, entry) => acc + entry.amountMinor,
+      0n,
+    );
     if (postSum !== 0n) {
-      this.logger.error(`CRITICAL: Post-creation invariant violation for journal ${journal.id}`);
+      this.logger.error(
+        `CRITICAL: Post-creation invariant violation for journal ${journal.id}`,
+      );
       throw new LedgerInvariantError(journal.id, postSum);
     }
 
-    this.logger.log(`Created journal ${journal.id} (${type}) with ${entries.length} entries`);
+    this.logger.log(
+      `Created journal ${journal.id} (${type}) with ${entries.length} entries`,
+    );
 
     return journal as JournalWithEntries;
   }
@@ -161,7 +179,7 @@ export class LedgerService {
     tx?: Prisma.TransactionClient,
   ): Promise<JournalWithEntries> {
     return this.createJournal({
-      type: 'DEPOSIT' as JournalType,
+      type: "DEPOSIT" as JournalType,
       amountMinor,
       description: `Deposit ${amountMinor} to user wallet`,
       depositId,
@@ -186,7 +204,7 @@ export class LedgerService {
     tx?: Prisma.TransactionClient,
   ): Promise<JournalWithEntries> {
     return this.createJournal({
-      type: 'WITHDRAWAL' as JournalType,
+      type: "WITHDRAWAL" as JournalType,
       amountMinor,
       description: `Withdrawal ${amountMinor} from user wallet`,
       withdrawalId,
@@ -212,7 +230,7 @@ export class LedgerService {
     tx?: Prisma.TransactionClient,
   ): Promise<JournalWithEntries> {
     return this.createJournal({
-      type: 'ESCROW_LOCK' as JournalType,
+      type: "ESCROW_LOCK" as JournalType,
       amountMinor,
       description: `Escrow hold for order ${orderId}`,
       escrowHoldId,
@@ -243,7 +261,7 @@ export class LedgerService {
     const sellerAmount = amountMinor - platformFeeMinor;
 
     return this.createJournal({
-      type: 'ESCROW_RELEASE' as JournalType,
+      type: "ESCROW_RELEASE" as JournalType,
       amountMinor,
       description: `Escrow release for order ${orderId}`,
       escrowHoldId,
@@ -271,7 +289,7 @@ export class LedgerService {
     tx?: Prisma.TransactionClient,
   ): Promise<JournalWithEntries> {
     return this.createJournal({
-      type: 'REFUND' as JournalType,
+      type: "REFUND" as JournalType,
       amountMinor,
       description: `Escrow refund for order ${orderId}`,
       escrowHoldId,
@@ -303,20 +321,31 @@ export class LedgerService {
   ): Promise<JournalWithEntries> {
     const totalEscrow = buyerRefundMinor + sellerAmountMinor + platformFeeMinor;
 
-    const entries: LedgerEntryInput[] = [{ accountId: escrowAccountId, amountMinor: -totalEscrow }];
+    const entries: LedgerEntryInput[] = [
+      { accountId: escrowAccountId, amountMinor: -totalEscrow },
+    ];
 
     if (buyerRefundMinor > 0n) {
-      entries.push({ accountId: buyerAccountId, amountMinor: buyerRefundMinor });
+      entries.push({
+        accountId: buyerAccountId,
+        amountMinor: buyerRefundMinor,
+      });
     }
     if (sellerAmountMinor > 0n) {
-      entries.push({ accountId: sellerAccountId, amountMinor: sellerAmountMinor });
+      entries.push({
+        accountId: sellerAccountId,
+        amountMinor: sellerAmountMinor,
+      });
     }
     if (platformFeeMinor > 0n) {
-      entries.push({ accountId: platformFeeAccountId, amountMinor: platformFeeMinor });
+      entries.push({
+        accountId: platformFeeAccountId,
+        amountMinor: platformFeeMinor,
+      });
     }
 
     return this.createJournal({
-      type: 'ADJUSTMENT' as JournalType,
+      type: "ADJUSTMENT" as JournalType,
       amountMinor: totalEscrow,
       description: `Dispute resolution for order ${orderId}`,
       disputeId,
@@ -337,7 +366,7 @@ export class LedgerService {
   async getOrCreateUserAccount(
     walletId: string,
     type: LedgerAccountType = LedgerAccountType.ASSET,
-    currency: string = 'IDR',
+    currency: string = "IDR",
     tx?: Prisma.TransactionClient,
   ): Promise<LedgerAccount> {
     const prisma = tx ?? this.prisma;
@@ -369,7 +398,7 @@ export class LedgerService {
   async getOrCreatePlatformAccount(
     platformKey: string,
     type: LedgerAccountType,
-    currency: string = 'IDR',
+    currency: string = "IDR",
     tx?: Prisma.TransactionClient,
   ): Promise<LedgerAccount> {
     const prisma = tx ?? this.prisma;
@@ -430,7 +459,7 @@ export class LedgerService {
 
     return this.prisma.ledgerEntry.findMany({
       where,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
       include: {
         journal: true,
@@ -457,10 +486,15 @@ export class LedgerService {
     const unbalancedJournals: string[] = [];
 
     for (const journal of journals) {
-      const sum = journal.entries.reduce((acc, entry) => acc + entry.amountMinor, 0n);
+      const sum = journal.entries.reduce(
+        (acc, entry) => acc + entry.amountMinor,
+        0n,
+      );
       if (sum !== 0n) {
         unbalancedJournals.push(journal.id);
-        this.logger.error(`Unbalanced journal detected: ${journal.id}, sum=${sum}`);
+        this.logger.error(
+          `Unbalanced journal detected: ${journal.id}, sum=${sum}`,
+        );
       }
     }
 
@@ -514,7 +548,7 @@ export class LedgerService {
     // Get all entries for this account up to and including this entry
     const entries = await prisma.ledgerEntry.findMany({
       where: { accountId },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     });
 
     let runningBalance = 0n;
@@ -534,12 +568,16 @@ export class LedgerService {
    * Generate idempotency key for operations
    */
   generateIdempotencyKey(operation: string, ...identifiers: string[]): string {
-    const data = [operation, ...identifiers, Date.now().toString()].join(':');
-    return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32);
+    const data = [operation, ...identifiers, Date.now().toString()].join(":");
+    return crypto
+      .createHash("sha256")
+      .update(data)
+      .digest("hex")
+      .substring(0, 32);
   }
 
   async healthCheck(): Promise<{ status: string }> {
-    this.logger.debug('Health check called');
-    return { status: 'ok' };
+    this.logger.debug("Health check called");
+    return { status: "ok" };
   }
 }

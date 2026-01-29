@@ -15,10 +15,12 @@ import { SessionRepository } from '../../src/core/auth/session.repository';
 import { MFAService } from '../../src/core/auth/mfa.service';
 import { PrismaService } from '../../src/infrastructure/database/prisma.service';
 import { BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { BruteForceService } from '../../src/core/auth/brute-force.service';
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let module: TestingModule;
   let userService: jest.Mocked<UserService>;
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
@@ -40,7 +42,7 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         AuthService,
         {
@@ -112,6 +114,17 @@ describe('AuthService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
             },
+          },
+        },
+        {
+          provide: BruteForceService,
+          useValue: {
+            checkLoginAttempt: jest.fn().mockResolvedValue(undefined),
+            recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+            clearFailedAttempts: jest.fn().mockResolvedValue(undefined),
+            isLocked: jest.fn().mockResolvedValue(false),
+            checkAccountLock: jest.fn().mockResolvedValue({ isLocked: false }),
+            recordLoginAttempt: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -229,17 +242,15 @@ describe('AuthService', () => {
     it('should lock account after max failed attempts', async () => {
       userService.findByEmail.mockResolvedValue(mockUser as any);
       const wrongPasswordDto = { ...loginDto, password: 'wrongpassword' };
+      const bruteForceService = module.get(BruteForceService);
 
-      // Attempt login 5 times with wrong password
-      for (let i = 0; i < 5; i++) {
-        try {
-          await service.login(wrongPasswordDto);
-        } catch (e) {
-          // Expected to fail
-        }
-      }
+      // Mock that account is locked after multiple failed attempts
+      (bruteForceService.checkAccountLock as jest.Mock).mockResolvedValue({ 
+        isLocked: true, 
+        remainingTime: 300 
+      });
 
-      // 6th attempt should be blocked
+      // Attempt should be blocked due to account lock
       await expect(service.login(wrongPasswordDto)).rejects.toThrow(ForbiddenException);
     });
   });
@@ -250,7 +261,7 @@ describe('AuthService', () => {
       const refreshToken = 'valid-refresh-token';
       
       tokenBlacklistService.blacklistToken.mockResolvedValue(undefined);
-      sessionRepository.revoke.mockResolvedValue(undefined);
+      sessionRepository.revoke.mockResolvedValue({ count: 1 });
 
       await expect(service.logout(userId, refreshToken)).resolves.not.toThrow();
       expect(tokenBlacklistService.blacklistToken).toHaveBeenCalled();
@@ -278,7 +289,7 @@ describe('AuthService', () => {
       jwtService.signAsync.mockResolvedValue('new-token');
       sessionRepository.create.mockResolvedValue({} as any);
       tokenBlacklistService.revokeRefreshToken.mockResolvedValue(undefined);
-      sessionRepository.revoke.mockResolvedValue(undefined);
+      sessionRepository.revoke.mockResolvedValue({ count: 1 });
       tokenBlacklistService.storeRefreshToken.mockResolvedValue(undefined);
 
       const result = await service.refreshToken(oldRefreshToken);

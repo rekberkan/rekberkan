@@ -1,14 +1,14 @@
 // User interfaces
-export * from './user.interface';
+export * from "./user.interface";
 
 // Transaction interfaces
-export * from './transaction.interface';
+export * from "./transaction.interface";
 
 // Dispute interfaces
-export * from './dispute.interface';
+export * from "./dispute.interface";
 
 // Pagination interfaces
-export * from './paginated-result.interface';
+export * from "./paginated-result.interface";
 
 // Request interfaces
-export * from './request.interface';
+export * from "./request.interface";

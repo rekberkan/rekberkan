@@ -4,10 +4,10 @@ import {
   ExecutionContext,
   ForbiddenException,
   Logger,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { ConfigService } from "@nestjs/config";
+import { Request } from "express";
 
 // ============================================================================
 // IP WHITELIST GUARD
@@ -15,15 +15,24 @@ import { Request } from 'express';
 // Fix #56: Restricts admin endpoints to whitelisted IP addresses
 // ============================================================================
 
-export const IP_WHITELIST_KEY = 'ipWhitelist';
+export const IP_WHITELIST_KEY = "ipWhitelist";
 
 /**
  * Decorator to apply IP whitelist to a controller or method
  * @param ips Array of allowed IP addresses or CIDR ranges
  */
 export const IpWhitelist = (ips?: string[]) => {
-  return (target: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor) => {
-    Reflect.defineMetadata(IP_WHITELIST_KEY, ips || [], target, propertyKey ?? '');
+  return (
+    target: any,
+    propertyKey?: string | symbol,
+    _descriptor?: PropertyDescriptor,
+  ) => {
+    Reflect.defineMetadata(
+      IP_WHITELIST_KEY,
+      ips || [],
+      target,
+      propertyKey ?? "",
+    );
   };
 };
 
@@ -39,17 +48,19 @@ export class IpWhitelistGuard implements CanActivate {
     private readonly configService: ConfigService,
   ) {
     // Global whitelist from environment
-    this.globalWhitelist = this.parseIpList(this.configService.get<string>('IP_WHITELIST', ''));
+    this.globalWhitelist = this.parseIpList(
+      this.configService.get<string>("IP_WHITELIST", ""),
+    );
 
     // Admin-specific whitelist
     this.adminWhitelist = this.parseIpList(
-      this.configService.get<string>('ADMIN_IP_WHITELIST', ''),
+      this.configService.get<string>("ADMIN_IP_WHITELIST", ""),
     );
 
     // Enable/disable IP whitelist (disabled in development by default)
     this.isEnabled =
-      this.configService.get<string>('NODE_ENV') === 'production' ||
-      this.configService.get<string>('ENABLE_IP_WHITELIST') === 'true';
+      this.configService.get<string>("NODE_ENV") === "production" ||
+      this.configService.get<string>("ENABLE_IP_WHITELIST") === "true";
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -67,11 +78,15 @@ export class IpWhitelistGuard implements CanActivate {
       this.reflector.get<string[]>(IP_WHITELIST_KEY, context.getClass());
 
     // Combine whitelists
-    const allowedIps = [...this.globalWhitelist, ...this.adminWhitelist, ...(routeWhitelist || [])];
+    const allowedIps = [
+      ...this.globalWhitelist,
+      ...this.adminWhitelist,
+      ...(routeWhitelist || []),
+    ];
 
     // If no whitelist configured, allow all (but log warning)
     if (allowedIps.length === 0) {
-      this.logger.warn('IP whitelist is enabled but no IPs are configured');
+      this.logger.warn("IP whitelist is enabled but no IPs are configured");
       return true;
     }
 
@@ -80,7 +95,7 @@ export class IpWhitelistGuard implements CanActivate {
 
     if (!isAllowed) {
       this.logger.warn(`Blocked request from non-whitelisted IP: ${clientIp}`);
-      throw new ForbiddenException('Access denied: IP not whitelisted');
+      throw new ForbiddenException("Access denied: IP not whitelisted");
     }
 
     return true;
@@ -91,20 +106,20 @@ export class IpWhitelistGuard implements CanActivate {
    */
   private getClientIp(request: Request): string {
     // Check X-Forwarded-For header (set by proxies)
-    const forwarded = request.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
+    const forwarded = request.headers["x-forwarded-for"];
+    if (typeof forwarded === "string") {
       // Take the first IP (original client)
-      return forwarded.split(',')[0].trim();
+      return forwarded.split(",")[0].trim();
     }
 
     // Check X-Real-IP header (set by nginx)
-    const realIp = request.headers['x-real-ip'];
-    if (typeof realIp === 'string') {
+    const realIp = request.headers["x-real-ip"];
+    if (typeof realIp === "string") {
       return realIp.trim();
     }
 
     // Fall back to socket remote address
-    return request.ip || request.socket.remoteAddress || 'unknown';
+    return request.ip || request.socket.remoteAddress || "unknown";
   }
 
   /**
@@ -115,7 +130,7 @@ export class IpWhitelistGuard implements CanActivate {
     const normalizedClientIp = this.normalizeIp(clientIp);
 
     for (const allowed of allowedIps) {
-      if (allowed.includes('/')) {
+      if (allowed.includes("/")) {
         // CIDR notation
         if (this.isIpInCidr(normalizedClientIp, allowed)) {
           return true;
@@ -136,7 +151,7 @@ export class IpWhitelistGuard implements CanActivate {
    */
   private normalizeIp(ip: string): string {
     // Remove IPv6 prefix for IPv4-mapped addresses
-    if (ip.startsWith('::ffff:')) {
+    if (ip.startsWith("::ffff:")) {
       return ip.substring(7);
     }
     return ip;
@@ -146,7 +161,7 @@ export class IpWhitelistGuard implements CanActivate {
    * Check if IP is within CIDR range
    */
   private isIpInCidr(ip: string, cidr: string): boolean {
-    const [range, bits] = cidr.split('/');
+    const [range, bits] = cidr.split("/");
     const mask = parseInt(bits, 10);
 
     // Convert IPs to numbers for comparison
@@ -167,7 +182,7 @@ export class IpWhitelistGuard implements CanActivate {
    * Convert IPv4 address to number
    */
   private ipToNumber(ip: string): number | null {
-    const parts = ip.split('.');
+    const parts = ip.split(".");
     if (parts.length !== 4) {
       return null;
     }
@@ -193,7 +208,7 @@ export class IpWhitelistGuard implements CanActivate {
     }
 
     return ipList
-      .split(',')
+      .split(",")
       .map((ip) => ip.trim())
       .filter((ip) => ip.length > 0);
   }

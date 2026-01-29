@@ -1,8 +1,8 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { LedgerService } from './ledger.service';
-import { LedgerLockService } from './ledger-lock.service';
-import { LedgerRepository } from './ledger.repository';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module, forwardRef } from "@nestjs/common";
+import { LedgerService } from "./ledger.service";
+import { LedgerLockService } from "./ledger-lock.service";
+import { LedgerRepository } from "./ledger.repository";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule],

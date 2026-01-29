@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
 import {
   Prisma,
   Payment,
@@ -8,7 +8,7 @@ import {
   Currency,
   PaymentType,
   PaymentProvider,
-} from '@prisma/client';
+} from "@prisma/client";
 
 export interface CreatePaymentData {
   userId: string;
@@ -32,7 +32,7 @@ export interface PaymentFilterOptions {
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
 }
 
 export interface PaginatedPayments {
@@ -52,7 +52,10 @@ export class PaymentRepository {
   /**
    * Create a new payment
    */
-  async create(data: CreatePaymentData, tx?: Prisma.TransactionClient): Promise<Payment> {
+  async create(
+    data: CreatePaymentData,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Payment> {
     const prisma = tx ?? this.prisma;
 
     const payment = await prisma.payment.create({
@@ -87,7 +90,10 @@ export class PaymentRepository {
   /**
    * Find payment by ID
    */
-  async findById(id: string, tx?: Prisma.TransactionClient): Promise<Payment | null> {
+  async findById(
+    id: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Payment | null> {
     const prisma = tx ?? this.prisma;
 
     return prisma.payment.findUnique({
@@ -107,7 +113,9 @@ export class PaymentRepository {
   /**
    * Find payment by provider invoice ID
    */
-  async findByProviderInvoiceId(providerInvoiceId: string): Promise<Payment | null> {
+  async findByProviderInvoiceId(
+    providerInvoiceId: string,
+  ): Promise<Payment | null> {
     return this.prisma.payment.findUnique({
       where: { providerInvoiceId },
       include: {
@@ -126,8 +134,17 @@ export class PaymentRepository {
    * Find payments with filters and pagination
    */
   async findMany(options: PaymentFilterOptions): Promise<PaginatedPayments> {
-    const { userId, status, paymentMethod, dateFrom, dateTo, page, limit, sortBy, sortOrder } =
-      options;
+    const {
+      userId,
+      status,
+      paymentMethod,
+      dateFrom,
+      dateTo,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = options;
 
     const where: Prisma.PaymentWhereInput = {
       userId,
@@ -181,7 +198,7 @@ export class PaymentRepository {
     };
 
     // Set timestamp based on status
-    if (status === 'SUCCESS') {
+    if (status === "SUCCESS") {
       updateData.paidAt = new Date();
     }
 
@@ -226,17 +243,22 @@ export class PaymentRepository {
     totalPending: number;
     totalAmountPaid: bigint;
   }> {
-    const [totalPayments, totalCompleted, totalPending, completedSum] = await Promise.all([
-      this.prisma.payment.count({ where: { userId } }),
-      this.prisma.payment.count({ where: { userId, status: PaymentStatus.SUCCESS } }),
-      this.prisma.payment.count({ where: { userId, status: PaymentStatus.PENDING } }),
-      this.prisma.payment.aggregate({
-        where: { userId, status: PaymentStatus.SUCCESS },
-        _sum: {
-          amountMinor: true,
-        },
-      }),
-    ]);
+    const [totalPayments, totalCompleted, totalPending, completedSum] =
+      await Promise.all([
+        this.prisma.payment.count({ where: { userId } }),
+        this.prisma.payment.count({
+          where: { userId, status: PaymentStatus.SUCCESS },
+        }),
+        this.prisma.payment.count({
+          where: { userId, status: PaymentStatus.PENDING },
+        }),
+        this.prisma.payment.aggregate({
+          where: { userId, status: PaymentStatus.SUCCESS },
+          _sum: {
+            amountMinor: true,
+          },
+        }),
+      ]);
 
     return {
       totalPayments,

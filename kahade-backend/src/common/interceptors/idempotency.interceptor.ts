@@ -5,13 +5,13 @@ import {
   CallHandler,
   BadRequestException,
   Logger,
-} from '@nestjs/common';
-import { Observable, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { Reflector } from '@nestjs/core';
-import { CacheService } from '@infrastructure/cache/cache.service';
-import { IDEMPOTENCY_KEY } from '../decorators/idempotency.decorator';
-import * as crypto from 'crypto';
+} from "@nestjs/common";
+import { Observable, of } from "rxjs";
+import { tap, catchError } from "rxjs/operators";
+import { Reflector } from "@nestjs/core";
+import { CacheService } from "@infrastructure/cache/cache.service";
+import { IDEMPOTENCY_KEY } from "../decorators/idempotency.decorator";
+import * as crypto from "crypto";
 
 // ============================================================================
 // BANK-GRADE IDEMPOTENCY INTERCEPTOR
@@ -19,7 +19,7 @@ import * as crypto from 'crypto';
 // ============================================================================
 
 interface IdempotencyRecord {
-  status: 'processing' | 'completed' | 'failed';
+  status: "processing" | "completed" | "failed";
   response?: any;
   error?: string;
   createdAt: number;
@@ -38,35 +38,38 @@ export class IdempotencyInterceptor implements NestInterceptor {
     private readonly cacheService: CacheService,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<any>> {
     // Check if idempotency is required for this endpoint
-    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(IDEMPOTENCY_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(
+      IDEMPOTENCY_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiresIdempotency) {
       return next.handle();
     }
 
     const request = context.switchToHttp().getRequest();
-    const idempotencyKey = request.headers['x-idempotency-key'];
+    const idempotencyKey = request.headers["x-idempotency-key"];
 
     // Validate idempotency key
     if (!idempotencyKey) {
       throw new BadRequestException({
-        code: 'IDEMPOTENCY_KEY_REQUIRED',
-        message: 'X-Idempotency-Key header is required for this operation',
-        hint: 'Provide a unique UUID or string to ensure request idempotency',
+        code: "IDEMPOTENCY_KEY_REQUIRED",
+        message: "X-Idempotency-Key header is required for this operation",
+        hint: "Provide a unique UUID or string to ensure request idempotency",
       });
     }
 
     // Validate key format (should be UUID or similar)
     if (!this.isValidIdempotencyKey(idempotencyKey)) {
       throw new BadRequestException({
-        code: 'INVALID_IDEMPOTENCY_KEY',
-        message: 'Invalid idempotency key format',
-        hint: 'Use a valid UUID v4 or a unique string (8-64 characters)',
+        code: "INVALID_IDEMPOTENCY_KEY",
+        message: "Invalid idempotency key format",
+        hint: "Use a valid UUID v4 or a unique string (8-64 characters)",
       });
     }
 
@@ -78,12 +81,16 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const existingRecord = await this.getIdempotencyRecord(cacheKey);
 
     if (existingRecord) {
-      return this.handleExistingRecord(existingRecord, requestHash, idempotencyKey);
+      return this.handleExistingRecord(
+        existingRecord,
+        requestHash,
+        idempotencyKey,
+      );
     }
 
     // Mark request as processing
     await this.setIdempotencyRecord(cacheKey, {
-      status: 'processing',
+      status: "processing",
       createdAt: Date.now(),
       requestHash,
     });
@@ -97,9 +104,11 @@ export class IdempotencyInterceptor implements NestInterceptor {
       tap(async (response) => {
         // Cache successful response
         await this.setIdempotencyRecord(cacheKey, {
-          status: 'completed',
+          status: "completed",
           response,
-          createdAt: (existingRecord as IdempotencyRecord | null)?.createdAt ?? Date.now(),
+          createdAt:
+            (existingRecord as IdempotencyRecord | null)?.createdAt ??
+            Date.now(),
           completedAt: Date.now(),
           requestHash,
         });
@@ -110,9 +119,11 @@ export class IdempotencyInterceptor implements NestInterceptor {
         // Cache error for idempotent errors (4xx)
         if (error.status >= 400 && error.status < 500) {
           await this.setIdempotencyRecord(cacheKey, {
-            status: 'failed',
+            status: "failed",
             error: error.message,
-            createdAt: (existingRecord as IdempotencyRecord | null)?.createdAt ?? Date.now(),
+            createdAt:
+              (existingRecord as IdempotencyRecord | null)?.createdAt ??
+              Date.now(),
             completedAt: Date.now(),
             requestHash,
           });
@@ -137,47 +148,50 @@ export class IdempotencyInterceptor implements NestInterceptor {
     // Check if request payload matches
     if (record.requestHash && record.requestHash !== currentRequestHash) {
       throw new BadRequestException({
-        code: 'IDEMPOTENCY_KEY_REUSED',
-        message: 'Idempotency key already used with different request payload',
-        hint: 'Use a new idempotency key for different requests',
+        code: "IDEMPOTENCY_KEY_REUSED",
+        message: "Idempotency key already used with different request payload",
+        hint: "Use a new idempotency key for different requests",
       });
     }
 
     switch (record.status) {
-      case 'completed':
+      case "completed":
         this.logger.debug(`Returning cached response for: ${idempotencyKey}`);
         return of(record.response);
 
-      case 'failed':
+      case "failed":
         throw new BadRequestException({
-          code: 'PREVIOUS_REQUEST_FAILED',
-          message: 'Previous request with this idempotency key failed',
+          code: "PREVIOUS_REQUEST_FAILED",
+          message: "Previous request with this idempotency key failed",
           error: record.error,
         });
 
-      case 'processing':
+      case "processing":
         // Check if processing has timed out
         const processingTime = Date.now() - record.createdAt;
         if (processingTime > this.PROCESSING_TIMEOUT_MS) {
           // Allow retry after timeout
-          this.logger.warn(`Processing timeout for idempotency key: ${idempotencyKey}`);
+          this.logger.warn(
+            `Processing timeout for idempotency key: ${idempotencyKey}`,
+          );
           throw new BadRequestException({
-            code: 'REQUEST_TIMEOUT',
-            message: 'Previous request timed out. Please retry.',
+            code: "REQUEST_TIMEOUT",
+            message: "Previous request timed out. Please retry.",
           });
         }
 
         // Request is still being processed
         throw new BadRequestException({
-          code: 'REQUEST_IN_PROGRESS',
-          message: 'A request with this idempotency key is currently being processed',
-          hint: 'Wait for the current request to complete or use a different key',
+          code: "REQUEST_IN_PROGRESS",
+          message:
+            "A request with this idempotency key is currently being processed",
+          hint: "Wait for the current request to complete or use a different key",
         });
 
       default:
         throw new BadRequestException({
-          code: 'UNKNOWN_IDEMPOTENCY_STATE',
-          message: 'Unknown idempotency record state',
+          code: "UNKNOWN_IDEMPOTENCY_STATE",
+          message: "Unknown idempotency record state",
         });
     }
   }
@@ -187,7 +201,8 @@ export class IdempotencyInterceptor implements NestInterceptor {
    */
   private isValidIdempotencyKey(key: string): boolean {
     // Accept UUID v4 format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(key)) {
       return true;
     }
@@ -212,9 +227,9 @@ export class IdempotencyInterceptor implements NestInterceptor {
     };
 
     return crypto
-      .createHash('sha256')
+      .createHash("sha256")
       .update(JSON.stringify(payload))
-      .digest('hex')
+      .digest("hex")
       .substring(0, 16);
   }
 
@@ -223,14 +238,16 @@ export class IdempotencyInterceptor implements NestInterceptor {
    */
   private getCacheKey(idempotencyKey: string, userId?: string): string {
     // Include user ID to prevent cross-user idempotency key collisions
-    const userPrefix = userId ? `user:${userId}:` : '';
+    const userPrefix = userId ? `user:${userId}:` : "";
     return `idempotency:${userPrefix}${idempotencyKey}`;
   }
 
   /**
    * Get idempotency record from cache
    */
-  private async getIdempotencyRecord(cacheKey: string): Promise<IdempotencyRecord | null> {
+  private async getIdempotencyRecord(
+    cacheKey: string,
+  ): Promise<IdempotencyRecord | null> {
     const record = await this.cacheService.get<IdempotencyRecord>(cacheKey);
     return record ?? null;
   }
@@ -238,7 +255,10 @@ export class IdempotencyInterceptor implements NestInterceptor {
   /**
    * Set idempotency record in cache
    */
-  private async setIdempotencyRecord(cacheKey: string, record: IdempotencyRecord): Promise<void> {
+  private async setIdempotencyRecord(
+    cacheKey: string,
+    record: IdempotencyRecord,
+  ): Promise<void> {
     await this.cacheService.set(cacheKey, record, this.DEFAULT_TTL_SECONDS);
   }
 }
@@ -265,13 +285,14 @@ export class IdempotencyResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(async (response) => {
         // Update record with response
-        const existingRecord = await this.cacheService.get<IdempotencyRecord>(cacheKey);
-        if (existingRecord && existingRecord.status === 'processing') {
+        const existingRecord =
+          await this.cacheService.get<IdempotencyRecord>(cacheKey);
+        if (existingRecord && existingRecord.status === "processing") {
           await this.cacheService.set(
             cacheKey,
             {
               ...existingRecord,
-              status: 'completed',
+              status: "completed",
               response,
               completedAt: Date.now(),
             },

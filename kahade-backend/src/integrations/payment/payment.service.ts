@@ -1,5 +1,5 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger, BadRequestException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class PaymentService {
@@ -15,7 +15,9 @@ export class PaymentService {
   }) {
     try {
       // Integrate with payment gateway (Midtrans, Xendit, etc.)
-      this.logger.log(`Creating payment for transaction: ${data.transactionId}`);
+      this.logger.log(
+        `Creating payment for transaction: ${data.transactionId}`,
+      );
 
       // Simulate payment creation
       return {
@@ -23,12 +25,12 @@ export class PaymentService {
         paymentUrl: `https://payment-gateway.com/pay/${data.transactionId}`,
         amount: data.amount,
         currency: data.currency,
-        status: 'pending',
+        status: "pending",
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       };
     } catch (error) {
-      this.logger.error('Failed to create payment', error);
-      throw new BadRequestException('Failed to create payment');
+      this.logger.error("Failed to create payment", error);
+      throw new BadRequestException("Failed to create payment");
     }
   }
 
@@ -40,16 +42,20 @@ export class PaymentService {
       // For now, simulate verification
       return {
         paymentId,
-        status: 'paid',
+        status: "paid",
         paidAt: new Date(),
       };
     } catch (error) {
-      this.logger.error('Failed to verify payment', error);
-      throw new BadRequestException('Failed to verify payment');
+      this.logger.error("Failed to verify payment", error);
+      throw new BadRequestException("Failed to verify payment");
     }
   }
 
-  async transferToSeller(data: { amount: number; sellerId: string; transactionId: string }) {
+  async transferToSeller(data: {
+    amount: number;
+    sellerId: string;
+    transactionId: string;
+  }) {
     try {
       this.logger.log(`Transferring funds to seller: ${data.sellerId}`);
 
@@ -59,16 +65,20 @@ export class PaymentService {
         transferId: `TRF-${Date.now()}`,
         amount: data.amount,
         sellerId: data.sellerId,
-        status: 'completed',
+        status: "completed",
         transferredAt: new Date(),
       };
     } catch (error) {
-      this.logger.error('Failed to transfer funds', error);
-      throw new BadRequestException('Failed to transfer funds');
+      this.logger.error("Failed to transfer funds", error);
+      throw new BadRequestException("Failed to transfer funds");
     }
   }
 
-  async refundToBuyer(data: { amount: number; buyerId: string; transactionId: string }) {
+  async refundToBuyer(data: {
+    amount: number;
+    buyerId: string;
+    transactionId: string;
+  }) {
     try {
       this.logger.log(`Refunding to buyer: ${data.buyerId}`);
 
@@ -77,12 +87,12 @@ export class PaymentService {
         refundId: `REF-${Date.now()}`,
         amount: data.amount,
         buyerId: data.buyerId,
-        status: 'completed',
+        status: "completed",
         refundedAt: new Date(),
       };
     } catch (error) {
-      this.logger.error('Failed to process refund', error);
-      throw new BadRequestException('Failed to process refund');
+      this.logger.error("Failed to process refund", error);
+      throw new BadRequestException("Failed to process refund");
     }
   }
 }

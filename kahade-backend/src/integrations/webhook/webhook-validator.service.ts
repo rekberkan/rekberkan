@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as crypto from "crypto";
 
 export interface IWebhookValidationResult {
   isValid: boolean;
@@ -26,15 +26,15 @@ export class WebhookValidatorService {
     grossAmount: string,
     signatureKey: string,
   ): boolean {
-    const serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY');
+    const serverKey = this.configService.get<string>("MIDTRANS_SERVER_KEY");
     if (!serverKey || !signatureKey) {
       return false;
     }
 
     const expectedSignature = crypto
-      .createHash('sha512')
+      .createHash("sha512")
       .update(`${orderId}${statusCode}${grossAmount}${serverKey}`)
-      .digest('hex');
+      .digest("hex");
 
     return expectedSignature === signatureKey;
   }
@@ -42,7 +42,10 @@ export class WebhookValidatorService {
   /**
    * Validate Xendit webhook signature
    */
-  validateXenditSignature(callbackToken: string, expectedToken: string): boolean {
+  validateXenditSignature(
+    callbackToken: string,
+    expectedToken: string,
+  ): boolean {
     if (!callbackToken || !expectedToken) {
       return false;
     }
@@ -52,17 +55,27 @@ export class WebhookValidatorService {
   /**
    * Validate generic HMAC-SHA256 webhook signature
    */
-  validateHMACSignature(payload: string, signature: string, secret: string): boolean {
+  validateHMACSignature(
+    payload: string,
+    signature: string,
+    secret: string,
+  ): boolean {
     if (!signature) {
       return false;
     }
-    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("hex");
 
     // Constant-time comparison to prevent timing attacks
     if (signature.length !== expectedSignature.length) {
       return false;
     }
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature),
+    );
   }
 
   /**
@@ -86,12 +99,15 @@ export class WebhookValidatorService {
    * Validate complete webhook request
    */
   async validateWebhookRequest(
-    provider: 'midtrans' | 'xendit' | 'custom',
+    provider: "midtrans" | "xendit" | "custom",
     headers: Record<string, string>,
     body: any,
   ): Promise<IWebhookValidationResult> {
-    const signature = headers['x-signature'] || headers['x-callback-token'] || body?.signature_key;
-    const timestamp = parseInt(headers['x-timestamp'] || '0', 10);
+    const signature =
+      headers["x-signature"] ||
+      headers["x-callback-token"] ||
+      body?.signature_key;
+    const timestamp = parseInt(headers["x-timestamp"] || "0", 10);
 
     // Validate timestamp (replay attack prevention)
     if (timestamp && !this.validateTimestamp(timestamp)) {
@@ -104,7 +120,7 @@ export class WebhookValidatorService {
     let isValid = false;
 
     switch (provider) {
-      case 'midtrans':
+      case "midtrans":
         isValid = this.validateMidtransSignature(
           body.order_id,
           body.status_code,
@@ -113,23 +129,26 @@ export class WebhookValidatorService {
         );
         break;
 
-      case 'xendit':
-        const expectedToken = this.configService.get<string>('XENDIT_CALLBACK_TOKEN') || '';
+      case "xendit":
+        const expectedToken =
+          this.configService.get<string>("XENDIT_CALLBACK_TOKEN") || "";
         isValid = this.validateXenditSignature(signature, expectedToken);
         break;
 
-      case 'custom':
+      case "custom":
         const secret =
-          this.configService.get<string>('WEBHOOK_SECRET') ||
-          this.configService.get<string>('payment.secret') ||
-          '';
+          this.configService.get<string>("WEBHOOK_SECRET") ||
+          this.configService.get<string>("payment.secret") ||
+          "";
         const payload = JSON.stringify(body);
         isValid = this.validateHMACSignature(payload, signature, secret);
         break;
     }
 
     if (!isValid) {
-      this.logger.error(`Webhook signature validation failed for provider: ${provider}`);
+      this.logger.error(
+        `Webhook signature validation failed for provider: ${provider}`,
+      );
     }
 
     return {
@@ -145,6 +164,6 @@ export class WebhookValidatorService {
    * Generate webhook signature for outgoing webhooks
    */
   generateWebhookSignature(payload: string, secret: string): string {
-    return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    return crypto.createHmac("sha256", secret).update(payload).digest("hex");
   }
 }

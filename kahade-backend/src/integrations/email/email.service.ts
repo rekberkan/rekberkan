@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as nodemailer from "nodemailer";
 
 @Injectable()
 export class EmailService {
@@ -9,22 +9,25 @@ export class EmailService {
 
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('email.host'),
-      port: this.configService.get<number>('email.port'),
-      secure: this.configService.get<boolean>('email.secure'),
+      host: this.configService.get<string>("email.host"),
+      port: this.configService.get<number>("email.port"),
+      secure: this.configService.get<boolean>("email.secure"),
       auth: {
-        user: this.configService.get<string>('email.user'),
-        pass: this.configService.get<string>('email.password'),
+        user: this.configService.get<string>("email.user"),
+        pass: this.configService.get<string>("email.password"),
       },
     });
   }
 
   async sendEmail(to: string, subject: string, html: string) {
     try {
-      const fromAddress = this.configService.get<string>('email.from');
-      const fromName = this.configService.get<string>('email.fromName');
+      const fromAddress = this.configService.get<string>("email.from");
+      const fromName = this.configService.get<string>("email.fromName");
       const info = await this.transporter.sendMail({
-        from: fromName && fromAddress ? `${fromName} <${fromAddress}>` : fromAddress,
+        from:
+          fromName && fromAddress
+            ? `${fromName} <${fromAddress}>`
+            : fromAddress,
         to,
         subject,
         html,
@@ -33,13 +36,13 @@ export class EmailService {
       this.logger.log(`Email sent: ${info.messageId}`);
       return info;
     } catch (error) {
-      this.logger.error('Failed to send email', error);
+      this.logger.error("Failed to send email", error);
       throw error;
     }
   }
 
   async sendWelcomeEmail(to: string, name: string) {
-    const subject = 'Welcome to Kahade!';
+    const subject = "Welcome to Kahade!";
     const html = `
       <h1>Welcome ${name}!</h1>
       <p>Thank you for joining Kahade, your trusted P2P escrow platform.</p>
@@ -49,7 +52,11 @@ export class EmailService {
     return this.sendEmail(to, subject, html);
   }
 
-  async sendTransactionNotification(to: string, transactionId: string, status: string) {
+  async sendTransactionNotification(
+    to: string,
+    transactionId: string,
+    status: string,
+  ) {
     const subject = `Transaction ${status}`;
     const html = `
       <h1>Transaction Update</h1>
@@ -61,7 +68,7 @@ export class EmailService {
   }
 
   async sendDisputeNotification(to: string, disputeId: string) {
-    const subject = 'Dispute Created';
+    const subject = "Dispute Created";
     const html = `
       <h1>Dispute Notification</h1>
       <p>A dispute (ID: ${disputeId}) has been created and is being reviewed by our team.</p>

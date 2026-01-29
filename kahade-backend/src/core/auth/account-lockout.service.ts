@@ -1,7 +1,7 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
 
 // ============================================================================
 // ACCOUNT LOCKOUT SERVICE
@@ -25,7 +25,7 @@ interface FailedAttemptRecord {
 @Injectable()
 export class AccountLockoutService {
   private readonly logger = new Logger(AccountLockoutService.name);
-  private readonly CACHE_PREFIX = 'lockout:';
+  private readonly CACHE_PREFIX = "lockout:";
 
   private readonly maxFailedAttempts: number;
   private readonly lockoutDurationMs: number;
@@ -35,11 +35,18 @@ export class AccountLockoutService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly configService: ConfigService,
   ) {
-    this.maxFailedAttempts = this.configService.get<number>('security.bruteForce.maxAttempts', 5);
+    this.maxFailedAttempts = this.configService.get<number>(
+      "security.bruteForce.maxAttempts",
+      5,
+    );
     this.lockoutDurationMs =
-      this.configService.get<number>('security.bruteForce.lockoutDuration', 900) * 1000; // 15 min
+      this.configService.get<number>(
+        "security.bruteForce.lockoutDuration",
+        900,
+      ) * 1000; // 15 min
     this.attemptWindowMs =
-      this.configService.get<number>('security.bruteForce.attemptWindow', 300) * 1000; // 5 min
+      this.configService.get<number>("security.bruteForce.attemptWindow", 300) *
+      1000; // 5 min
   }
 
   /**
@@ -157,7 +164,9 @@ export class AccountLockoutService {
   async unlockAccount(identifier: string): Promise<void> {
     const key = this.buildKey(identifier);
     await this.cacheManager.del(key);
-    this.logger.log(`Account ${this.maskIdentifier(identifier)} manually unlocked`);
+    this.logger.log(
+      `Account ${this.maskIdentifier(identifier)} manually unlocked`,
+    );
   }
 
   /**
@@ -187,16 +196,19 @@ export class AccountLockoutService {
    * Mask identifier for logging
    */
   private maskIdentifier(identifier: string): string {
-    if (identifier.includes('@')) {
+    if (identifier.includes("@")) {
       // Email - mask middle part
-      const [local, domain] = identifier.split('@');
+      const [local, domain] = identifier.split("@");
       const maskedLocal =
         local.length > 2
-          ? local[0] + '*'.repeat(local.length - 2) + local[local.length - 1]
+          ? local[0] + "*".repeat(local.length - 2) + local[local.length - 1]
           : local;
       return `${maskedLocal}@${domain}`;
     }
     // Other identifiers - mask all but first 2 chars
-    return identifier.substring(0, 2) + '*'.repeat(Math.max(0, identifier.length - 2));
+    return (
+      identifier.substring(0, 2) +
+      "*".repeat(Math.max(0, identifier.length - 2))
+    );
   }
 }

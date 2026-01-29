@@ -1,19 +1,21 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from "@prisma/client/runtime/library";
 
 export class DecimalUtil {
   /**
    * Convert Prisma Decimal to number
    */
-  static toNumber(decimal: Decimal | number | string | null | undefined): number {
+  static toNumber(
+    decimal: Decimal | number | string | null | undefined,
+  ): number {
     if (decimal === null || decimal === undefined) {
       return 0;
     }
 
-    if (typeof decimal === 'number') {
+    if (typeof decimal === "number") {
       return decimal;
     }
 
-    if (typeof decimal === 'string') {
+    if (typeof decimal === "string") {
       return parseFloat(decimal);
     }
 
@@ -32,7 +34,7 @@ export class DecimalUtil {
    * Convert Prisma Decimal to string with fixed decimals
    */
   static toFixed(decimal: Decimal | number, decimals: number = 2): string {
-    if (typeof decimal === 'number') {
+    if (typeof decimal === "number") {
       return decimal.toFixed(decimals);
     }
     return decimal.toFixed(decimals);
@@ -41,11 +43,14 @@ export class DecimalUtil {
   /**
    * Format as currency (IDR)
    */
-  static toCurrency(decimal: Decimal | number, currency: string = 'IDR'): string {
+  static toCurrency(
+    decimal: Decimal | number,
+    currency: string = "IDR",
+  ): string {
     const number = this.toNumber(decimal);
 
-    if (currency === 'IDR') {
-      return `Rp ${number.toLocaleString('id-ID')}`;
+    if (currency === "IDR") {
+      return `Rp ${number.toLocaleString("id-ID")}`;
     }
 
     return `${currency} ${number.toLocaleString()}`;

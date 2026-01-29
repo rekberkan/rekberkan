@@ -1,15 +1,15 @@
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 
 export class NumberUtil {
-  static formatCurrency(amount: number, currency: string = 'IDR'): string {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
+  static formatCurrency(amount: number, currency: string = "IDR"): string {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
       currency,
     }).format(amount);
   }
 
   static formatNumber(num: number): string {
-    return new Intl.NumberFormat('id-ID').format(num);
+    return new Intl.NumberFormat("id-ID").format(num);
   }
 
   static random(min: number, max: number): number {

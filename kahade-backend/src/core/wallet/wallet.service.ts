@@ -4,14 +4,14 @@ import {
   BadRequestException,
   ConflictException,
   InternalServerErrorException,
-} from '@nestjs/common';
-import * as crypto from 'crypto';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
-import { Wallet } from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
-import { TopUpDto, mapPaymentMethod } from './dto/topup.dto';
-import { WithdrawDto } from './dto/withdraw.dto';
+} from "@nestjs/common";
+import * as crypto from "crypto";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma } from "@prisma/client";
+import { Wallet } from "@prisma/client";
+import { ConfigService } from "@nestjs/config";
+import { TopUpDto, mapPaymentMethod } from "./dto/topup.dto";
+import { WithdrawDto } from "./dto/withdraw.dto";
 
 // ============================================================================
 // BANK-GRADE WALLET SERVICE
@@ -21,8 +21,8 @@ import { WithdrawDto } from './dto/withdraw.dto';
 export class InsufficientBalanceError extends BadRequestException {
   constructor(available: bigint | number, requested: bigint | number) {
     super({
-      code: 'INSUFFICIENT_BALANCE',
-      message: 'Insufficient balance for this operation',
+      code: "INSUFFICIENT_BALANCE",
+      message: "Insufficient balance for this operation",
       available: available.toString(),
       requested: requested.toString(),
     });
@@ -32,8 +32,8 @@ export class InsufficientBalanceError extends BadRequestException {
 export class OptimisticLockError extends ConflictException {
   constructor() {
     super({
-      code: 'CONCURRENT_MODIFICATION',
-      message: 'Wallet was modified by another operation. Please retry.',
+      code: "CONCURRENT_MODIFICATION",
+      message: "Wallet was modified by another operation. Please retry.",
     });
   }
 }
@@ -41,7 +41,7 @@ export class OptimisticLockError extends ConflictException {
 export class WalletNotFoundError extends BadRequestException {
   constructor(identifier: string) {
     super({
-      code: 'WALLET_NOT_FOUND',
+      code: "WALLET_NOT_FOUND",
       message: `Wallet not found: ${identifier}`,
     });
   }
@@ -50,8 +50,8 @@ export class WalletNotFoundError extends BadRequestException {
 export class LedgerMismatchError extends InternalServerErrorException {
   constructor(walletId: string, walletBalance: bigint, ledgerBalance: bigint) {
     super({
-      code: 'LEDGER_MISMATCH',
-      message: 'Critical: Wallet balance does not match ledger entries',
+      code: "LEDGER_MISMATCH",
+      message: "Critical: Wallet balance does not match ledger entries",
       walletId,
       walletBalance: walletBalance.toString(),
       ledgerBalance: ledgerBalance.toString(),
@@ -111,16 +111,16 @@ export class WalletService {
   private readonly RETRY_DELAY_MS = 100;
 
   private readonly SUPPORTED_BANKS = [
-    { code: 'BCA', name: 'Bank Central Asia', logo: '/banks/bca.png' },
-    { code: 'BNI', name: 'Bank Negara Indonesia', logo: '/banks/bni.png' },
-    { code: 'BRI', name: 'Bank Rakyat Indonesia', logo: '/banks/bri.png' },
-    { code: 'MANDIRI', name: 'Bank Mandiri', logo: '/banks/mandiri.png' },
-    { code: 'CIMB', name: 'CIMB Niaga', logo: '/banks/cimb.png' },
-    { code: 'PERMATA', name: 'Bank Permata', logo: '/banks/permata.png' },
-    { code: 'DANAMON', name: 'Bank Danamon', logo: '/banks/danamon.png' },
-    { code: 'BSI', name: 'Bank Syariah Indonesia', logo: '/banks/bsi.png' },
-    { code: 'BTN', name: 'Bank Tabungan Negara', logo: '/banks/btn.png' },
-    { code: 'MEGA', name: 'Bank Mega', logo: '/banks/mega.png' },
+    { code: "BCA", name: "Bank Central Asia", logo: "/banks/bca.png" },
+    { code: "BNI", name: "Bank Negara Indonesia", logo: "/banks/bni.png" },
+    { code: "BRI", name: "Bank Rakyat Indonesia", logo: "/banks/bri.png" },
+    { code: "MANDIRI", name: "Bank Mandiri", logo: "/banks/mandiri.png" },
+    { code: "CIMB", name: "CIMB Niaga", logo: "/banks/cimb.png" },
+    { code: "PERMATA", name: "Bank Permata", logo: "/banks/permata.png" },
+    { code: "DANAMON", name: "Bank Danamon", logo: "/banks/danamon.png" },
+    { code: "BSI", name: "Bank Syariah Indonesia", logo: "/banks/bsi.png" },
+    { code: "BTN", name: "Bank Tabungan Negara", logo: "/banks/btn.png" },
+    { code: "MEGA", name: "Bank Mega", logo: "/banks/mega.png" },
   ];
 
   constructor(
@@ -160,7 +160,12 @@ export class WalletService {
   async getTransactions(
     userId: string,
     options: { type?: string; page: number; limit: number },
-  ): Promise<{ data: WalletTransaction[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: WalletTransaction[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const { type, page, limit } = options;
     const skip = (page - 1) * limit;
 
@@ -168,53 +173,58 @@ export class WalletService {
     const depositsWhere: any = {
       wallet: { userId },
     };
-    if (type === 'deposit') {
+    if (type === "deposit") {
       depositsWhere.status = { not: undefined };
     }
 
-    const [deposits, withdrawals, depositCount, withdrawalCount] = await Promise.all([
-      type !== 'withdrawal'
-        ? (this.prisma as any).deposit.findMany({
-            where: depositsWhere,
-            orderBy: { createdAt: 'desc' },
-            include: { payment: true },
-            take: limit,
-            skip: type === 'deposit' ? skip : 0,
-          })
-        : [],
-      type !== 'deposit'
-        ? (this.prisma as any).withdrawal.findMany({
-            where: { wallet: { userId } },
-            orderBy: { requestedAt: 'desc' },
-            include: { bankAccount: true },
-            take: limit,
-            skip: type === 'withdrawal' ? skip : 0,
-          })
-        : [],
-      type !== 'withdrawal' ? (this.prisma as any).deposit.count({ where: depositsWhere }) : 0,
-      type !== 'deposit'
-        ? (this.prisma as any).withdrawal.count({ where: { wallet: { userId } } })
-        : 0,
-    ]);
+    const [deposits, withdrawals, depositCount, withdrawalCount] =
+      await Promise.all([
+        type !== "withdrawal"
+          ? (this.prisma as any).deposit.findMany({
+              where: depositsWhere,
+              orderBy: { createdAt: "desc" },
+              include: { payment: true },
+              take: limit,
+              skip: type === "deposit" ? skip : 0,
+            })
+          : [],
+        type !== "deposit"
+          ? (this.prisma as any).withdrawal.findMany({
+              where: { wallet: { userId } },
+              orderBy: { requestedAt: "desc" },
+              include: { bankAccount: true },
+              take: limit,
+              skip: type === "withdrawal" ? skip : 0,
+            })
+          : [],
+        type !== "withdrawal"
+          ? (this.prisma as any).deposit.count({ where: depositsWhere })
+          : 0,
+        type !== "deposit"
+          ? (this.prisma as any).withdrawal.count({
+              where: { wallet: { userId } },
+            })
+          : 0,
+      ]);
 
     // Combine and sort transactions
     const transactions: WalletTransaction[] = [
       ...deposits.map((d: any) => ({
         id: d.id,
-        type: 'deposit',
+        type: "deposit",
         amount: Number(d.amountMinor) / 100,
-        description: `Top up via ${d.payment?.paymentMethod || 'Virtual Account'}`,
+        description: `Top up via ${d.payment?.paymentMethod || "Virtual Account"}`,
         status: d.status,
         createdAt: d.createdAt,
         referenceId: d.payment?.providerInvoiceId || d.paymentId,
       })),
       ...withdrawals.map((w: any) => ({
         id: w.id,
-        type: 'withdrawal',
+        type: "withdrawal",
         amount: -Number(w.amountMinor) / 100,
         description: w.bankAccount
           ? `Withdrawal to ${w.bankAccount.bankName} ••••${w.bankAccount.accountNumberLast4}`
-          : 'Withdrawal',
+          : "Withdrawal",
         status: w.status,
         createdAt: w.requestedAt,
         referenceId: w.id,
@@ -252,7 +262,7 @@ export class WalletService {
 
     // Validate minimum amount
     if (amount < 10000) {
-      throw new BadRequestException('Minimum top up amount is Rp 10,000');
+      throw new BadRequestException("Minimum top up amount is Rp 10,000");
     }
 
     // Get or create wallet
@@ -269,10 +279,10 @@ export class WalletService {
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const amountMinor = BigInt(Math.round(amount * 100));
-    const paymentMethod = method.startsWith('va_')
-      ? 'VIRTUAL_ACCOUNT'
-      : method.startsWith('ewallet_') || method === 'qris'
-        ? 'EWALLET'
+    const paymentMethod = method.startsWith("va_")
+      ? "VIRTUAL_ACCOUNT"
+      : method.startsWith("ewallet_") || method === "qris"
+        ? "EWALLET"
         : null;
 
     // Create payment + deposit record
@@ -280,13 +290,13 @@ export class WalletService {
       const payment = await tx.payment.create({
         data: {
           userId,
-          provider: 'XENDIT',
+          provider: "XENDIT",
           providerInvoiceId: externalId,
-          paymentType: 'DEPOSIT',
+          paymentType: "DEPOSIT",
           paymentMethod: paymentMethod ?? undefined,
           amountMinor,
-          currency: 'IDR',
-          status: 'PENDING',
+          currency: "IDR",
+          status: "PENDING",
           expiresAt,
           paymentDetails: {
             method,
@@ -300,8 +310,8 @@ export class WalletService {
           walletId: wallet.id,
           paymentId: payment.id,
           amountMinor,
-          currency: 'IDR',
-          status: 'PENDING',
+          currency: "IDR",
+          status: "PENDING",
         },
       });
     });
@@ -309,7 +319,9 @@ export class WalletService {
     // Generate VA number (simulated for now)
     const vaNumber = this.generateVANumber(method);
 
-    this.logger.log(`Top up initiated: ${deposit.id} for user ${userId}, amount: ${amount}`);
+    this.logger.log(
+      `Top up initiated: ${deposit.id} for user ${userId}, amount: ${amount}`,
+    );
 
     return {
       id: deposit.id,
@@ -335,11 +347,12 @@ export class WalletService {
     status: string;
     estimatedArrival: Date;
   }> {
-    const { amount, bankAccountId, bankCode, accountNumber, accountName } = withdrawDto;
+    const { amount, bankAccountId, bankCode, accountNumber, accountName } =
+      withdrawDto;
 
     // Validate minimum amount
     if (amount < 50000) {
-      throw new BadRequestException('Minimum withdrawal amount is Rp 50,000');
+      throw new BadRequestException("Minimum withdrawal amount is Rp 50,000");
     }
 
     // Get wallet
@@ -375,7 +388,7 @@ export class WalletService {
       });
 
       if (!bankAccount) {
-        throw new BadRequestException('Invalid or inactive bank account');
+        throw new BadRequestException("Invalid or inactive bank account");
       }
       finalBankAccountId = bankAccountId;
     } else if (bankCode && accountNumber && accountName) {
@@ -400,22 +413,23 @@ export class WalletService {
         // Create new bank account with encrypted data using AES-256-GCM
         // SECURITY FIX [C003]: Removed hardcoded default encryption key
         const encryptBankData = (text: string): string => {
-          const secret = this.configService.get<string>('BANK_ENCRYPTION_KEY');
+          const secret = this.configService.get<string>("BANK_ENCRYPTION_KEY");
           if (!secret) {
             throw new InternalServerErrorException(
-              'BANK_ENCRYPTION_KEY must be configured for bank account operations'
+              "BANK_ENCRYPTION_KEY must be configured for bank account operations",
             );
           }
           // SECURITY FIX [M007]: Use proper salt derivation
-          const salt = this.configService.get<string>('BANK_ENCRYPTION_SALT') || 
+          const salt =
+            this.configService.get<string>("BANK_ENCRYPTION_SALT") ||
             `rekberkan-bank-${secret.substring(0, 8)}`;
           const key = crypto.scryptSync(secret, salt, 32);
           const iv = crypto.randomBytes(16);
-          const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-          let encrypted = cipher.update(text, 'utf8', 'hex');
-          encrypted += cipher.final('hex');
+          const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+          let encrypted = cipher.update(text, "utf8", "hex");
+          encrypted += cipher.final("hex");
           const authTag = cipher.getAuthTag();
-          return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+          return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
         };
 
         bankAccount = await this.prisma.bankAccount.create({
@@ -434,7 +448,7 @@ export class WalletService {
       }
     } else {
       throw new BadRequestException(
-        'Either bankAccountId or bank details (bankCode, accountNumber, accountName) are required',
+        "Either bankAccountId or bank details (bankCode, accountNumber, accountName) are required",
       );
     }
 
@@ -456,20 +470,22 @@ export class WalletService {
           userId,
           bankAccountId: finalBankAccountId,
           amountMinor,
-          currency: 'IDR',
-          status: 'PENDING',
+          currency: "IDR",
+          status: "PENDING",
         },
       });
     });
 
-    this.logger.log(`Withdrawal initiated: ${withdrawal.id} for user ${userId}, amount: ${amount}`);
+    this.logger.log(
+      `Withdrawal initiated: ${withdrawal.id} for user ${userId}, amount: ${amount}`,
+    );
 
     return {
       id: withdrawal.id,
       amount,
       netAmount: amount,
       bankAccountId: finalBankAccountId,
-      status: 'PENDING',
+      status: "PENDING",
       estimatedArrival: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours
     };
   }
@@ -485,11 +501,17 @@ export class WalletService {
    * BANK-GRADE: Deduct balance with optimistic locking
    */
   async deductBalance(options: DeductBalanceOptions): Promise<Wallet> {
-    const { userId, amount, reason, tx, maxRetries = this.MAX_RETRIES } = options;
+    const {
+      userId,
+      amount,
+      reason,
+      tx,
+      maxRetries = this.MAX_RETRIES,
+    } = options;
     const prisma = tx ?? this.prisma;
 
     if (amount <= 0n) {
-      throw new BadRequestException('Amount must be positive');
+      throw new BadRequestException("Amount must be positive");
     }
 
     let retries = 0;
@@ -545,7 +567,9 @@ export class WalletService {
       }
     }
 
-    throw lastError ?? new InternalServerErrorException('Failed to update balance');
+    throw (
+      lastError ?? new InternalServerErrorException("Failed to update balance")
+    );
   }
 
   /**
@@ -556,7 +580,7 @@ export class WalletService {
     const prisma = tx ?? this.prisma;
 
     if (amount <= 0n) {
-      throw new BadRequestException('Amount must be positive');
+      throw new BadRequestException("Amount must be positive");
     }
 
     let wallet = await prisma.wallet.findUnique({
@@ -589,7 +613,7 @@ export class WalletService {
     const prisma = tx ?? this.prisma;
 
     if (amount <= 0n) {
-      throw new BadRequestException('Amount must be positive');
+      throw new BadRequestException("Amount must be positive");
     }
 
     let retries = 0;
@@ -642,7 +666,9 @@ export class WalletService {
       }
     }
 
-    throw new InternalServerErrorException('Failed to lock balance after retries');
+    throw new InternalServerErrorException(
+      "Failed to lock balance after retries",
+    );
   }
 
   /**
@@ -657,7 +683,7 @@ export class WalletService {
     const prisma = tx ?? this.prisma;
 
     if (amount <= 0n) {
-      throw new BadRequestException('Amount must be positive');
+      throw new BadRequestException("Amount must be positive");
     }
 
     const wallet = await prisma.wallet.findUnique({
@@ -701,7 +727,7 @@ export class WalletService {
     const prisma = tx ?? this.prisma;
 
     if (amount <= 0n) {
-      throw new BadRequestException('Amount must be positive');
+      throw new BadRequestException("Amount must be positive");
     }
 
     const fromWallet = await prisma.wallet.findUnique({
@@ -750,7 +776,9 @@ export class WalletService {
       prisma.wallet.findUnique({ where: { userId: toUserId } }),
     ]);
 
-    this.logger.log(`Transferred ${amount} from ${fromUserId} to ${toUserId}. Reason: ${reason}`);
+    this.logger.log(
+      `Transferred ${amount} from ${fromUserId} to ${toUserId}. Reason: ${reason}`,
+    );
 
     return {
       fromWallet: updatedFromWallet!,
@@ -761,7 +789,10 @@ export class WalletService {
   /**
    * Create wallet for new user
    */
-  async createWallet(userId: string, currency: string = 'IDR'): Promise<Wallet> {
+  async createWallet(
+    userId: string,
+    currency: string = "IDR",
+  ): Promise<Wallet> {
     const existing = await this.prisma.wallet.findUnique({
       where: { userId },
     });
@@ -788,7 +819,10 @@ export class WalletService {
   /**
    * Get or create wallet for user
    */
-  async getOrCreateWallet(userId: string, currency: string = 'IDR'): Promise<Wallet> {
+  async getOrCreateWallet(
+    userId: string,
+    currency: string = "IDR",
+  ): Promise<Wallet> {
     const existing = await this.prisma.wallet.findUnique({
       where: { userId },
     });
@@ -809,27 +843,30 @@ export class WalletService {
   }
 
   private generateVANumber(method: string): string {
-    const prefix = method.includes('bca')
-      ? '1234'
-      : method.includes('bni')
-        ? '8808'
-        : method.includes('mandiri')
-          ? '8908'
-          : method.includes('bri')
-            ? '2626'
-            : '9999';
+    const prefix = method.includes("bca")
+      ? "1234"
+      : method.includes("bni")
+        ? "8808"
+        : method.includes("mandiri")
+          ? "8908"
+          : method.includes("bri")
+            ? "2626"
+            : "9999";
     const random = Math.random().toString().substring(2, 14);
     return `${prefix}${random}`;
   }
 
-  private generateReconciliationHash(walletId: string, balance: bigint): string {
+  private generateReconciliationHash(
+    walletId: string,
+    balance: bigint,
+  ): string {
     const data = `${walletId}:${balance.toString()}:${Date.now()}`;
-    return crypto.createHash('sha256').update(data).digest('hex');
+    return crypto.createHash("sha256").update(data).digest("hex");
   }
 
   async healthCheck(): Promise<{ status: string }> {
-    this.logger.debug('Health check called');
-    return { status: 'ok' };
+    this.logger.debug("Health check called");
+    return { status: "ok" };
   }
 
   /**
@@ -854,11 +891,11 @@ export class WalletService {
     // Get pending deposits and withdrawals
     const [pendingDeposits, pendingWithdrawals] = await Promise.all([
       (this.prisma as any).deposit.aggregate({
-        where: { walletId: wallet.id, status: 'PENDING' },
+        where: { walletId: wallet.id, status: "PENDING" },
         _sum: { amountMinor: true },
       }),
       (this.prisma as any).withdrawal.aggregate({
-        where: { walletId: wallet.id, status: 'PENDING' },
+        where: { walletId: wallet.id, status: "PENDING" },
         _sum: { amountMinor: true },
       }),
     ]);
@@ -869,7 +906,8 @@ export class WalletService {
       total: Number(wallet.balanceMinor) / 100,
       currency: wallet.currency,
       pendingDeposits: Number(pendingDeposits._sum?.amountMinor || 0n) / 100,
-      pendingWithdrawals: Number(pendingWithdrawals._sum?.amountMinor || 0n) / 100,
+      pendingWithdrawals:
+        Number(pendingWithdrawals._sum?.amountMinor || 0n) / 100,
     };
   }
 
@@ -899,7 +937,7 @@ export class WalletService {
     const [withdrawals, total] = await Promise.all([
       (this.prisma as any).withdrawal.findMany({
         where,
-        orderBy: { requestedAt: 'desc' },
+        orderBy: { requestedAt: "desc" },
         include: { bankAccount: true },
         take: limit,
         skip,
@@ -950,11 +988,13 @@ export class WalletService {
     });
 
     if (!withdrawal || withdrawal.walletId !== wallet.id) {
-      throw new BadRequestException('Withdrawal not found');
+      throw new BadRequestException("Withdrawal not found");
     }
 
-    if (withdrawal.status !== 'PENDING') {
-      throw new BadRequestException(`Cannot cancel withdrawal with status: ${withdrawal.status}`);
+    if (withdrawal.status !== "PENDING") {
+      throw new BadRequestException(
+        `Cannot cancel withdrawal with status: ${withdrawal.status}`,
+      );
     }
 
     // Cancel withdrawal and unlock balance
@@ -962,7 +1002,7 @@ export class WalletService {
       // Update withdrawal status
       await (tx as any).withdrawal.update({
         where: { id: withdrawalId },
-        data: { status: 'REJECTED', rejectionReason: 'Cancelled by user' },
+        data: { status: "REJECTED", rejectionReason: "Cancelled by user" },
       });
 
       // Unlock the balance
@@ -978,6 +1018,6 @@ export class WalletService {
 
     this.logger.log(`Withdrawal ${withdrawalId} cancelled by user ${userId}`);
 
-    return { success: true, message: 'Withdrawal cancelled successfully' };
+    return { success: true, message: "Withdrawal cancelled successfully" };
   }
 }

@@ -7,8 +7,8 @@ import {
   HttpStatus,
   SetMetadata,
   OnModuleDestroy,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 
 // ============================================================================
 // RATE LIMIT GUARD - Production Ready
@@ -21,7 +21,7 @@ interface RateLimitRecord {
 }
 
 // Decorator key for custom rate limits
-export const RATE_LIMIT_KEY = 'rateLimit';
+export const RATE_LIMIT_KEY = "rateLimit";
 
 // Decorator for custom rate limits
 export const RateLimit = (ttl: number, limit: number) =>
@@ -48,10 +48,10 @@ export class RateLimitGuard implements CanActivate, OnModuleDestroy {
     const controller = context.getClass();
 
     // Get custom rate limit from decorator or use default
-    const customLimit = this.reflector.getAllAndOverride<{ ttl: number; limit: number }>(
-      RATE_LIMIT_KEY,
-      [handler, controller],
-    );
+    const customLimit = this.reflector.getAllAndOverride<{
+      ttl: number;
+      limit: number;
+    }>(RATE_LIMIT_KEY, [handler, controller]);
 
     const ttl = customLimit?.ttl || this.defaultTtl;
     const limit = customLimit?.limit || this.defaultLimit;
@@ -82,20 +82,25 @@ export class RateLimitGuard implements CanActivate, OnModuleDestroy {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: 'Too many requests. Please try again later.',
+          message: "Too many requests. Please try again later.",
           retryAfter,
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
-    this.setRateLimitHeaders(request, limit, limit - record.count, record.resetAt);
+    this.setRateLimitHeaders(
+      request,
+      limit,
+      limit - record.count,
+      record.resetAt,
+    );
     return true;
   }
 
   private getKey(request: any, handlerName: string): string {
     const userId = request.user?.id;
-    const ip = request.ip || request.connection?.remoteAddress || 'unknown';
+    const ip = request.ip || request.connection?.remoteAddress || "unknown";
 
     if (userId) {
       return `user:${userId}:${handlerName}`;
@@ -111,9 +116,9 @@ export class RateLimitGuard implements CanActivate, OnModuleDestroy {
   ): void {
     const response = request.res;
     if (response) {
-      response.setHeader('X-RateLimit-Limit', limit);
-      response.setHeader('X-RateLimit-Remaining', Math.max(0, remaining));
-      response.setHeader('X-RateLimit-Reset', Math.ceil(resetAt / 1000));
+      response.setHeader("X-RateLimit-Limit", limit);
+      response.setHeader("X-RateLimit-Remaining", Math.max(0, remaining));
+      response.setHeader("X-RateLimit-Reset", Math.ceil(resetAt / 1000));
     }
   }
 

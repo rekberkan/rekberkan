@@ -1,15 +1,15 @@
-import { Processor, Process } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
-import { EmailService } from '@integrations/email/email.service';
+import { Processor, Process } from "@nestjs/bull";
+import { Logger } from "@nestjs/common";
+import { Job } from "bull";
+import { EmailService } from "@integrations/email/email.service";
 
-@Processor('email')
+@Processor("email")
 export class EmailProcessor {
   private readonly logger = new Logger(EmailProcessor.name);
 
   constructor(private readonly emailService: EmailService) {}
 
-  @Process('send-email')
+  @Process("send-email")
   async handleSendEmail(job: Job) {
     this.logger.debug(`Processing email job: ${job.id}`);
     const { to, subject, html } = job.data;
@@ -23,7 +23,7 @@ export class EmailProcessor {
     }
   }
 
-  @Process('send-welcome-email')
+  @Process("send-welcome-email")
   async handleWelcomeEmail(job: Job) {
     const { email, name } = job.data;
     try {
@@ -35,14 +35,20 @@ export class EmailProcessor {
     }
   }
 
-  @Process('send-transaction-notification')
+  @Process("send-transaction-notification")
   async handleTransactionNotification(job: Job) {
     const { email, transactionId, status } = job.data;
     try {
-      await this.emailService.sendTransactionNotification(email, transactionId, status);
+      await this.emailService.sendTransactionNotification(
+        email,
+        transactionId,
+        status,
+      );
       this.logger.log(`Transaction notification sent to: ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send transaction notification: ${error.message}`);
+      this.logger.error(
+        `Failed to send transaction notification: ${error.message}`,
+      );
       throw error;
     }
   }

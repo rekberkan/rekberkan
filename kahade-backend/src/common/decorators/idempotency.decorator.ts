@@ -3,17 +3,17 @@ import {
   applyDecorators,
   createParamDecorator,
   ExecutionContext,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
 // ============================================================================
 // BANK-GRADE IDEMPOTENCY DECORATOR
 // Ensures financial operations are executed exactly once
 // ============================================================================
 
-export const IDEMPOTENCY_KEY = 'idempotency_required';
-export const IDEMPOTENCY_TTL_KEY = 'idempotency_ttl';
-export const FINANCIAL_OPERATION_KEY = 'financial_operation';
-export const AUDIT_REQUIRED_KEY = 'audit_required';
+export const IDEMPOTENCY_KEY = "idempotency_required";
+export const IDEMPOTENCY_TTL_KEY = "idempotency_ttl";
+export const FINANCIAL_OPERATION_KEY = "financial_operation";
+export const AUDIT_REQUIRED_KEY = "audit_required";
 
 /**
  * BANK-GRADE: Mark endpoint as idempotent
@@ -76,20 +76,33 @@ export function FinancialOperation(operationType: string) {
 export const IdempotencyKey = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): string | undefined => {
     const request = ctx.switchToHttp().getRequest();
-    return request.headers['x-idempotency-key'] || request.idempotencyKey;
+    return request.headers["x-idempotency-key"] || request.idempotencyKey;
   },
 );
 
 /**
  * Check if idempotency is required for a handler
  */
-export function isIdempotencyRequired(reflector: any, handler: any, classRef: any): boolean {
-  return reflector.getAllAndOverride(IDEMPOTENCY_KEY, [handler, classRef]) ?? false;
+export function isIdempotencyRequired(
+  reflector: any,
+  handler: any,
+  classRef: any,
+): boolean {
+  return (
+    reflector.getAllAndOverride(IDEMPOTENCY_KEY, [handler, classRef]) ?? false
+  );
 }
 
 /**
  * Get idempotency TTL for a handler
  */
-export function getIdempotencyTTL(reflector: any, handler: any, classRef: any): number {
-  return reflector.getAllAndOverride(IDEMPOTENCY_TTL_KEY, [handler, classRef]) ?? 86400;
+export function getIdempotencyTTL(
+  reflector: any,
+  handler: any,
+  classRef: any,
+): number {
+  return (
+    reflector.getAllAndOverride(IDEMPOTENCY_TTL_KEY, [handler, classRef]) ??
+    86400
+  );
 }

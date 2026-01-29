@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { KYCStatus } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { KYCStatus } from "@prisma/client";
 
 // ============================================================================
 // BANK-GRADE WITHDRAWAL GUARD SERVICE
@@ -26,7 +26,11 @@ export interface IWithdrawalLimitCheck {
 // Default limits based on KYC status
 const DEFAULT_LIMITS: Record<
   KYCStatus,
-  { dailyLimitMinor: bigint; perTxLimitMinor: bigint; monthlyLimitMinor: bigint }
+  {
+    dailyLimitMinor: bigint;
+    perTxLimitMinor: bigint;
+    monthlyLimitMinor: bigint;
+  }
 > = {
   [KYCStatus.NONE]: {
     dailyLimitMinor: BigInt(5_000_000 * 100),
@@ -61,14 +65,18 @@ export class WithdrawalGuardService {
   /**
    * Check if user can withdraw the requested amount
    */
-  async checkWithdrawalLimits(userId: string, amountMinor: bigint): Promise<IWithdrawalLimitCheck> {
+  async checkWithdrawalLimits(
+    userId: string,
+    amountMinor: bigint,
+  ): Promise<IWithdrawalLimitCheck> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { kycStatus: true },
     });
 
     const kycStatus = (user?.kycStatus as KYCStatus) || KYCStatus.NONE;
-    const defaultLimits = DEFAULT_LIMITS[kycStatus] || DEFAULT_LIMITS[KYCStatus.NONE];
+    const defaultLimits =
+      DEFAULT_LIMITS[kycStatus] || DEFAULT_LIMITS[KYCStatus.NONE];
     const dailyLimit = defaultLimits.dailyLimitMinor;
     const perTxLimit = defaultLimits.perTxLimitMinor;
     const monthlyLimit = defaultLimits.monthlyLimitMinor;
@@ -80,7 +88,7 @@ export class WithdrawalGuardService {
       where: {
         userId,
         requestedAt: { gte: today },
-        status: { in: ['PENDING', 'APPROVED', 'COMPLETED'] },
+        status: { in: ["PENDING", "APPROVED", "COMPLETED"] },
       },
       _sum: { amountMinor: true },
     });
@@ -91,14 +99,14 @@ export class WithdrawalGuardService {
       where: {
         userId,
         requestedAt: { gte: monthStart },
-        status: { in: ['PENDING', 'APPROVED', 'COMPLETED'] },
+        status: { in: ["PENDING", "APPROVED", "COMPLETED"] },
       },
       _sum: { amountMinor: true },
     });
 
     const lastWithdrawal = await this.prisma.withdrawal.findFirst({
       where: { userId },
-      orderBy: { requestedAt: 'desc' },
+      orderBy: { requestedAt: "desc" },
       select: { requestedAt: true },
     });
 
@@ -170,7 +178,8 @@ export class WithdrawalGuardService {
       minutesSinceLastWithdrawal !== null &&
       minutesSinceLastWithdrawal < DEFAULT_COOLING_PERIOD_MINUTES
     ) {
-      const minutesRemaining = DEFAULT_COOLING_PERIOD_MINUTES - minutesSinceLastWithdrawal;
+      const minutesRemaining =
+        DEFAULT_COOLING_PERIOD_MINUTES - minutesSinceLastWithdrawal;
       return {
         canWithdraw: false,
         reason: `Cooling period active. Please wait ${minutesRemaining} minutes.`,
@@ -261,6 +270,6 @@ export class WithdrawalGuardService {
 
   private formatAmount(amountMinor: bigint): string {
     const amount = Number(amountMinor) / 100;
-    return `Rp ${amount.toLocaleString('id-ID')}`;
+    return `Rp ${amount.toLocaleString("id-ID")}`;
   }
 }

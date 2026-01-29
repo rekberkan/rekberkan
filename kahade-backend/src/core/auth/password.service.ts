@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { HashUtil } from '@common/utils/crypto.util';
-import * as crypto from 'crypto';
+import { Injectable } from "@nestjs/common";
+import { HashUtil } from "@common/utils/crypto.util";
+import * as crypto from "crypto";
 
 export interface IPasswordPolicy {
   minLength: number;
@@ -43,34 +43,41 @@ export class PasswordService {
 
     // Length check
     if (password.length < this.policy.minLength) {
-      errors.push(`Password must be at least ${this.policy.minLength} characters`);
+      errors.push(
+        `Password must be at least ${this.policy.minLength} characters`,
+      );
     }
 
     // Uppercase check
     if (this.policy.requireUppercase && !/[A-Z]/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
+      errors.push("Password must contain at least one uppercase letter");
     }
 
     // Lowercase check
     if (this.policy.requireLowercase && !/[a-z]/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
+      errors.push("Password must contain at least one lowercase letter");
     }
 
     // Numbers check
     if (this.policy.requireNumbers && !/\d/.test(password)) {
-      errors.push('Password must contain at least one number');
+      errors.push("Password must contain at least one number");
     }
 
     // Special characters check
-    if (this.policy.requireSpecialChars && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      errors.push('Password must contain at least one special character');
+    if (
+      this.policy.requireSpecialChars &&
+      !/[!@#$%^&*(),.?":{}|<>]/.test(password)
+    ) {
+      errors.push("Password must contain at least one special character");
     }
 
     // Simple strength calculation
     const score = this.calculatePasswordStrength(password, userInputs);
 
     if (score < this.policy.minStrengthScore) {
-      errors.push('Password is too weak. Use a stronger password with more variety.');
+      errors.push(
+        "Password is too weak. Use a stronger password with more variety.",
+      );
     }
 
     return {
@@ -83,7 +90,10 @@ export class PasswordService {
   /**
    * Calculate password strength (0-4)
    */
-  private calculatePasswordStrength(password: string, userInputs: string[] = []): number {
+  private calculatePasswordStrength(
+    password: string,
+    userInputs: string[] = [],
+  ): number {
     let score = 0;
 
     // Length bonus
@@ -97,12 +107,14 @@ export class PasswordService {
     const hasNumber = /\d/.test(password);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    const varietyCount = [hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+    const varietyCount = [hasLower, hasUpper, hasNumber, hasSpecial].filter(
+      Boolean,
+    ).length;
     if (varietyCount >= 3) score++;
     if (varietyCount === 4) score++;
 
     // Check for common patterns (reduce score)
-    const commonPatterns = ['123456', 'password', 'qwerty', 'abc123', '111111'];
+    const commonPatterns = ["123456", "password", "qwerty", "abc123", "111111"];
     if (commonPatterns.some((p) => password.toLowerCase().includes(p))) {
       score = Math.max(0, score - 2);
     }
@@ -123,7 +135,8 @@ export class PasswordService {
   needsRotation(passwordUpdatedAt: Date | null): boolean {
     if (!passwordUpdatedAt) return true;
 
-    const daysSinceUpdate = (Date.now() - passwordUpdatedAt.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUpdate =
+      (Date.now() - passwordUpdatedAt.getTime()) / (1000 * 60 * 60 * 24);
 
     return daysSinceUpdate >= this.policy.rotationDays;
   }
@@ -135,7 +148,9 @@ export class PasswordService {
     newPassword: string,
     previousPasswordHashes: string[],
   ): Promise<boolean> {
-    const recentHashes = previousPasswordHashes.slice(-this.policy.preventReuse);
+    const recentHashes = previousPasswordHashes.slice(
+      -this.policy.preventReuse,
+    );
 
     for (const hash of recentHashes) {
       const isReused = await HashUtil.verify(newPassword, hash);
@@ -151,13 +166,13 @@ export class PasswordService {
    * Generate secure random password
    */
   generateSecurePassword(length = 16): string {
-    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-    const numbers = '0123456789';
-    const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const special = "!@#$%^&*()_+-=[]{}|;:,.<>?";
     const all = uppercase + lowercase + numbers + special;
 
-    let password = '';
+    let password = "";
 
     // Ensure at least one of each required type
     password += uppercase[crypto.randomInt(uppercase.length)];
@@ -171,12 +186,12 @@ export class PasswordService {
     }
 
     // Shuffle password using Fisher-Yates
-    const chars = password.split('');
+    const chars = password.split("");
     for (let i = chars.length - 1; i > 0; i--) {
       const j = crypto.randomInt(i + 1);
       [chars[i], chars[j]] = [chars[j], chars[i]];
     }
 
-    return chars.join('');
+    return chars.join("");
   }
 }

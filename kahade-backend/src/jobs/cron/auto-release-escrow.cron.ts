@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { EscrowService } from '@core/escrow/escrow.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { EscrowService } from "@core/escrow/escrow.service";
 
 // ============================================================================
 // AUTO-RELEASE ESCROW CRON JOB
@@ -22,12 +22,12 @@ export class AutoReleaseEscrowCron {
   async handleExpiredEscrows(): Promise<void> {
     // Prevent concurrent runs
     if (this.isRunning) {
-      this.logger.warn('Auto-release escrow job already running, skipping...');
+      this.logger.warn("Auto-release escrow job already running, skipping...");
       return;
     }
 
     this.isRunning = true;
-    this.logger.log('Starting auto-release escrow job...');
+    this.logger.log("Starting auto-release escrow job...");
 
     try {
       const processedCount = await this.escrowService.processExpiredEscrows();
@@ -35,10 +35,13 @@ export class AutoReleaseEscrowCron {
       if (processedCount > 0) {
         this.logger.log(`Auto-released ${processedCount} expired escrow(s)`);
       } else {
-        this.logger.debug('No expired escrows to process');
+        this.logger.debug("No expired escrows to process");
       }
     } catch (error) {
-      this.logger.error(`Auto-release escrow job failed: ${error.message}`, error.stack);
+      this.logger.error(
+        `Auto-release escrow job failed: ${error.message}`,
+        error.stack,
+      );
     } finally {
       this.isRunning = false;
     }
@@ -48,7 +51,7 @@ export class AutoReleaseEscrowCron {
    * Manual trigger for testing or admin use
    */
   async run(): Promise<{ processed: number }> {
-    this.logger.log('Manual auto-release escrow job triggered');
+    this.logger.log("Manual auto-release escrow job triggered");
     const processedCount = await this.escrowService.processExpiredEscrows();
     return { processed: processedCount };
   }

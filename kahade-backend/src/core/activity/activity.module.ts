@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ActivityController } from './activity.controller';
-import { ActivityRepository } from './activity.repository';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module } from "@nestjs/common";
+import { ActivityController } from "./activity.controller";
+import { ActivityRepository } from "./activity.repository";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule],

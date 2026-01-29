@@ -1,25 +1,33 @@
-import { IsEnum, IsString, IsOptional, IsNumber, Min, Max, MaxLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  MaxLength,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type, Transform } from "class-transformer";
 
 export enum DisputeDecision {
-  FAVOR_BUYER = 'FAVOR_BUYER',
-  FAVOR_SELLER = 'FAVOR_SELLER',
-  SPLIT = 'SPLIT',
-  NO_ACTION = 'NO_ACTION',
+  FAVOR_BUYER = "FAVOR_BUYER",
+  FAVOR_SELLER = "FAVOR_SELLER",
+  SPLIT = "SPLIT",
+  NO_ACTION = "NO_ACTION",
 }
 
 export class DisputeDecisionDto {
   @ApiProperty({
-    description: 'Decision on the dispute',
+    description: "Decision on the dispute",
     enum: DisputeDecision,
     example: DisputeDecision.FAVOR_BUYER,
   })
-  @IsEnum(DisputeDecision, { message: 'Invalid decision' })
+  @IsEnum(DisputeDecision, { message: "Invalid decision" })
   decision: DisputeDecision;
 
   @ApiPropertyOptional({
-    description: 'Percentage of escrow to release to seller (0-100)',
+    description: "Percentage of escrow to release to seller (0-100)",
     example: 50,
     minimum: 0,
     maximum: 100,
@@ -32,8 +40,8 @@ export class DisputeDecisionDto {
   sellerPercentage?: number;
 
   @ApiProperty({
-    description: 'Explanation for the decision',
-    example: 'Based on the evidence provided, the buyer claim is valid...',
+    description: "Explanation for the decision",
+    example: "Based on the evidence provided, the buyer claim is valid...",
     maxLength: 2000,
   })
   @IsString()
@@ -42,7 +50,7 @@ export class DisputeDecisionDto {
   explanation: string;
 
   @ApiPropertyOptional({
-    description: 'Internal notes (not visible to parties)',
+    description: "Internal notes (not visible to parties)",
     maxLength: 1000,
   })
   @IsOptional()

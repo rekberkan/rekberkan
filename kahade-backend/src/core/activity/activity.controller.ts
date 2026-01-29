@@ -1,46 +1,67 @@
-import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { PrismaService } from '@infrastructure/database/prisma.service';
+import { Controller, Get, Query, UseGuards, Logger } from "@nestjs/common";
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+} from "@nestjs/swagger";
+import { JwtAuthGuard } from "@common/guards/jwt-auth.guard";
+import { CurrentUser } from "@common/decorators/current-user.decorator";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { sanitizePagination } from "@common/pipes/pagination.pipe";
 
 // ============================================================================
 // ACTIVITY CONTROLLER - Production Ready
 // Implements: Activity Logging, History Retrieval, Filtering
 // ============================================================================
 
-@ApiTags('activity')
-@Controller('activity')
+@ApiTags("activity")
+@Controller("activity")
 export class ActivityController {
   private readonly logger = new Logger(ActivityController.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @Get('health')
-  @ApiOperation({ summary: 'Health check' })
+  @Get("health")
+  @ApiOperation({ summary: "Health check" })
   health() {
-    return { status: 'ok' };
+    return { status: "ok" };
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get user activity log' })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by activity type' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'from', required: false, description: 'Start date (ISO format)' })
-  @ApiQuery({ name: 'to', required: false, description: 'End date (ISO format)' })
-  @ApiResponse({ status: 200, description: 'Returns user activity log' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get user activity log" })
+  @ApiQuery({
+    name: "type",
+    required: false,
+    description: "Filter by activity type",
+  })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({
+    name: "from",
+    required: false,
+    description: "Start date (ISO format)",
+  })
+  @ApiQuery({
+    name: "to",
+    required: false,
+    description: "End date (ISO format)",
+  })
+  @ApiResponse({ status: 200, description: "Returns user activity log" })
   async getActivityLog(
-    @CurrentUser('id') userId: string,
-    @Query('type') type?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-    @Query('from') from?: string,
-    @Query('to') to?: string,
+    @CurrentUser("id") userId: string,
+    @Query("type") type?: string,
+    @Query("page") rawPage?: number,
+    @Query("limit") rawLimit?: number,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
   ) {
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = sanitizePagination(rawPage, rawLimit, {
+      maxLimit: 100,
+    });
     const where: any = { userId };
 
     if (type) {
@@ -56,7 +77,7 @@ export class ActivityController {
     const [activities, total] = await Promise.all([
       this.prisma.userActivity.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -79,25 +100,26 @@ export class ActivityController {
     };
   }
 
-  @Get('summary')
+  @Get("summary")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get activity summary' })
-  @ApiResponse({ status: 200, description: 'Returns activity summary' })
-  async getActivitySummary(@CurrentUser('id') userId: string) {
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get activity summary" })
+  @ApiResponse({ status: 200, description: "Returns activity summary" })
+  async getActivitySummary(@CurrentUser("id") userId: string) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const [totalActivities, recentActivities, activityByType] = await Promise.all([
-      this.prisma.userActivity.count({ where: { userId } }),
-      this.prisma.userActivity.count({
-        where: { userId, createdAt: { gte: thirtyDaysAgo } },
-      }),
-      this.prisma.userActivity.groupBy({
-        by: ['activityType'],
-        where: { userId },
-        _count: true,
-      }),
-    ]);
+    const [totalActivities, recentActivities, activityByType] =
+      await Promise.all([
+        this.prisma.userActivity.count({ where: { userId } }),
+        this.prisma.userActivity.count({
+          where: { userId, createdAt: { gte: thirtyDaysAgo } },
+        }),
+        this.prisma.userActivity.groupBy({
+          by: ["activityType"],
+          where: { userId },
+          _count: true,
+        }),
+      ]);
 
     return {
       totalActivities,
@@ -109,19 +131,19 @@ export class ActivityController {
     };
   }
 
-  @Get('transactions')
+  @Get("transactions")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get transaction history' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiResponse({ status: 200, description: 'Returns transaction history' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get transaction history" })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({ name: "status", required: false })
+  @ApiResponse({ status: 200, description: "Returns transaction history" })
   async getTransactionHistory(
-    @CurrentUser('id') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-    @Query('status') status?: string,
+    @CurrentUser("id") userId: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
+    @Query("status") status?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {
@@ -136,7 +158,7 @@ export class ActivityController {
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
         select: {
@@ -170,10 +192,13 @@ export class ActivityController {
         role:
           o.initiatorId === userId
             ? o.initiatorRole
-            : o.initiatorRole === 'BUYER'
-              ? 'SELLER'
-              : 'BUYER',
-        counterparty: o.initiatorId === userId ? o.counterparty?.username : o.initiator.username,
+            : o.initiatorRole === "BUYER"
+              ? "SELLER"
+              : "BUYER",
+        counterparty:
+          o.initiatorId === userId
+            ? o.counterparty?.username
+            : o.initiator.username,
         createdAt: o.createdAt,
         paidAt: o.paidAt,
         completedAt: o.completedAt,
@@ -185,19 +210,23 @@ export class ActivityController {
     };
   }
 
-  @Get('wallet')
+  @Get("wallet")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get wallet activity history' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'type', required: false, description: 'DEPOSIT, WITHDRAWAL, TRANSFER' })
-  @ApiResponse({ status: 200, description: 'Returns wallet activity history' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get wallet activity history" })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({
+    name: "type",
+    required: false,
+    description: "DEPOSIT, WITHDRAWAL, TRANSFER",
+  })
+  @ApiResponse({ status: 200, description: "Returns wallet activity history" })
   async getWalletHistory(
-    @CurrentUser('id') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-    @Query('type') type?: string,
+    @CurrentUser("id") userId: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
+    @Query("type") type?: string,
   ) {
     const skip = (page - 1) * limit;
 
@@ -222,11 +251,11 @@ export class ActivityController {
     let depositTotal = 0;
     let withdrawalTotal = 0;
 
-    if (!type || type.toUpperCase() === 'DEPOSIT') {
+    if (!type || type.toUpperCase() === "DEPOSIT") {
       [deposits, depositTotal] = await Promise.all([
         this.prisma.deposit.findMany({
           where: { walletId: wallet.id },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           skip: type ? skip : 0,
           take: type ? limit : Math.ceil(limit / 2),
         }),
@@ -234,11 +263,11 @@ export class ActivityController {
       ]);
     }
 
-    if (!type || type.toUpperCase() === 'WITHDRAWAL') {
+    if (!type || type.toUpperCase() === "WITHDRAWAL") {
       [withdrawals, withdrawalTotal] = await Promise.all([
         this.prisma.withdrawal.findMany({
           where: { walletId: wallet.id },
-          orderBy: { requestedAt: 'desc' },
+          orderBy: { requestedAt: "desc" },
           skip: type ? skip : 0,
           take: type ? limit : Math.ceil(limit / 2),
         }),
@@ -250,7 +279,7 @@ export class ActivityController {
     const combined = [
       ...deposits.map((d) => ({
         id: d.id,
-        type: 'DEPOSIT',
+        type: "DEPOSIT",
         amount: Number(d.amountMinor) / 100,
         status: d.status,
         reference: d.externalRef,
@@ -259,14 +288,17 @@ export class ActivityController {
       })),
       ...withdrawals.map((w) => ({
         id: w.id,
-        type: 'WITHDRAWAL',
+        type: "WITHDRAWAL",
         amount: Number(w.amountMinor) / 100,
         status: w.status,
         reference: w.externalRef,
         createdAt: w.requestedAt,
         completedAt: w.completedAt,
       })),
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 
     return {
       data: combined.slice(0, limit),
@@ -277,17 +309,17 @@ export class ActivityController {
     };
   }
 
-  @Get('security')
+  @Get("security")
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get security-related activity' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiResponse({ status: 200, description: 'Returns security activity' })
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({ summary: "Get security-related activity" })
+  @ApiQuery({ name: "page", required: false })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiResponse({ status: 200, description: "Returns security activity" })
   async getSecurityActivity(
-    @CurrentUser('id') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @CurrentUser("id") userId: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
   ) {
     const skip = (page - 1) * limit;
 
@@ -297,10 +329,10 @@ export class ActivityController {
         where: {
           userId,
           activityType: {
-            in: ['LOGIN', 'LOGOUT'],
+            in: ["LOGIN", "LOGOUT"],
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -308,7 +340,7 @@ export class ActivityController {
         where: {
           userId,
           activityType: {
-            in: ['LOGIN', 'LOGOUT'],
+            in: ["LOGIN", "LOGOUT"],
           },
         },
       }),
@@ -336,10 +368,10 @@ export class ActivityController {
 
   private maskIpAddress(ip: string): string {
     // Mask last octet for privacy
-    const parts = ip.split('.');
+    const parts = ip.split(".");
     if (parts.length === 4) {
       return `${parts[0]}.${parts[1]}.${parts[2]}.***`;
     }
-    return ip.substring(0, ip.length - 3) + '***';
+    return ip.substring(0, ip.length - 3) + "***";
   }
 }

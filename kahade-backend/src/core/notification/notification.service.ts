@@ -1,9 +1,20 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
-import { NotificationRepository, ICreateNotification } from './notification.repository';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util';
-import { Notification } from '@prisma/client';
-import { NotificationType } from './dto/create-notification.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from "@nestjs/common";
+import {
+  NotificationRepository,
+  ICreateNotification,
+} from "./notification.repository";
+import { CreateNotificationDto } from "./dto/create-notification.dto";
+import {
+  PaginationUtil,
+  PaginationParams,
+} from "@common/utils/pagination.util";
+import { Notification } from "@prisma/client";
+import { NotificationType } from "./dto/create-notification.dto";
 
 interface FindAllParams extends PaginationParams {
   read?: boolean;
@@ -13,11 +24,19 @@ interface FindAllParams extends PaginationParams {
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
-  constructor(private readonly notificationRepository: NotificationRepository) {}
+  constructor(
+    private readonly notificationRepository: NotificationRepository,
+  ) {}
 
-  async create(createNotificationDto: CreateNotificationDto): Promise<Notification> {
-    const notification = await this.notificationRepository.create(createNotificationDto);
-    this.logger.log(`Notification created: ${notification.id} for user: ${notification.userId}`);
+  async create(
+    createNotificationDto: CreateNotificationDto,
+  ): Promise<Notification> {
+    const notification = await this.notificationRepository.create(
+      createNotificationDto,
+    );
+    this.logger.log(
+      `Notification created: ${notification.id} for user: ${notification.userId}`,
+    );
     return notification;
   }
 
@@ -43,12 +62,8 @@ export class NotificationService {
     const { page = 1, limit = 10, read } = params;
     const skip = PaginationUtil.getSkip(page, limit);
 
-    const { notifications, total } = await this.notificationRepository.findByUser(
-      userId,
-      skip,
-      limit,
-      read,
-    );
+    const { notifications, total } =
+      await this.notificationRepository.findByUser(userId, skip, limit, read);
 
     return PaginationUtil.paginate(notifications, total, page, limit);
   }
@@ -65,11 +80,13 @@ export class NotificationService {
     const notification = await this.notificationRepository.findById(id);
 
     if (!notification) {
-      throw new NotFoundException('Notification not found');
+      throw new NotFoundException("Notification not found");
     }
 
     if (notification.userId !== userId) {
-      throw new ForbiddenException('Not authorized to update this notification');
+      throw new ForbiddenException(
+        "Not authorized to update this notification",
+      );
     }
 
     return this.notificationRepository.markAsRead(id);
@@ -77,7 +94,9 @@ export class NotificationService {
 
   async markAllAsRead(userId: string): Promise<{ count: number }> {
     const count = await this.notificationRepository.markAllAsRead(userId);
-    this.logger.log(`Marked ${count} notifications as read for user: ${userId}`);
+    this.logger.log(
+      `Marked ${count} notifications as read for user: ${userId}`,
+    );
     return { count };
   }
 
@@ -85,11 +104,13 @@ export class NotificationService {
     const notification = await this.notificationRepository.findById(id);
 
     if (!notification) {
-      throw new NotFoundException('Notification not found');
+      throw new NotFoundException("Notification not found");
     }
 
     if (notification.userId !== userId) {
-      throw new ForbiddenException('Not authorized to delete this notification');
+      throw new ForbiddenException(
+        "Not authorized to delete this notification",
+      );
     }
 
     await this.notificationRepository.delete(id);
@@ -105,7 +126,13 @@ export class NotificationService {
   async sendTransactionNotification(
     userId: string,
     transactionId: string,
-    event: 'created' | 'accepted' | 'paid' | 'completed' | 'cancelled' | 'disputed',
+    event:
+      | "created"
+      | "accepted"
+      | "paid"
+      | "completed"
+      | "cancelled"
+      | "disputed",
     title: string,
   ): Promise<Notification> {
     const messages: Record<string, string> = {
@@ -119,7 +146,7 @@ export class NotificationService {
 
     return this.createForUser(
       userId,
-      'TRANSACTION' as NotificationType,
+      "TRANSACTION" as NotificationType,
       `Transaction ${event.charAt(0).toUpperCase() + event.slice(1)}`,
       messages[event],
       { transactionId, event },
@@ -135,16 +162,18 @@ export class NotificationService {
   ): Promise<Notification | null> {
     // If it's an email, we would send an email here
     // For now, we'll create an in-app notification if it's a userId
-    if (recipientEmailOrUserId.includes('@')) {
+    if (recipientEmailOrUserId.includes("@")) {
       // This is an email - in production, send email via email service
-      this.logger.log(`Order invite email would be sent to: ${recipientEmailOrUserId}`);
+      this.logger.log(
+        `Order invite email would be sent to: ${recipientEmailOrUserId}`,
+      );
       return null;
     }
 
     return this.createForUser(
       recipientEmailOrUserId,
       NotificationType.ORDER,
-      'New Order Invitation',
+      "New Order Invitation",
       `You have been invited to join order "${orderTitle}".`,
       { orderNumber, inviteToken },
     );
@@ -159,7 +188,7 @@ export class NotificationService {
     return this.createForUser(
       userId,
       NotificationType.ORDER,
-      'Order Accepted',
+      "Order Accepted",
       `${accepterName} has accepted your order.`,
       { orderNumber, accepterName },
     );
@@ -175,8 +204,8 @@ export class NotificationService {
     return this.createForUser(
       userId,
       NotificationType.PAYMENT,
-      'Payment Received',
-      `Payment of Rp ${Number(amount).toLocaleString('id-ID')} for "${orderTitle}" has been received.`,
+      "Payment Received",
+      `Payment of Rp ${Number(amount).toLocaleString("id-ID")} for "${orderTitle}" has been received.`,
       { orderId, amount: amount.toString() },
     );
   }
@@ -191,8 +220,8 @@ export class NotificationService {
     return this.createForUser(
       userId,
       NotificationType.ESCROW,
-      'Escrow Released',
-      `Escrow of Rp ${Number(amount).toLocaleString('id-ID')} for "${orderTitle}" has been released.`,
+      "Escrow Released",
+      `Escrow of Rp ${Number(amount).toLocaleString("id-ID")} for "${orderTitle}" has been released.`,
       { orderId, amount: amount.toString() },
     );
   }
@@ -207,8 +236,8 @@ export class NotificationService {
     return this.createForUser(
       userId,
       NotificationType.ORDER,
-      'Order Cancelled',
-      `Order "${orderTitle}" has been cancelled.${reason ? ` Reason: ${reason}` : ''}`,
+      "Order Cancelled",
+      `Order "${orderTitle}" has been cancelled.${reason ? ` Reason: ${reason}` : ""}`,
       { orderId, reason },
     );
   }
@@ -217,32 +246,32 @@ export class NotificationService {
   async sendWalletNotification(
     userId: string,
     event:
-      | 'topup_success'
-      | 'topup_failed'
-      | 'withdrawal_pending'
-      | 'withdrawal_completed'
-      | 'withdrawal_rejected',
+      | "topup_success"
+      | "topup_failed"
+      | "withdrawal_pending"
+      | "withdrawal_completed"
+      | "withdrawal_rejected",
     amount: number,
   ): Promise<Notification> {
     const titles: Record<string, string> = {
-      topup_success: 'Top Up Successful',
-      topup_failed: 'Top Up Failed',
-      withdrawal_pending: 'Withdrawal Pending',
-      withdrawal_completed: 'Withdrawal Completed',
-      withdrawal_rejected: 'Withdrawal Rejected',
+      topup_success: "Top Up Successful",
+      topup_failed: "Top Up Failed",
+      withdrawal_pending: "Withdrawal Pending",
+      withdrawal_completed: "Withdrawal Completed",
+      withdrawal_rejected: "Withdrawal Rejected",
     };
 
     const messages: Record<string, string> = {
-      topup_success: `Your top up of Rp ${amount.toLocaleString('id-ID')} has been successful.`,
-      topup_failed: `Your top up of Rp ${amount.toLocaleString('id-ID')} has failed.`,
-      withdrawal_pending: `Your withdrawal of Rp ${amount.toLocaleString('id-ID')} is being processed.`,
-      withdrawal_completed: `Your withdrawal of Rp ${amount.toLocaleString('id-ID')} has been completed.`,
-      withdrawal_rejected: `Your withdrawal of Rp ${amount.toLocaleString('id-ID')} has been rejected.`,
+      topup_success: `Your top up of Rp ${amount.toLocaleString("id-ID")} has been successful.`,
+      topup_failed: `Your top up of Rp ${amount.toLocaleString("id-ID")} has failed.`,
+      withdrawal_pending: `Your withdrawal of Rp ${amount.toLocaleString("id-ID")} is being processed.`,
+      withdrawal_completed: `Your withdrawal of Rp ${amount.toLocaleString("id-ID")} has been completed.`,
+      withdrawal_rejected: `Your withdrawal of Rp ${amount.toLocaleString("id-ID")} has been rejected.`,
     };
 
     return this.createForUser(
       userId,
-      'PAYMENT' as NotificationType,
+      "PAYMENT" as NotificationType,
       titles[event],
       messages[event],
       { event, amount },

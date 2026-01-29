@@ -1,19 +1,19 @@
 export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
+  USER = "USER",
+  ADMIN = "ADMIN",
 }
 
 export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  BANNED = 'BANNED',
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  BANNED = "BANNED",
 }
 
 export enum KYCStatus {
-  NONE = 'NONE',
-  PENDING = 'PENDING',
-  VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED',
+  NONE = "NONE",
+  PENDING = "PENDING",
+  VERIFIED = "VERIFIED",
+  REJECTED = "REJECTED",
 }
 
 export interface IUser {

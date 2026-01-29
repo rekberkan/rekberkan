@@ -1,15 +1,23 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { UserRepository, ICreateUser, IUpdateUser } from './user.repository';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util';
-import { IUserResponse, KYCStatus } from '@common/interfaces/user.interface';
-import { User } from '@prisma/client';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { UploadKycDto } from './dto/upload-kyc.dto';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from "@nestjs/common";
+import { UserRepository, ICreateUser, IUpdateUser } from "./user.repository";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import {
+  PaginationUtil,
+  PaginationParams,
+} from "@common/utils/pagination.util";
+import { IUserResponse, KYCStatus } from "@common/interfaces/user.interface";
+import { User } from "@prisma/client";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { UploadKycDto } from "./dto/upload-kyc.dto";
+import * as fs from "fs";
+import * as path from "path";
+import { HashUtil } from "@common/utils/hash.util";
+import * as crypto from "crypto";
 
 // ============================================================================
 // USER SERVICE - Production Ready
@@ -18,8 +26,9 @@ import * as crypto from 'crypto';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
-  private readonly AVATAR_UPLOAD_DIR = process.env.AVATAR_UPLOAD_DEST || './uploads/avatars';
-  private readonly KYC_UPLOAD_DIR = process.env.UPLOAD_DEST || './uploads';
+  private readonly AVATAR_UPLOAD_DIR =
+    process.env.AVATAR_UPLOAD_DEST || "./uploads/avatars";
+  private readonly KYC_UPLOAD_DIR = process.env.UPLOAD_DEST || "./uploads";
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -27,15 +36,19 @@ export class UserService {
   ) {}
 
   async create(createUserData: ICreateUser): Promise<User> {
-    const existingUser = await this.userRepository.findByEmail(createUserData.email);
+    const existingUser = await this.userRepository.findByEmail(
+      createUserData.email,
+    );
     if (existingUser) {
-      throw new BadRequestException('Email already exists');
+      throw new BadRequestException("Email already exists");
     }
 
     if (createUserData.username) {
-      const existingUsername = await this.userRepository.findByUsername(createUserData.username);
+      const existingUsername = await this.userRepository.findByUsername(
+        createUserData.username,
+      );
       if (existingUsername) {
-        throw new BadRequestException('Username already exists');
+        throw new BadRequestException("Username already exists");
       }
     }
 
@@ -45,7 +58,7 @@ export class UserService {
   async findById(id: string): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
     return user;
   }
@@ -69,16 +82,21 @@ export class UserService {
     return PaginationUtil.paginate(sanitizedUsers, total, page, limit);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<IUserResponse> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<IUserResponse> {
     await this.findById(id); // Validate user exists
 
     const updateData: IUpdateUser = {};
 
     if (updateUserDto.username) {
       // Check if username is taken by another user
-      const existingUsername = await this.userRepository.findByUsername(updateUserDto.username);
+      const existingUsername = await this.userRepository.findByUsername(
+        updateUserDto.username,
+      );
       if (existingUsername && existingUsername.id !== id) {
-        throw new BadRequestException('Username already exists');
+        throw new BadRequestException("Username already exists");
       }
       updateData.username = updateUserDto.username;
     }
@@ -110,19 +128,21 @@ export class UserService {
   ): Promise<{ message: string }> {
     const user = await this.findById(userId);
 
-    // Verify current password
-    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    // Verify current password using centralized hash utility
+    const isValid = await HashUtil.compare(currentPassword, user.passwordHash);
     if (!isValid) {
-      throw new BadRequestException('Current password is incorrect');
+      throw new BadRequestException("Current password is incorrect");
     }
 
     // Validate new password
     if (newPassword.length < 8) {
-      throw new BadRequestException('New password must be at least 8 characters');
+      throw new BadRequestException(
+        "New password must be at least 8 characters",
+      );
     }
 
-    // Hash and update password
-    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+    // Hash and update password using centralized hash utility
+    const newPasswordHash = await HashUtil.hash(newPassword);
     await this.userRepository.update(userId, {
       passwordHash: newPasswordHash,
       passwordUpdatedAt: new Date(),
@@ -130,7 +150,7 @@ export class UserService {
 
     this.logger.log(`Password changed for user ${userId}`);
 
-    return { message: 'Password changed successfully' };
+    return { message: "Password changed successfully" };
   }
 
   async updatePassword(userId: string, newPasswordHash: string): Promise<void> {
@@ -140,7 +160,11 @@ export class UserService {
     });
   }
 
-  async setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+  async setPasswordResetToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       passwordResetToken: tokenHash,
       passwordResetExpires: expiresAt,
@@ -203,13 +227,16 @@ export class UserService {
 
     // In production, upload to S3/cloud storage
     // For now, we'll store the file on disk
-    const userDir = path.join(this.KYC_UPLOAD_DIR, 'kyc', userId);
+    const userDir = path.join(this.KYC_UPLOAD_DIR, "kyc", userId);
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
     }
 
-    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const fileExt = file.originalname.split(".").pop()?.toLowerCase() || "jpg";
+    const fileHash = crypto
+      .createHash("sha256")
+      .update(file.buffer)
+      .digest("hex");
     const fileName = `${Date.now()}_${fileHash.substring(0, 8)}.${fileExt}`;
     const filePath = `/uploads/kyc/${userId}/${fileName}`;
     const fullPath = path.join(userDir, fileName);
@@ -226,21 +253,21 @@ export class UserService {
         fullNameEnc: payload.fullName.trim(),
         idNumberEnc: payload.idNumber.trim(),
         dateOfBirthEnc: payload.dateOfBirth,
-        addressEnc: payload.address?.trim() ?? '',
-        status: 'PENDING',
+        addressEnc: payload.address?.trim() ?? "",
+        status: "PENDING",
       },
     });
 
     // Update user KYC status
     await this.userRepository.update(userId, {
-      kycStatus: 'PENDING',
+      kycStatus: "PENDING",
     });
 
     this.logger.log(`KYC document uploaded for user ${userId}`);
 
     return {
-      message: 'KYC document uploaded successfully',
-      status: 'PENDING',
+      message: "KYC document uploaded successfully",
+      status: "PENDING",
     };
   }
 
@@ -258,13 +285,19 @@ export class UserService {
     return this.sanitizeUser(updated);
   }
 
-  async updateAvatar(userId: string, file: Express.Multer.File): Promise<IUserResponse> {
+  async updateAvatar(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<IUserResponse> {
     if (!fs.existsSync(this.AVATAR_UPLOAD_DIR)) {
       fs.mkdirSync(this.AVATAR_UPLOAD_DIR, { recursive: true });
     }
 
-    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const fileExt = file.originalname.split(".").pop()?.toLowerCase() || "jpg";
+    const fileHash = crypto
+      .createHash("sha256")
+      .update(file.buffer)
+      .digest("hex");
     const fileName = `${Date.now()}_${fileHash.substring(0, 8)}.${fileExt}`;
     const filePath = path.join(this.AVATAR_UPLOAD_DIR, fileName);
     const relativePath = `/uploads/avatars/${fileName}`;
@@ -290,21 +323,22 @@ export class UserService {
       OR: [{ initiatorId: userId }, { counterpartyId: userId }],
     };
 
-    const [totalTransactions, completedTransactions, disputeCount] = await Promise.all([
-      (this.prisma as any).order.count({ where }),
-      (this.prisma as any).order.count({
-        where: {
-          ...where,
-          status: 'COMPLETED',
-        },
-      }),
-      (this.prisma as any).order.count({
-        where: {
-          ...where,
-          status: 'DISPUTED',
-        },
-      }),
-    ]);
+    const [totalTransactions, completedTransactions, disputeCount] =
+      await Promise.all([
+        (this.prisma as any).order.count({ where }),
+        (this.prisma as any).order.count({
+          where: {
+            ...where,
+            status: "COMPLETED",
+          },
+        }),
+        (this.prisma as any).order.count({
+          where: {
+            ...where,
+            status: "DISPUTED",
+          },
+        }),
+      ]);
 
     return {
       totalTransactions,
@@ -329,13 +363,14 @@ export class UserService {
         fromUser: { select: { id: true, username: true } },
         order: { select: { id: true, title: true, orderNumber: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     const totalRatings = ratings.length;
     const averageRating =
       totalRatings > 0
-        ? ratings.reduce((sum: number, r: any) => sum + r.score, 0) / totalRatings
+        ? ratings.reduce((sum: number, r: any) => sum + r.score, 0) /
+          totalRatings
         : 0;
 
     // Calculate breakdown
@@ -363,7 +398,11 @@ export class UserService {
   // ACCOUNT STATUS MANAGEMENT
   // ============================================================================
 
-  async suspendUser(userId: string, reason: string, suspendedUntil?: Date): Promise<void> {
+  async suspendUser(
+    userId: string,
+    reason: string,
+    suspendedUntil?: Date,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       suspendedAt: new Date(),
       suspendedUntil: suspendedUntil || null,

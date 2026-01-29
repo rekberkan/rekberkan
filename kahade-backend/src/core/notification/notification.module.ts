@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
-import { NotificationRepository } from './notification.repository';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module } from "@nestjs/common";
+import { NotificationController } from "./notification.controller";
+import { NotificationService } from "./notification.service";
+import { NotificationRepository } from "./notification.repository";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule],

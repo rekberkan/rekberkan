@@ -8,12 +8,12 @@ import {
   UnauthorizedException,
   BadRequestException,
   Req,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { PaymentStatus, WebhookStatus } from '@prisma/client';
-import * as crypto from 'crypto';
-import { Request } from 'express';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { PaymentStatus, WebhookStatus } from "@prisma/client";
+import * as crypto from "crypto";
+import { Request } from "express";
 
 // ============================================================================
 // BANK-GRADE MIDTRANS WEBHOOK CONTROLLER
@@ -39,7 +39,7 @@ interface MidtransNotificationPayload {
   [key: string]: any;
 }
 
-@Controller('webhooks/midtrans')
+@Controller("webhooks/midtrans")
 export class MidtransWebhookController {
   private readonly logger = new Logger(MidtransWebhookController.name);
   private readonly serverKey: string;
@@ -48,11 +48,11 @@ export class MidtransWebhookController {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    this.serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY', '');
+    this.serverKey = this.configService.get<string>("MIDTRANS_SERVER_KEY", "");
 
     if (!this.serverKey) {
       this.logger.warn(
-        '⚠️  MIDTRANS_SERVER_KEY not set! Webhook signature verification will fail.',
+        "⚠️  MIDTRANS_SERVER_KEY not set! Webhook signature verification will fail.",
       );
     }
   }
@@ -61,7 +61,7 @@ export class MidtransWebhookController {
   // PAYMENT NOTIFICATION HANDLER
   // ============================================================================
 
-  @Post('notification')
+  @Post("notification")
   @HttpCode(HttpStatus.OK)
   async handleNotification(
     @Body() payload: MidtransNotificationPayload,
@@ -75,8 +75,12 @@ export class MidtransWebhookController {
       !payload.transaction_status ||
       !payload.signature_key
     ) {
-      this.logger.warn('Invalid Midtrans webhook payload: missing required fields');
-      throw new BadRequestException('Invalid webhook payload: missing required fields');
+      this.logger.warn(
+        "Invalid Midtrans webhook payload: missing required fields",
+      );
+      throw new BadRequestException(
+        "Invalid webhook payload: missing required fields",
+      );
     }
 
     const requestIp = this.getClientIp(req);
@@ -92,33 +96,37 @@ export class MidtransWebhookController {
     // Step 2: Store webhook event (for audit trail)
     const webhookEvent = await this.prisma.webhookEvent.create({
       data: {
-        provider: 'MIDTRANS',
+        provider: "MIDTRANS",
         eventId,
         eventType: `payment.${payload.transaction_status}`,
         payload: payload as any,
         status: WebhookStatus.PENDING,
         signatureValid,
-        signatureError: signatureValid ? null : 'Invalid signature key',
+        signatureError: signatureValid ? null : "Invalid signature key",
         requestIp,
         requestHeaders: this.sanitizeHeaders(req.headers),
-        providerEventAt: payload.transaction_time ? new Date(payload.transaction_time) : null,
+        providerEventAt: payload.transaction_time
+          ? new Date(payload.transaction_time)
+          : null,
       },
     });
 
     // Step 3: Reject if signature invalid
     if (!signatureValid) {
-      this.logger.error(`Invalid Midtrans signature for transaction ${payload.transaction_id}`);
+      this.logger.error(
+        `Invalid Midtrans signature for transaction ${payload.transaction_id}`,
+      );
 
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
         data: {
           status: WebhookStatus.FAILED,
-          processingError: 'Invalid signature key',
+          processingError: "Invalid signature key",
           processedAt: new Date(),
         },
       });
 
-      throw new UnauthorizedException('Invalid webhook signature');
+      throw new UnauthorizedException("Invalid webhook signature");
     }
 
     // Step 4: Check idempotency
@@ -132,7 +140,7 @@ export class MidtransWebhookController {
 
     if (existingEvent) {
       this.logger.warn(`Duplicate Midtrans notification: ${eventId}`);
-      return { status: 'ok', message: 'Already processed' };
+      return { status: "ok", message: "Already processed" };
     }
 
     try {
@@ -148,9 +156,11 @@ export class MidtransWebhookController {
         },
       });
 
-      return { status: 'ok', message: 'Processed successfully' };
+      return { status: "ok", message: "Processed successfully" };
     } catch (error) {
-      this.logger.error(`Failed to process Midtrans notification ${eventId}: ${error.message}`);
+      this.logger.error(
+        `Failed to process Midtrans notification ${eventId}: ${error.message}`,
+      );
 
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
@@ -163,7 +173,7 @@ export class MidtransWebhookController {
       });
 
       // Return 200 to prevent Midtrans from retrying (we handle retries internally)
-      return { status: 'error', message: 'Processing failed, will retry' };
+      return { status: "error", message: "Processing failed, will retry" };
     }
   }
 
@@ -171,14 +181,15 @@ export class MidtransWebhookController {
   // RECURRING PAYMENT NOTIFICATION
   // ============================================================================
 
-  @Post('recurring')
+  @Post("recurring")
   @HttpCode(HttpStatus.OK)
   async handleRecurringNotification(
     @Body() payload: any,
     @Req() req: Request,
   ): Promise<{ status: string; message: string }> {
     const requestIp = this.getClientIp(req);
-    const eventId = payload.transaction_id || `midtrans-recurring-${Date.now()}`;
+    const eventId =
+      payload.transaction_id || `midtrans-recurring-${Date.now()}`;
 
     this.logger.log(`Received Midtrans recurring notification: ${eventId}`);
 
@@ -186,13 +197,13 @@ export class MidtransWebhookController {
 
     const webhookEvent = await this.prisma.webhookEvent.create({
       data: {
-        provider: 'MIDTRANS',
+        provider: "MIDTRANS",
         eventId,
-        eventType: 'recurring.notification',
+        eventType: "recurring.notification",
         payload: payload as any,
         status: WebhookStatus.PENDING,
         signatureValid,
-        signatureError: signatureValid ? null : 'Invalid signature',
+        signatureError: signatureValid ? null : "Invalid signature",
         requestIp,
         requestHeaders: this.sanitizeHeaders(req.headers),
       },
@@ -201,9 +212,12 @@ export class MidtransWebhookController {
     if (!signatureValid) {
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
-        data: { status: WebhookStatus.FAILED, processingError: 'Invalid signature' },
+        data: {
+          status: WebhookStatus.FAILED,
+          processingError: "Invalid signature",
+        },
       });
-      throw new UnauthorizedException('Invalid webhook signature');
+      throw new UnauthorizedException("Invalid webhook signature");
     }
 
     try {
@@ -215,7 +229,7 @@ export class MidtransWebhookController {
         data: { status: WebhookStatus.PROCESSED, processedAt: new Date() },
       });
 
-      return { status: 'ok', message: 'Processed successfully' };
+      return { status: "ok", message: "Processed successfully" };
     } catch (error) {
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
@@ -225,7 +239,7 @@ export class MidtransWebhookController {
           retryCount: { increment: 1 },
         },
       });
-      return { status: 'error', message: 'Processing failed' };
+      return { status: "error", message: "Processing failed" };
     }
   }
 
@@ -233,7 +247,7 @@ export class MidtransWebhookController {
   // PAYOUT NOTIFICATION (for disbursements)
   // ============================================================================
 
-  @Post('payout')
+  @Post("payout")
   @HttpCode(HttpStatus.OK)
   async handlePayoutNotification(
     @Body() payload: any,
@@ -249,13 +263,13 @@ export class MidtransWebhookController {
 
     const webhookEvent = await this.prisma.webhookEvent.create({
       data: {
-        provider: 'MIDTRANS',
+        provider: "MIDTRANS",
         eventId,
-        eventType: 'payout.notification',
+        eventType: "payout.notification",
         payload: payload as any,
         status: WebhookStatus.PENDING,
         signatureValid,
-        signatureError: signatureValid ? null : 'Invalid payout signature',
+        signatureError: signatureValid ? null : "Invalid payout signature",
         requestIp,
         requestHeaders: this.sanitizeHeaders(req.headers),
       },
@@ -264,9 +278,12 @@ export class MidtransWebhookController {
     if (!signatureValid) {
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
-        data: { status: WebhookStatus.FAILED, processingError: 'Invalid signature' },
+        data: {
+          status: WebhookStatus.FAILED,
+          processingError: "Invalid signature",
+        },
       });
-      throw new UnauthorizedException('Invalid webhook signature');
+      throw new UnauthorizedException("Invalid webhook signature");
     }
 
     try {
@@ -277,7 +294,7 @@ export class MidtransWebhookController {
         data: { status: WebhookStatus.PROCESSED, processedAt: new Date() },
       });
 
-      return { status: 'ok', message: 'Processed successfully' };
+      return { status: "ok", message: "Processed successfully" };
     } catch (error) {
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
@@ -287,7 +304,7 @@ export class MidtransWebhookController {
           retryCount: { increment: 1 },
         },
       });
-      return { status: 'error', message: 'Processing failed' };
+      return { status: "error", message: "Processing failed" };
     }
   }
 
@@ -301,12 +318,12 @@ export class MidtransWebhookController {
    */
   private verifySignature(payload: MidtransNotificationPayload): boolean {
     if (!this.serverKey) {
-      this.logger.error('Server key not configured');
+      this.logger.error("Server key not configured");
       return false;
     }
 
     if (!payload.signature_key) {
-      this.logger.error('No signature key in payload');
+      this.logger.error("No signature key in payload");
       return false;
     }
 
@@ -316,11 +333,17 @@ export class MidtransWebhookController {
     const signatureString = `${order_id}${status_code}${gross_amount}${this.serverKey}`;
 
     // Generate expected signature
-    const expectedSignature = crypto.createHash('sha512').update(signatureString).digest('hex');
+    const expectedSignature = crypto
+      .createHash("sha512")
+      .update(signatureString)
+      .digest("hex");
 
     // Timing-safe comparison to prevent timing attacks
     try {
-      return crypto.timingSafeEqual(Buffer.from(signature_key), Buffer.from(expectedSignature));
+      return crypto.timingSafeEqual(
+        Buffer.from(signature_key),
+        Buffer.from(expectedSignature),
+      );
     } catch {
       // If buffers have different lengths, comparison fails
       return false;
@@ -338,7 +361,10 @@ export class MidtransWebhookController {
     // Payout signature format may differ - implement based on Midtrans docs
     // For now, use similar approach
     const signatureString = `${payload.reference_no}${payload.status}${this.serverKey}`;
-    const expectedSignature = crypto.createHash('sha512').update(signatureString).digest('hex');
+    const expectedSignature = crypto
+      .createHash("sha512")
+      .update(signatureString)
+      .digest("hex");
 
     if (!payload.signature_key) {
       return false;
@@ -374,7 +400,7 @@ export class MidtransWebhookController {
           { providerInvoiceId: payload.transaction_id },
           {
             paymentDetails: {
-              path: ['order_id'],
+              path: ["order_id"],
               equals: order_id,
             },
           },
@@ -387,7 +413,7 @@ export class MidtransWebhookController {
     }
 
     // Check fraud status
-    if (fraud_status === 'deny') {
+    if (fraud_status === "deny") {
       this.logger.warn(`Payment ${payment.id} flagged as fraud`);
     }
 
@@ -403,7 +429,7 @@ export class MidtransWebhookController {
           fromStatus: payment.status,
           toStatus: newStatus,
           webhookEventId,
-          reason: `Midtrans: ${transaction_status}${fraud_status ? ` (fraud: ${fraud_status})` : ''}`,
+          reason: `Midtrans: ${transaction_status}${fraud_status ? ` (fraud: ${fraud_status})` : ""}`,
         },
       });
 
@@ -438,7 +464,10 @@ export class MidtransWebhookController {
       }
 
       // If payment failed/expired, handle accordingly
-      if (newStatus === PaymentStatus.FAILED || newStatus === PaymentStatus.EXPIRED) {
+      if (
+        newStatus === PaymentStatus.FAILED ||
+        newStatus === PaymentStatus.EXPIRED
+      ) {
         await this.handlePaymentFailed(payment.id, tx);
       }
     });
@@ -451,7 +480,10 @@ export class MidtransWebhookController {
   /**
    * Process payout notification (withdrawal)
    */
-  private async processPayoutNotification(payload: any, _webhookEventId: string): Promise<void> {
+  private async processPayoutNotification(
+    payload: any,
+    _webhookEventId: string,
+  ): Promise<void> {
     const { reference_no, status } = payload;
 
     // Find withdrawal by reference
@@ -472,13 +504,13 @@ export class MidtransWebhookController {
         data: {
           status: newStatus,
           processedAt: new Date(),
-          completedAt: status === 'success' ? new Date() : null,
+          completedAt: status === "success" ? new Date() : null,
           providerResponse: payload,
         },
       });
 
       // If failed, unlock the balance
-      if (status === 'failed') {
+      if (status === "failed") {
         await tx.wallet.update({
           where: { id: withdrawal.walletId },
           data: {
@@ -488,7 +520,7 @@ export class MidtransWebhookController {
       }
 
       // If completed, deduct from locked balance
-      if (status === 'success') {
+      if (status === "success") {
         await tx.wallet.update({
           where: { id: withdrawal.walletId },
           data: {
@@ -499,13 +531,18 @@ export class MidtransWebhookController {
       }
     });
 
-    this.logger.log(`Processed payout notification for withdrawal ${withdrawal.id}: ${status}`);
+    this.logger.log(
+      `Processed payout notification for withdrawal ${withdrawal.id}: ${status}`,
+    );
   }
 
   /**
    * Handle completed payment
    */
-  private async handlePaymentCompleted(paymentId: string, tx: any): Promise<void> {
+  private async handlePaymentCompleted(
+    paymentId: string,
+    tx: any,
+  ): Promise<void> {
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
       include: { deposit: true, order: true },
@@ -518,7 +555,7 @@ export class MidtransWebhookController {
       await tx.deposit.update({
         where: { id: payment.deposit.id },
         data: {
-          status: 'COMPLETED',
+          status: "COMPLETED",
           completedAt: new Date(),
         },
       });
@@ -537,7 +574,7 @@ export class MidtransWebhookController {
       await tx.order.update({
         where: { id: payment.order.id },
         data: {
-          status: 'PAID',
+          status: "PAID",
           paidAt: new Date(),
         },
       });
@@ -559,7 +596,7 @@ export class MidtransWebhookController {
     if (payment.deposit) {
       await tx.deposit.update({
         where: { id: payment.deposit.id },
-        data: { status: 'FAILED' },
+        data: { status: "FAILED" },
       });
     }
 
@@ -567,7 +604,7 @@ export class MidtransWebhookController {
     if (payment.order) {
       await tx.order.update({
         where: { id: payment.order.id },
-        data: { status: 'EXPIRED' },
+        data: { status: "EXPIRED" },
       });
     }
   }
@@ -576,9 +613,12 @@ export class MidtransWebhookController {
   // UTILITY METHODS
   // ============================================================================
 
-  private mapMidtransStatus(transactionStatus: string, fraudStatus?: string): PaymentStatus {
+  private mapMidtransStatus(
+    transactionStatus: string,
+    fraudStatus?: string,
+  ): PaymentStatus {
     // Check fraud first
-    if (fraudStatus === 'deny') {
+    if (fraudStatus === "deny") {
       return PaymentStatus.FAILED;
     }
 
@@ -599,27 +639,27 @@ export class MidtransWebhookController {
 
   private mapPayoutStatus(status: string): any {
     const statusMap: Record<string, string> = {
-      success: 'COMPLETED',
-      pending: 'PROCESSING',
-      failed: 'FAILED',
-      queued: 'PENDING',
+      success: "COMPLETED",
+      pending: "PROCESSING",
+      failed: "FAILED",
+      queued: "PENDING",
     };
 
-    return statusMap[status] ?? 'PENDING';
+    return statusMap[status] ?? "PENDING";
   }
 
   private getClientIp(req: Request): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
+    const forwarded = req.headers["x-forwarded-for"];
+    if (typeof forwarded === "string") {
+      return forwarded.split(",")[0].trim();
     }
-    return req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    return req.ip ?? req.socket.remoteAddress ?? "unknown";
   }
 
   private sanitizeHeaders(headers: any): any {
     const sanitized = { ...headers };
-    delete sanitized['authorization'];
-    delete sanitized['cookie'];
+    delete sanitized["authorization"];
+    delete sanitized["cookie"];
     return sanitized;
   }
 }

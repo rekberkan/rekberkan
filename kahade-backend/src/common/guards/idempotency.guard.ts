@@ -4,10 +4,10 @@ import {
   ExecutionContext,
   BadRequestException,
   ConflictException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { IDEMPOTENCY_KEY } from '../decorators/idempotency.decorator';
-import { CacheService } from '@infrastructure/cache/cache.service';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { IDEMPOTENCY_KEY } from "../decorators/idempotency.decorator";
+import { CacheService } from "@infrastructure/cache/cache.service";
 
 @Injectable()
 export class IdempotencyGuard implements CanActivate {
@@ -17,20 +17,22 @@ export class IdempotencyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(IDEMPOTENCY_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresIdempotency = this.reflector.getAllAndOverride<boolean>(
+      IDEMPOTENCY_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiresIdempotency) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest();
-    const idempotencyKey = request.headers['x-idempotency-key'];
+    const idempotencyKey = request.headers["x-idempotency-key"];
 
     if (!idempotencyKey) {
-      throw new BadRequestException('X-Idempotency-Key header is required for this operation');
+      throw new BadRequestException(
+        "X-Idempotency-Key header is required for this operation",
+      );
     }
 
     // Check if request with this key was already processed
@@ -40,7 +42,7 @@ export class IdempotencyGuard implements CanActivate {
     if (existingResult) {
       // Request already processed, return cached result
       throw new ConflictException({
-        message: 'Request already processed',
+        message: "Request already processed",
         result: existingResult,
         idempotencyKey,
       });

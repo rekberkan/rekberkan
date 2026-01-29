@@ -1,3 +1,3 @@
-import { SetMetadata } from '@nestjs/common';
+import { SetMetadata } from "@nestjs/common";
 
-export const Cache = (...args: unknown[]) => SetMetadata('cache', args);
+export const Cache = (...args: unknown[]) => SetMetadata("cache", args);

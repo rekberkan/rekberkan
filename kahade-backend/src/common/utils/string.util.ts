@@ -1,15 +1,15 @@
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 
 export class StringUtil {
   static generateRandomString(length: number): string {
     return crypto
       .randomBytes(Math.ceil(length / 2))
-      .toString('hex')
+      .toString("hex")
       .slice(0, length);
   }
 
   static generateNumericCode(length: number): string {
-    let result = '';
+    let result = "";
     while (result.length < length) {
       const byte = crypto.randomBytes(1)[0];
       if (byte < 250) {
@@ -24,14 +24,18 @@ export class StringUtil {
       .toString()
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-]+/g, '')
-      .replace(/\-\-+/g, '-')
-      .replace(/^-+/, '')
-      .replace(/-+$/, '');
+      .replace(/\s+/g, "-")
+      .replace(/[^\w\-]+/g, "")
+      .replace(/\-\-+/g, "-")
+      .replace(/^-+/, "")
+      .replace(/-+$/, "");
   }
 
-  static truncate(text: string, length: number, suffix: string = '...'): string {
+  static truncate(
+    text: string,
+    length: number,
+    suffix: string = "...",
+  ): string {
     if (text.length <= length) {
       return text;
     }
@@ -45,17 +49,17 @@ export class StringUtil {
   static titleCase(text: string): string {
     return text
       .toLowerCase()
-      .split(' ')
+      .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .join(" ");
   }
 
   static sanitizeFilename(filename: string): string {
-    return filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    return filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   }
 
   static maskEmail(email: string): string {
-    const [username, domain] = email.split('@');
+    const [username, domain] = email.split("@");
     if (username.length <= 2) {
       return `${username[0]}***@${domain}`;
     }

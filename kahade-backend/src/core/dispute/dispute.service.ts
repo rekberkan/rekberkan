@@ -4,11 +4,19 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
-} from '@nestjs/common';
-import { DisputeRepository } from './dispute.repository';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { PaginationUtil, PaginationParams } from '@common/utils/pagination.util';
-import { Dispute, DisputeStatus, DisputeDecision, OrderStatus } from '@prisma/client';
+} from "@nestjs/common";
+import { DisputeRepository } from "./dispute.repository";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import {
+  PaginationUtil,
+  PaginationParams,
+} from "@common/utils/pagination.util";
+import {
+  Dispute,
+  DisputeStatus,
+  DisputeDecision,
+  OrderStatus,
+} from "@prisma/client";
 
 // ============================================================================
 // BANK-GRADE DISPUTE SERVICE
@@ -50,26 +58,37 @@ export class DisputeService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You are not part of this order');
+      throw new ForbiddenException("You are not part of this order");
     }
 
     // Check if order can be disputed
-    if (order.status === OrderStatus.COMPLETED || order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException('Cannot dispute completed or cancelled order');
+    if (
+      order.status === OrderStatus.COMPLETED ||
+      order.status === OrderStatus.CANCELLED
+    ) {
+      throw new BadRequestException(
+        "Cannot dispute completed or cancelled order",
+      );
     }
 
     // Check if there's already an open dispute
-    const existingDispute = await this.disputeRepository.findByOrderId(dto.orderId);
+    const existingDispute = await this.disputeRepository.findByOrderId(
+      dto.orderId,
+    );
     if (existingDispute && existingDispute.status !== DisputeStatus.CLOSED) {
-      throw new BadRequestException('There is already an open dispute for this order');
+      throw new BadRequestException(
+        "There is already an open dispute for this order",
+      );
     }
 
     // Calculate response deadline
-    const responseDeadline = new Date(Date.now() + this.RESPONSE_DEADLINE_HOURS * 60 * 60 * 1000);
+    const responseDeadline = new Date(
+      Date.now() + this.RESPONSE_DEADLINE_HOURS * 60 * 60 * 1000,
+    );
 
     // Create dispute in transaction
     const dispute = await this.prisma.$transaction(async (tx) => {
@@ -98,7 +117,7 @@ export class DisputeService {
       await tx.disputeTimeline.create({
         data: {
           disputeId: newDispute.id,
-          action: 'OPENED',
+          action: "OPENED",
           performedBy: userId,
           details: { reason: dto.reason },
         },
@@ -116,7 +135,10 @@ export class DisputeService {
     const { page = 1, limit = 10 } = params || {};
     const skip = PaginationUtil.getSkip(page, limit);
 
-    const { disputes, total } = await this.disputeRepository.findAll(skip, limit);
+    const { disputes, total } = await this.disputeRepository.findAll(
+      skip,
+      limit,
+    );
 
     return PaginationUtil.paginate(disputes, total, page, limit);
   }
@@ -125,7 +147,11 @@ export class DisputeService {
     const { page = 1, limit = 10 } = params || {};
     const skip = PaginationUtil.getSkip(page, limit);
 
-    const { disputes, total } = await this.disputeRepository.findByStatus(status, skip, limit);
+    const { disputes, total } = await this.disputeRepository.findByStatus(
+      status,
+      skip,
+      limit,
+    );
 
     return PaginationUtil.paginate(disputes, total, page, limit);
   }
@@ -134,7 +160,7 @@ export class DisputeService {
     const dispute = await this.disputeRepository.findById(id);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     // If userId provided, check authorization
@@ -149,22 +175,26 @@ export class DisputeService {
         order.initiatorId !== userId &&
         order.counterpartyId !== userId
       ) {
-        throw new ForbiddenException('Not authorized to view this dispute');
+        throw new ForbiddenException("Not authorized to view this dispute");
       }
     }
 
     return dispute;
   }
 
-  async respond(id: string, userId: string, response: string): Promise<Dispute> {
+  async respond(
+    id: string,
+    userId: string,
+    response: string,
+  ): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     if (dispute.status !== DisputeStatus.OPEN) {
-      throw new BadRequestException('Dispute is not open for response');
+      throw new BadRequestException("Dispute is not open for response");
     }
 
     // Check if user is the counterparty
@@ -173,15 +203,19 @@ export class DisputeService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     const isCounterparty =
-      (order.initiatorId === dispute.openedBy && order.counterpartyId === userId) ||
-      (order.counterpartyId === dispute.openedBy && order.initiatorId === userId);
+      (order.initiatorId === dispute.openedBy &&
+        order.counterpartyId === userId) ||
+      (order.counterpartyId === dispute.openedBy &&
+        order.initiatorId === userId);
 
     if (!isCounterparty) {
-      throw new ForbiddenException('Only the counterparty can respond to this dispute');
+      throw new ForbiddenException(
+        "Only the counterparty can respond to this dispute",
+      );
     }
 
     // Update dispute
@@ -195,7 +229,7 @@ export class DisputeService {
       await tx.disputeTimeline.create({
         data: {
           disputeId: id,
-          action: 'RESPONDED',
+          action: "RESPONDED",
           performedBy: userId,
           details: { response },
         },
@@ -209,15 +243,24 @@ export class DisputeService {
     return updated;
   }
 
-  async escalate(id: string, adminId: string, dto: EscalateDisputeDto): Promise<Dispute> {
+  async escalate(
+    id: string,
+    adminId: string,
+    dto: EscalateDisputeDto,
+  ): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
-    if (dispute.status !== DisputeStatus.OPEN && dispute.status !== DisputeStatus.RESPONDED) {
-      throw new BadRequestException('Dispute cannot be escalated in current status');
+    if (
+      dispute.status !== DisputeStatus.OPEN &&
+      dispute.status !== DisputeStatus.RESPONDED
+    ) {
+      throw new BadRequestException(
+        "Dispute cannot be escalated in current status",
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -234,7 +277,7 @@ export class DisputeService {
       await tx.disputeTimeline.create({
         data: {
           disputeId: id,
-          action: 'ESCALATED',
+          action: "ESCALATED",
           performedBy: adminId,
           details: { escalatedTo: dto.escalatedTo, notes: dto.notes },
         },
@@ -248,11 +291,15 @@ export class DisputeService {
     return updated;
   }
 
-  async assignArbitrator(id: string, adminId: string, arbitratorId: string): Promise<Dispute> {
+  async assignArbitrator(
+    id: string,
+    adminId: string,
+    arbitratorId: string,
+  ): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -268,7 +315,7 @@ export class DisputeService {
       await tx.disputeTimeline.create({
         data: {
           disputeId: id,
-          action: 'ARBITRATOR_ASSIGNED',
+          action: "ARBITRATOR_ASSIGNED",
           performedBy: adminId,
           details: { arbitratorId },
         },
@@ -282,19 +329,25 @@ export class DisputeService {
     return updated;
   }
 
-  async resolve(id: string, adminId: string, dto: ResolveDisputeDto): Promise<Dispute> {
+  async resolve(
+    id: string,
+    adminId: string,
+    dto: ResolveDisputeDto,
+  ): Promise<Dispute> {
     const dispute = await this.disputeRepository.findById(id);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     if (dispute.status === DisputeStatus.CLOSED) {
-      throw new BadRequestException('Dispute already closed');
+      throw new BadRequestException("Dispute already closed");
     }
 
     // Calculate appeal deadline
-    const appealDeadline = new Date(Date.now() + this.APPEAL_DEADLINE_DAYS * 24 * 60 * 60 * 1000);
+    const appealDeadline = new Date(
+      Date.now() + this.APPEAL_DEADLINE_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const updated = await this.prisma.$transaction(async (tx) => {
       // Update dispute
@@ -303,8 +356,12 @@ export class DisputeService {
         data: {
           status: DisputeStatus.DECIDED,
           decision: dto.decision,
-          sellerAmountMinor: dto.sellerAmountMinor ? BigInt(dto.sellerAmountMinor) : null,
-          buyerRefundMinor: dto.buyerRefundMinor ? BigInt(dto.buyerRefundMinor) : null,
+          sellerAmountMinor: dto.sellerAmountMinor
+            ? BigInt(dto.sellerAmountMinor)
+            : null,
+          buyerRefundMinor: dto.buyerRefundMinor
+            ? BigInt(dto.buyerRefundMinor)
+            : null,
           resolutionNotes: dto.resolutionNotes,
           decidedAt: new Date(),
           appealDeadline,
@@ -340,7 +397,7 @@ export class DisputeService {
       await tx.disputeTimeline.create({
         data: {
           disputeId: id,
-          action: 'DECIDED',
+          action: "DECIDED",
           performedBy: adminId,
           details: {
             decision: dto.decision,
@@ -363,19 +420,19 @@ export class DisputeService {
     const dispute = await this.disputeRepository.findById(id);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
     if (dispute.status !== DisputeStatus.DECIDED) {
-      throw new BadRequestException('Only decided disputes can be appealed');
+      throw new BadRequestException("Only decided disputes can be appealed");
     }
 
     if (!dispute.canAppeal) {
-      throw new BadRequestException('Appeal window has closed');
+      throw new BadRequestException("Appeal window has closed");
     }
 
     if (dispute.appealDeadline && new Date() > dispute.appealDeadline) {
-      throw new BadRequestException('Appeal deadline has passed');
+      throw new BadRequestException("Appeal deadline has passed");
     }
 
     // Check if user is part of the dispute
@@ -383,8 +440,11 @@ export class DisputeService {
       where: { id: dispute.orderId },
     });
 
-    if (!order || (order.initiatorId !== userId && order.counterpartyId !== userId)) {
-      throw new ForbiddenException('Not authorized to appeal this dispute');
+    if (
+      !order ||
+      (order.initiatorId !== userId && order.counterpartyId !== userId)
+    ) {
+      throw new ForbiddenException("Not authorized to appeal this dispute");
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -400,7 +460,7 @@ export class DisputeService {
       await tx.disputeTimeline.create({
         data: {
           disputeId: id,
-          action: 'APPEALED',
+          action: "APPEALED",
           performedBy: userId,
           details: { reason },
         },
@@ -427,11 +487,16 @@ export class DisputeService {
     const dispute = await this.disputeRepository.findById(disputeId);
 
     if (!dispute) {
-      throw new NotFoundException('Dispute not found');
+      throw new NotFoundException("Dispute not found");
     }
 
-    if (dispute.status === DisputeStatus.CLOSED || dispute.status === DisputeStatus.DECIDED) {
-      throw new BadRequestException('Cannot submit evidence for closed disputes');
+    if (
+      dispute.status === DisputeStatus.CLOSED ||
+      dispute.status === DisputeStatus.DECIDED
+    ) {
+      throw new BadRequestException(
+        "Cannot submit evidence for closed disputes",
+      );
     }
 
     await this.prisma.disputeEvidence.create({
@@ -452,12 +517,12 @@ export class DisputeService {
     const messages = await this.prisma.disputeTimeline.findMany({
       where: {
         disputeId: dispute.id,
-        action: 'MESSAGE',
+        action: "MESSAGE",
       },
       include: {
         user: { select: { id: true, username: true } },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
 
     return messages.map((message: any) => ({
@@ -476,22 +541,22 @@ export class DisputeService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('Not authorized to message in this dispute');
+      throw new ForbiddenException("Not authorized to message in this dispute");
     }
 
     await this.prisma.disputeTimeline.create({
       data: {
         disputeId,
-        action: 'MESSAGE',
+        action: "MESSAGE",
         performedBy: userId,
         details: { message },
       },
     });
 
-    return { message: 'Message sent' };
+    return { message: "Message sent" };
   }
 }

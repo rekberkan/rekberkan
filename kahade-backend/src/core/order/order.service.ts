@@ -5,26 +5,29 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { OrderRepository, CreateOrderData } from './order.repository';
-import { EscrowService } from '../escrow/escrow.service';
-import { WalletService } from '../wallet/wallet.service';
-import { NotificationService } from '../notification/notification.service';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
-import { AcceptOrderDto } from './dto/accept-order.dto';
-import { CancelOrderDto } from './dto/cancel-order.dto';
-import { OrderFilterDto } from './dto/order-filter.dto';
-import { CreateOrderCommentDto, UpdateOrderCommentDto } from './dto/order-comment.dto';
-import { v4 as uuidv4 } from 'uuid';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { OrderRepository, CreateOrderData } from "./order.repository";
+import { EscrowService } from "../escrow/escrow.service";
+import { WalletService } from "../wallet/wallet.service";
+import { NotificationService } from "../notification/notification.service";
+import { CreateOrderDto } from "./dto/create-order.dto";
+import { UpdateOrderDto } from "./dto/update-order.dto";
+import { AcceptOrderDto } from "./dto/accept-order.dto";
+import { CancelOrderDto } from "./dto/cancel-order.dto";
+import { OrderFilterDto } from "./dto/order-filter.dto";
+import {
+  CreateOrderCommentDto,
+  UpdateOrderCommentDto,
+} from "./dto/order-comment.dto";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
-  private readonly PLATFORM_FEE_PERCENTAGE = 1; // 1% platform fee
-  private readonly INVITE_EXPIRY_DAYS = 7;
+  private readonly PLATFORM_FEE_PERCENTAGE: number;
+  private readonly INVITE_EXPIRY_DAYS: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -33,7 +36,17 @@ export class OrderService {
     private readonly escrowService: EscrowService,
     private readonly walletService: WalletService,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) {
+    // Load configurable values from config service
+    this.PLATFORM_FEE_PERCENTAGE = this.configService.get<number>(
+      "platform.feePercentage",
+      1,
+    );
+    this.INVITE_EXPIRY_DAYS = this.configService.get<number>(
+      "platform.inviteExpiryDays",
+      7,
+    );
+  }
 
   /**
    * Calculate platform fee based on amount
@@ -46,27 +59,35 @@ export class OrderService {
    * Generate invite token
    */
   private generateInviteToken(): string {
-    return uuidv4().replace(/-/g, '');
+    return uuidv4().replace(/-/g, "");
   }
 
   /**
    * Create a new order
    */
-  async createOrder(userId: string, dto: CreateOrderDto, idempotencyKey?: string) {
+  async createOrder(
+    userId: string,
+    dto: CreateOrderDto,
+    idempotencyKey?: string,
+  ) {
     this.logger.log(`Creating order for user ${userId}`);
 
-    // Check idempotency
+    // Check idempotency - use title and amount hash for deduplication
     if (idempotencyKey) {
       const existing = await this.prisma.order.findFirst({
         where: {
           initiatorId: userId,
+          title: dto.title,
+          amountMinor: BigInt(dto.amountMinor),
           createdAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+            gte: new Date(Date.now() - 5 * 60 * 1000), // Last 5 minutes
           },
         },
       });
       if (existing) {
-        this.logger.warn(`Duplicate order creation attempt with idempotency key`);
+        this.logger.warn(
+          `Duplicate order creation attempt with idempotency key: ${idempotencyKey}`,
+        );
         return existing;
       }
     }
@@ -74,7 +95,9 @@ export class OrderService {
     const amountMinor = BigInt(dto.amountMinor);
     const platformFeeMinor = this.calculatePlatformFee(amountMinor);
     const inviteToken = this.generateInviteToken();
-    const inviteExpiresAt = new Date(Date.now() + this.INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    const inviteExpiresAt = new Date(
+      Date.now() + this.INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const orderData: CreateOrderData = {
       initiatorId: userId,
@@ -89,6 +112,7 @@ export class OrderService {
       customTerms: dto.customTerms,
       inviteToken,
       inviteExpiresAt,
+      // Note: idempotencyKey stored in audit log, not in order table
     };
 
     const order = await this.orderRepository.create(orderData);
@@ -107,10 +131,10 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Order created successfully',
+      message: "Order created successfully",
       data: {
         ...order,
-        inviteLink: `${this.configService.get('app.frontendUrl')}/orders/accept/${inviteToken}`,
+        inviteLink: `${this.configService.get("app.frontendUrl")}/orders/accept/${inviteToken}`,
       },
     };
   }
@@ -130,8 +154,8 @@ export class OrderService {
       maxAmount: filterDto.maxAmount ? BigInt(filterDto.maxAmount) : undefined,
       page: filterDto.page || 1,
       limit: filterDto.limit || 10,
-      sortBy: filterDto.sortBy || 'createdAt',
-      sortOrder: (filterDto.sortOrder || 'desc') as 'asc' | 'desc',
+      sortBy: filterDto.sortBy || "createdAt",
+      sortOrder: (filterDto.sortOrder || "desc") as "asc" | "desc",
     };
 
     return this.orderRepository.findMany(options);
@@ -144,12 +168,12 @@ export class OrderService {
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Check access
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You do not have access to this order');
+      throw new ForbiddenException("You do not have access to this order");
     }
 
     return order;
@@ -162,11 +186,11 @@ export class OrderService {
     const order = await this.orderRepository.findByOrderNumber(orderNumber);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You do not have access to this order');
+      throw new ForbiddenException("You do not have access to this order");
     }
 
     return order;
@@ -176,18 +200,20 @@ export class OrderService {
    * Get order by invite token (public preview)
    */
   async getOrderByInviteToken(inviteToken: string) {
-    const order = (await this.orderRepository.findByInviteToken(inviteToken)) as any;
+    const order = (await this.orderRepository.findByInviteToken(
+      inviteToken,
+    )) as any;
 
     if (!order) {
-      throw new NotFoundException('Invalid invite token');
+      throw new NotFoundException("Invalid invite token");
     }
 
     if (order.inviteExpiresAt < new Date()) {
-      throw new BadRequestException('Invite token has expired');
+      throw new BadRequestException("Invite token has expired");
     }
 
-    if (order.status !== 'WAITING_COUNTERPARTY') {
-      throw new BadRequestException('This order has already been accepted');
+    if (order.status !== "WAITING_COUNTERPARTY") {
+      throw new BadRequestException("This order has already been accepted");
     }
 
     // Return limited info for preview
@@ -216,15 +242,20 @@ export class OrderService {
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId) {
-      throw new ForbiddenException('Only the order creator can update this order');
+      throw new ForbiddenException(
+        "Only the order creator can update this order",
+      );
     }
 
-    if (order.status !== 'WAITING_COUNTERPARTY' && order.status !== 'PENDING_ACCEPT') {
-      throw new BadRequestException('Cannot update order after acceptance');
+    if (
+      order.status !== "WAITING_COUNTERPARTY" &&
+      order.status !== "PENDING_ACCEPT"
+    ) {
+      throw new BadRequestException("Cannot update order after acceptance");
     }
 
     const updateData: any = {};
@@ -234,19 +265,22 @@ export class OrderService {
     if (dto.customTerms !== undefined) updateData.customTerms = dto.customTerms;
 
     // Only allow amount/period changes before acceptance
-    if (order.status === 'WAITING_COUNTERPARTY') {
+    if (order.status === "WAITING_COUNTERPARTY") {
       if (dto.amountMinor) {
         updateData.amountMinor = BigInt(dto.amountMinor);
-        updateData.platformFeeMinor = this.calculatePlatformFee(BigInt(dto.amountMinor));
+        updateData.platformFeeMinor = this.calculatePlatformFee(
+          BigInt(dto.amountMinor),
+        );
       }
-      if (dto.holdingPeriodDays) updateData.holdingPeriodDays = dto.holdingPeriodDays;
+      if (dto.holdingPeriodDays)
+        updateData.holdingPeriodDays = dto.holdingPeriodDays;
     }
 
     const updated = await this.orderRepository.update(orderId, updateData);
 
     return {
       success: true,
-      message: 'Order updated successfully',
+      message: "Order updated successfully",
       data: updated,
     };
   }
@@ -258,24 +292,24 @@ export class OrderService {
     const order = await this.orderRepository.findByInviteToken(dto.inviteToken);
 
     if (!order) {
-      throw new NotFoundException('Invalid invite token');
+      throw new NotFoundException("Invalid invite token");
     }
 
     if (order.inviteExpiresAt < new Date()) {
-      throw new BadRequestException('Invite token has expired');
+      throw new BadRequestException("Invite token has expired");
     }
 
-    if (order.status !== 'WAITING_COUNTERPARTY') {
-      throw new ConflictException('This order has already been accepted');
+    if (order.status !== "WAITING_COUNTERPARTY") {
+      throw new ConflictException("This order has already been accepted");
     }
 
     if (order.initiatorId === userId) {
-      throw new BadRequestException('You cannot accept your own order');
+      throw new BadRequestException("You cannot accept your own order");
     }
 
     const updated = (await this.orderRepository.updateStatus(
       order.id,
-      'PENDING_ACCEPT' as any,
+      "PENDING_ACCEPT" as any,
       {
         counterpartyId: userId,
       },
@@ -286,14 +320,14 @@ export class OrderService {
     await this.notificationService.sendOrderAccepted(
       order.initiatorId,
       order.orderNumber,
-      updated.counterparty?.username || 'Unknown',
+      updated.counterparty?.username || "Unknown",
     );
 
     this.logger.log(`Order ${order.orderNumber} accepted by user ${userId}`);
 
     return {
       success: true,
-      message: 'Order accepted successfully',
+      message: "Order accepted successfully",
       data: updated,
     };
   }
@@ -303,42 +337,52 @@ export class OrderService {
    */
   async payOrder(userId: string, orderId: string, idempotencyKey: string) {
     if (!idempotencyKey) {
-      throw new BadRequestException('Idempotency key is required for payment');
+      throw new BadRequestException("Idempotency key is required for payment");
     }
 
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Determine buyer
-    const buyerId = order.initiatorRole === 'BUYER' ? order.initiatorId : order.counterpartyId;
+    const buyerId =
+      order.initiatorRole === "BUYER"
+        ? order.initiatorId
+        : order.counterpartyId;
 
     if (userId !== buyerId) {
-      throw new ForbiddenException('Only the buyer can pay for this order');
+      throw new ForbiddenException("Only the buyer can pay for this order");
     }
 
-    if (order.status !== 'PENDING_ACCEPT' && order.status !== 'ACCEPTED') {
-      throw new BadRequestException(`Cannot pay for order in status: ${order.status}`);
+    if (order.status !== "PENDING_ACCEPT" && order.status !== "ACCEPTED") {
+      throw new BadRequestException(
+        `Cannot pay for order in status: ${order.status}`,
+      );
     }
 
     // Calculate total amount including fee if buyer pays
     let totalAmount = order.amountMinor;
-    if (order.feePayer === 'BUYER' || order.feePayer === 'FIFTY_FIFTY') {
+    if (order.feePayer === "BUYER" || order.feePayer === "FIFTY_FIFTY") {
       const feeAmount =
-        order.feePayer === 'FIFTY_FIFTY' ? order.platformFeeMinor / 2n : order.platformFeeMinor;
+        order.feePayer === "FIFTY_FIFTY"
+          ? order.platformFeeMinor / 2n
+          : order.platformFeeMinor;
       totalAmount += feeAmount;
     }
 
     // Check buyer balance
     const balance = await this.walletService.getBalance(buyerId);
     if (BigInt(balance.available) < totalAmount) {
-      throw new BadRequestException('Insufficient balance');
+      throw new BadRequestException("Insufficient balance");
     }
 
     // Create escrow
-    const sellerId = order.initiatorRole === 'SELLER' ? order.initiatorId : order.counterpartyId;
+    const sellerId =
+      order.initiatorRole === "SELLER"
+        ? order.initiatorId
+        : order.counterpartyId;
 
     await this.escrowService.createEscrow({
       orderId: order.id,
@@ -350,10 +394,12 @@ export class OrderService {
     });
 
     // Update order status
-    const autoReleaseAt = new Date(Date.now() + order.holdingPeriodDays * 24 * 60 * 60 * 1000);
+    const autoReleaseAt = new Date(
+      Date.now() + order.holdingPeriodDays * 24 * 60 * 60 * 1000,
+    );
     const updated = await this.orderRepository.updateStatus(
       orderId,
-      'PAID' as any,
+      "PAID" as any,
       {
         autoReleaseAt,
       },
@@ -374,7 +420,7 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Payment successful, funds locked in escrow',
+      message: "Payment successful, funds locked in escrow",
       data: updated,
     };
   }
@@ -382,30 +428,39 @@ export class OrderService {
   /**
    * Confirm delivery and release escrow
    */
-  async confirmDelivery(userId: string, orderId: string, idempotencyKey: string) {
+  async confirmDelivery(
+    userId: string,
+    orderId: string,
+    idempotencyKey: string,
+  ) {
     if (!idempotencyKey) {
-      throw new BadRequestException('Idempotency key is required');
+      throw new BadRequestException("Idempotency key is required");
     }
 
     const order = (await this.orderRepository.findById(orderId)) as any;
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     // Only buyer can confirm
-    const buyerId = order.initiatorRole === 'BUYER' ? order.initiatorId : order.counterpartyId;
+    const buyerId =
+      order.initiatorRole === "BUYER"
+        ? order.initiatorId
+        : order.counterpartyId;
 
     if (userId !== buyerId) {
-      throw new ForbiddenException('Only the buyer can confirm delivery');
+      throw new ForbiddenException("Only the buyer can confirm delivery");
     }
 
-    if (order.status !== 'PAID') {
-      throw new BadRequestException(`Cannot confirm delivery for order in status: ${order.status}`);
+    if (order.status !== "PAID") {
+      throw new BadRequestException(
+        `Cannot confirm delivery for order in status: ${order.status}`,
+      );
     }
 
     if (!order.escrowHold) {
-      throw new BadRequestException('No escrow found for this order');
+      throw new BadRequestException("No escrow found for this order");
     }
 
     // Release escrow
@@ -419,13 +474,16 @@ export class OrderService {
     // Update order status
     const updated = await this.orderRepository.updateStatus(
       orderId,
-      'COMPLETED' as any,
+      "COMPLETED" as any,
       {},
       undefined,
     );
 
     // Notify seller
-    const sellerId = order.initiatorRole === 'SELLER' ? order.initiatorId : order.counterpartyId;
+    const sellerId =
+      order.initiatorRole === "SELLER"
+        ? order.initiatorId
+        : order.counterpartyId;
     if (sellerId) {
       await this.notificationService.sendEscrowReleased(
         sellerId,
@@ -439,7 +497,7 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Delivery confirmed, escrow released to seller',
+      message: "Delivery confirmed, escrow released to seller",
       data: updated,
     };
   }
@@ -451,24 +509,28 @@ export class OrderService {
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You do not have access to this order');
+      throw new ForbiddenException("You do not have access to this order");
     }
 
     // Can only cancel before payment
-    if (order.status === 'PAID' || order.status === 'COMPLETED') {
+    if (order.status === "PAID" || order.status === "COMPLETED") {
       throw new BadRequestException(
-        'Cannot cancel order after payment. Please open a dispute instead.',
+        "Cannot cancel order after payment. Please open a dispute instead.",
       );
     }
 
-    const updated = await this.orderRepository.updateStatus(orderId, 'CANCELLED' as any);
+    const updated = await this.orderRepository.updateStatus(
+      orderId,
+      "CANCELLED" as any,
+    );
 
     // Notify other party
-    const otherPartyId = order.initiatorId === userId ? order.counterpartyId : order.initiatorId;
+    const otherPartyId =
+      order.initiatorId === userId ? order.counterpartyId : order.initiatorId;
     if (otherPartyId) {
       await this.notificationService.sendOrderCancelled(
         otherPartyId,
@@ -482,7 +544,7 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Order cancelled successfully',
+      message: "Order cancelled successfully",
       data: updated,
     };
   }
@@ -498,28 +560,33 @@ export class OrderService {
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You do not have access to this order');
+      throw new ForbiddenException("You do not have access to this order");
     }
 
-    if (order.status !== 'PAID') {
-      throw new BadRequestException('Can only dispute paid orders');
+    if (order.status !== "PAID") {
+      throw new BadRequestException("Can only dispute paid orders");
     }
 
     // Update order status
-    const updated = await this.orderRepository.updateStatus(orderId, 'DISPUTED' as any);
+    const updated = await this.orderRepository.updateStatus(
+      orderId,
+      "DISPUTED" as any,
+    );
 
     // Create dispute record (handled by dispute service)
     // This is a simplified version - full implementation would call DisputeService
 
-    this.logger.log(`Dispute opened for order ${order.orderNumber} by user ${userId}`);
+    this.logger.log(
+      `Dispute opened for order ${order.orderNumber} by user ${userId}`,
+    );
 
     return {
       success: true,
-      message: 'Dispute opened successfully',
+      message: "Dispute opened successfully",
       data: updated,
     };
   }
@@ -531,20 +598,22 @@ export class OrderService {
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId) {
-      throw new ForbiddenException('Only the order creator can resend invites');
+      throw new ForbiddenException("Only the order creator can resend invites");
     }
 
-    if (order.status !== 'WAITING_COUNTERPARTY') {
-      throw new BadRequestException('Order has already been accepted');
+    if (order.status !== "WAITING_COUNTERPARTY") {
+      throw new BadRequestException("Order has already been accepted");
     }
 
     // Generate new invite token
     const newInviteToken = this.generateInviteToken();
-    const newInviteExpiresAt = new Date(Date.now() + this.INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    const newInviteExpiresAt = new Date(
+      Date.now() + this.INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     await this.orderRepository.update(orderId, {
       inviteToken: newInviteToken,
@@ -561,7 +630,7 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Invitation resent successfully',
+      message: "Invitation resent successfully",
     };
   }
 
@@ -572,11 +641,11 @@ export class OrderService {
     const order = (await this.orderRepository.findById(orderId)) as any;
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You do not have access to this order');
+      throw new ForbiddenException("You do not have access to this order");
     }
 
     return order.comments || [];
@@ -585,15 +654,19 @@ export class OrderService {
   /**
    * Add comment
    */
-  async addComment(userId: string, orderId: string, dto: CreateOrderCommentDto) {
+  async addComment(
+    userId: string,
+    orderId: string,
+    dto: CreateOrderCommentDto,
+  ) {
     const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     if (order.initiatorId !== userId && order.counterpartyId !== userId) {
-      throw new ForbiddenException('You do not have access to this order');
+      throw new ForbiddenException("You do not have access to this order");
     }
 
     const comment = await this.prisma.orderComment.create({
@@ -630,11 +703,11 @@ export class OrderService {
     });
 
     if (!comment || comment.orderId !== orderId) {
-      throw new NotFoundException('Comment not found');
+      throw new NotFoundException("Comment not found");
     }
 
     if (comment.userId !== userId) {
-      throw new ForbiddenException('You can only edit your own comments');
+      throw new ForbiddenException("You can only edit your own comments");
     }
 
     const updated = await this.prisma.orderComment.update({
@@ -656,11 +729,11 @@ export class OrderService {
     });
 
     if (!comment || comment.orderId !== orderId) {
-      throw new NotFoundException('Comment not found');
+      throw new NotFoundException("Comment not found");
     }
 
     if (comment.userId !== userId) {
-      throw new ForbiddenException('You can only delete your own comments');
+      throw new ForbiddenException("You can only delete your own comments");
     }
 
     await this.prisma.orderComment.update({
@@ -671,6 +744,6 @@ export class OrderService {
       },
     });
 
-    return { success: true, message: 'Comment deleted' };
+    return { success: true, message: "Comment deleted" };
   }
 }

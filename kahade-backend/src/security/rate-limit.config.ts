@@ -1,4 +1,4 @@
-import { ThrottlerModuleOptions } from '@nestjs/throttler';
+import { ThrottlerModuleOptions } from "@nestjs/throttler";
 
 // ============================================================================
 // BANK-GRADE RATE LIMITING CONFIGURATION
@@ -11,17 +11,17 @@ import { ThrottlerModuleOptions } from '@nestjs/throttler';
  */
 export const rateLimitConfig: ThrottlerModuleOptions = [
   {
-    name: 'short',
+    name: "short",
     ttl: 1000, // 1 second
     limit: 3, // Max 3 requests per second
   },
   {
-    name: 'medium',
+    name: "medium",
     ttl: 10000, // 10 seconds
     limit: 20, // Max 20 requests per 10 seconds
   },
   {
-    name: 'long',
+    name: "long",
     ttl: 60000, // 1 minute
     limit: 100, // Max 100 requests per minute
   },
@@ -147,7 +147,10 @@ export function getRateLimit(
   category: keyof typeof RATE_LIMITS,
   endpoint: string,
 ): { ttl: number; limit: number } {
-  const categoryLimits = RATE_LIMITS[category] as Record<string, { ttl: number; limit: number }>;
+  const categoryLimits = RATE_LIMITS[category] as Record<
+    string,
+    { ttl: number; limit: number }
+  >;
   return categoryLimits[endpoint] || { ttl: 60000, limit: 100 };
 }
 

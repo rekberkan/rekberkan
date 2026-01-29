@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { DeliveryController } from './delivery.controller';
-import { DeliveryRepository } from './delivery.repository';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module } from "@nestjs/common";
+import { DeliveryController } from "./delivery.controller";
+import { DeliveryRepository } from "./delivery.repository";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule],

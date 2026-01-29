@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from "bcrypt";
 
 // ============================================================================
 // BANK-GRADE PASSWORD HASHING UTILITY
@@ -17,14 +17,14 @@ export class HashUtil {
    */
   static async hash(password: string): Promise<string> {
     if (!password || password.length === 0) {
-      throw new Error('Password cannot be empty');
+      throw new Error("Password cannot be empty");
     }
-    
+
     // Bcrypt has a max length of 72 bytes
-    if (Buffer.byteLength(password, 'utf8') > 72) {
-      throw new Error('Password exceeds maximum length');
+    if (Buffer.byteLength(password, "utf8") > 72) {
+      throw new Error("Password exceeds maximum length");
     }
-    
+
     return bcrypt.hash(password, this.SALT_ROUNDS);
   }
 
@@ -38,7 +38,7 @@ export class HashUtil {
     if (!password || !hash) {
       return false;
     }
-    
+
     try {
       // bcrypt.compare is already timing-safe
       return await bcrypt.compare(password, hash);

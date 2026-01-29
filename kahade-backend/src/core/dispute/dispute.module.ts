@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { DisputeController } from './dispute.controller';
-import { DisputeService } from './dispute.service';
-import { DisputeRepository } from './dispute.repository';
-import { TransactionModule } from '../transaction/transaction.module';
-import { DatabaseModule } from '@infrastructure/database/database.module';
+import { Module } from "@nestjs/common";
+import { DisputeController } from "./dispute.controller";
+import { DisputeService } from "./dispute.service";
+import { DisputeRepository } from "./dispute.repository";
+import { TransactionModule } from "../transaction/transaction.module";
+import { DatabaseModule } from "@infrastructure/database/database.module";
 
 @Module({
   imports: [DatabaseModule, TransactionModule],

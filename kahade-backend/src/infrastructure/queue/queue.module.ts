@@ -1,8 +1,8 @@
-import { Module, Global, Logger } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module, Global, Logger } from "@nestjs/common";
+import { BullModule } from "@nestjs/bull";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 
-const useRedis = process.env.REDIS_ENABLED === 'true';
+const useRedis = process.env.REDIS_ENABLED === "true";
 
 @Global()
 @Module({
@@ -12,18 +12,18 @@ const useRedis = process.env.REDIS_ENABLED === 'true';
           imports: [ConfigModule],
           inject: [ConfigService],
           useFactory: (configService: ConfigService) => {
-            Logger.log('Using Redis for Bull queues', 'QueueModule');
+            Logger.log("Using Redis for Bull queues", "QueueModule");
             return {
               redis: {
-                host: configService.get<string>('redis.host', 'localhost'),
-                port: configService.get<number>('redis.port', 6379),
-                password: configService.get<string>('redis.password'),
+                host: configService.get<string>("redis.host", "localhost"),
+                port: configService.get<number>("redis.port", 6379),
+                password: configService.get<string>("redis.password"),
               },
-              prefix: configService.get<string>('queue.prefix', 'kahade'),
+              prefix: configService.get<string>("queue.prefix", "kahade"),
               defaultJobOptions: {
                 attempts: 3,
                 backoff: {
-                  type: 'exponential',
+                  type: "exponential",
                   delay: 1000,
                 },
                 removeOnComplete: true,
@@ -39,7 +39,7 @@ const useRedis = process.env.REDIS_ENABLED === 'true';
 export class QueueModule {
   constructor() {
     if (!useRedis) {
-      Logger.warn('Bull queues disabled (Redis not available)', 'QueueModule');
+      Logger.warn("Bull queues disabled (Redis not available)", "QueueModule");
     }
   }
 }

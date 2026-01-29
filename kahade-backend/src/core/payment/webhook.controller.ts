@@ -10,14 +10,14 @@ import {
   Logger,
   RawBodyRequest,
   Req,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
-import { Public } from '@common/decorators/public.decorator';
-import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
-import { Request } from 'express';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { CacheService } from '@infrastructure/cache/cache.service';
+} from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiHeader } from "@nestjs/swagger";
+import { Public } from "@common/decorators/public.decorator";
+import { ConfigService } from "@nestjs/config";
+import * as crypto from "crypto";
+import { Request } from "express";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { CacheService } from "@infrastructure/cache/cache.service";
 
 // ============================================================================
 // BANK-GRADE WEBHOOK CONTROLLER
@@ -49,8 +49,8 @@ interface MidtransWebhookPayload {
   fraud_status?: string;
 }
 
-@ApiTags('webhooks')
-@Controller('webhooks')
+@ApiTags("webhooks")
+@Controller("webhooks")
 export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
   private readonly webhookTtlSeconds = 24 * 60 * 60;
@@ -61,9 +61,9 @@ export class WebhookController {
     private readonly cacheService: CacheService,
   ) {}
 
-  @Get('health')
+  @Get("health")
   health() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { status: "ok", timestamp: new Date().toISOString() };
   }
 
   // ============================================================================
@@ -71,24 +71,29 @@ export class WebhookController {
   // ============================================================================
 
   @Public()
-  @Post('xendit/invoice')
+  @Post("xendit/invoice")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle Xendit invoice webhooks' })
-  @ApiHeader({ name: 'x-callback-token', description: 'Xendit callback verification token' })
+  @ApiOperation({ summary: "Handle Xendit invoice webhooks" })
+  @ApiHeader({
+    name: "x-callback-token",
+    description: "Xendit callback verification token",
+  })
   async handleXenditInvoice(
-    @Headers('x-callback-token') callbackToken: string,
+    @Headers("x-callback-token") callbackToken: string,
     @Body() payload: XenditWebhookPayload,
   ) {
     // Step 1: Verify callback token
-    const expectedToken = this.configService.get<string>('XENDIT_CALLBACK_TOKEN');
+    const expectedToken = this.configService.get<string>(
+      "XENDIT_CALLBACK_TOKEN",
+    );
     if (!expectedToken) {
-      this.logger.error('XENDIT_CALLBACK_TOKEN not configured');
-      throw new BadRequestException('Webhook configuration error');
+      this.logger.error("XENDIT_CALLBACK_TOKEN not configured");
+      throw new BadRequestException("Webhook configuration error");
     }
 
     if (!this.secureCompare(callbackToken, expectedToken)) {
       this.logger.warn(`Invalid Xendit callback token received`);
-      throw new BadRequestException('Invalid callback token');
+      throw new BadRequestException("Invalid callback token");
     }
 
     // Step 2: Check idempotency
@@ -101,13 +106,13 @@ export class WebhookController {
     );
     if (!lockAcquired) {
       this.logger.log(`Duplicate webhook ignored: ${webhookId}`);
-      return { status: 'duplicate', message: 'Webhook already processed' };
+      return { status: "duplicate", message: "Webhook already processed" };
     }
 
     // Step 3: Validate payload
     if (!payload.id || !payload.external_id || !payload.status) {
-      this.logger.warn('Invalid Xendit payload received');
-      throw new BadRequestException('Invalid payload');
+      this.logger.warn("Invalid Xendit payload received");
+      throw new BadRequestException("Invalid payload");
     }
 
     // Step 4: Process webhook
@@ -123,7 +128,7 @@ export class WebhookController {
       await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
       return {
-        status: 'processed',
+        status: "processed",
         webhookId: payload.id,
         timestamp: new Date().toISOString(),
       };
@@ -135,19 +140,24 @@ export class WebhookController {
   }
 
   @Public()
-  @Post('xendit/disbursement')
+  @Post("xendit/disbursement")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle Xendit disbursement webhooks' })
-  @ApiHeader({ name: 'x-callback-token', description: 'Xendit callback verification token' })
+  @ApiOperation({ summary: "Handle Xendit disbursement webhooks" })
+  @ApiHeader({
+    name: "x-callback-token",
+    description: "Xendit callback verification token",
+  })
   async handleXenditDisbursement(
-    @Headers('x-callback-token') callbackToken: string,
+    @Headers("x-callback-token") callbackToken: string,
     @Body() payload: any,
   ) {
     // Verify callback token
-    const expectedToken = this.configService.get<string>('XENDIT_CALLBACK_TOKEN');
+    const expectedToken = this.configService.get<string>(
+      "XENDIT_CALLBACK_TOKEN",
+    );
     if (!expectedToken || !this.secureCompare(callbackToken, expectedToken)) {
-      this.logger.warn('Invalid Xendit disbursement callback token');
-      throw new BadRequestException('Invalid callback token');
+      this.logger.warn("Invalid Xendit disbursement callback token");
+      throw new BadRequestException("Invalid callback token");
     }
 
     const webhookId = `xendit_disbursement_${payload.id}`;
@@ -158,7 +168,7 @@ export class WebhookController {
       this.webhookTtlSeconds,
     );
     if (!lockAcquired) {
-      return { status: 'duplicate' };
+      return { status: "duplicate" };
     }
 
     this.logger.log(`Processing Xendit disbursement webhook: ${payload.id}`);
@@ -168,7 +178,7 @@ export class WebhookController {
 
       await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
-      return { status: 'processed' };
+      return { status: "processed" };
     } catch (error) {
       await this.cacheService.del(idempotencyKey);
       throw error;
@@ -180,35 +190,35 @@ export class WebhookController {
   // ============================================================================
 
   @Public()
-  @Post('midtrans/notification')
+  @Post("midtrans/notification")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle Midtrans payment notifications' })
+  @ApiOperation({ summary: "Handle Midtrans payment notifications" })
   async handleMidtransNotification(
     @Body() payload: MidtransWebhookPayload,
     @Req() _req: RawBodyRequest<Request>,
   ) {
     // Step 1: Verify signature
-    const serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY');
+    const serverKey = this.configService.get<string>("MIDTRANS_SERVER_KEY");
     if (!serverKey) {
-      this.logger.error('MIDTRANS_SERVER_KEY not configured');
-      throw new BadRequestException('Webhook configuration error');
+      this.logger.error("MIDTRANS_SERVER_KEY not configured");
+      throw new BadRequestException("Webhook configuration error");
     }
 
     const expectedSignature = this.generateMidtransSignature(
       payload.order_id,
-      payload.status_code || '200',
+      payload.status_code || "200",
       payload.gross_amount,
       serverKey,
     );
 
     if (!payload.signature_key) {
-      this.logger.warn('Missing Midtrans signature');
-      throw new BadRequestException('Invalid signature');
+      this.logger.warn("Missing Midtrans signature");
+      throw new BadRequestException("Invalid signature");
     }
 
     if (!this.secureCompare(payload.signature_key, expectedSignature)) {
-      this.logger.warn('Invalid Midtrans signature');
-      throw new BadRequestException('Invalid signature');
+      this.logger.warn("Invalid Midtrans signature");
+      throw new BadRequestException("Invalid signature");
     }
 
     // Step 2: Check idempotency
@@ -220,12 +230,16 @@ export class WebhookController {
       this.webhookTtlSeconds,
     );
     if (!lockAcquired) {
-      return { status: 'duplicate' };
+      return { status: "duplicate" };
     }
 
     // Step 3: Validate payload
-    if (!payload.transaction_id || !payload.order_id || !payload.transaction_status) {
-      throw new BadRequestException('Invalid payload');
+    if (
+      !payload.transaction_id ||
+      !payload.order_id ||
+      !payload.transaction_status
+    ) {
+      throw new BadRequestException("Invalid payload");
     }
 
     // Step 4: Process
@@ -238,7 +252,7 @@ export class WebhookController {
 
       await this.cacheService.set(idempotencyKey, true, this.webhookTtlSeconds);
 
-      return { status: 'processed' };
+      return { status: "processed" };
     } catch (error) {
       await this.cacheService.del(idempotencyKey);
       throw error;
@@ -249,18 +263,20 @@ export class WebhookController {
   // PAYMENT PROCESSING METHODS
   // ============================================================================
 
-  private async processXenditPayment(payload: XenditWebhookPayload): Promise<void> {
+  private async processXenditPayment(
+    payload: XenditWebhookPayload,
+  ): Promise<void> {
     const { external_id, status, amount, paid_amount } = payload;
 
     // external_id format: "topup_{walletId}_{timestamp}" or "order_{orderId}"
-    const parts = external_id.split('_');
+    const parts = external_id.split("_");
     const type = parts[0];
     const entityId = parts[1];
 
-    if (type === 'topup') {
+    if (type === "topup") {
       // Process wallet top-up
       await this.processTopUpPayment(entityId, status, paid_amount || amount);
-    } else if (type === 'order') {
+    } else if (type === "order") {
       // Process order payment
       await this.processOrderPayment(entityId, status, paid_amount || amount);
     }
@@ -271,7 +287,7 @@ export class WebhookController {
     status: string,
     amount: number,
   ): Promise<void> {
-    if (status === 'PAID' || status === 'SETTLED') {
+    if (status === "PAID" || status === "SETTLED") {
       // Credit wallet
       await this.prisma.$transaction(async (tx) => {
         await tx.wallet.update({
@@ -301,22 +317,22 @@ export class WebhookController {
       return;
     }
 
-    if (status === 'PAID' || status === 'SETTLED') {
+    if (status === "PAID" || status === "SETTLED") {
       // Update order status to PAID
       await this.prisma.order.update({
         where: { id: orderId },
         data: {
-          status: 'PAID',
+          status: "PAID",
           paidAt: new Date(),
         },
       });
 
       this.logger.log(`Order ${orderId} payment completed`);
-    } else if (status === 'EXPIRED' || status === 'FAILED') {
+    } else if (status === "EXPIRED" || status === "FAILED") {
       // Update order status
       await this.prisma.order.update({
         where: { id: orderId },
-        data: { status: 'CANCELLED', cancelledAt: new Date() },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
       });
 
       this.logger.log(`Order ${orderId} payment failed: ${status}`);
@@ -327,22 +343,22 @@ export class WebhookController {
     const { external_id, status } = payload;
 
     // external_id format: "withdrawal_{withdrawalId}"
-    const parts = external_id.split('_');
-    if (parts[0] !== 'withdrawal') return;
+    const parts = external_id.split("_");
+    if (parts[0] !== "withdrawal") return;
 
     const withdrawalId = parts[1];
 
-    if (status === 'COMPLETED') {
+    if (status === "COMPLETED") {
       await this.prisma.withdrawal.update({
         where: { id: withdrawalId },
         data: {
-          status: 'COMPLETED',
+          status: "COMPLETED",
           completedAt: new Date(),
         },
       });
 
       this.logger.log(`Withdrawal ${withdrawalId} completed`);
-    } else if (status === 'FAILED') {
+    } else if (status === "FAILED") {
       // Refund the locked amount
       const withdrawal = await this.prisma.withdrawal.findUnique({
         where: { id: withdrawalId },
@@ -353,8 +369,8 @@ export class WebhookController {
           await tx.withdrawal.update({
             where: { id: withdrawalId },
             data: {
-              status: 'FAILED',
-              rejectionReason: payload.failure_code || 'Unknown error',
+              status: "FAILED",
+              rejectionReason: payload.failure_code || "Unknown error",
             },
           });
 
@@ -372,36 +388,39 @@ export class WebhookController {
     }
   }
 
-  private async processMidtransPayment(payload: MidtransWebhookPayload): Promise<void> {
-    const { order_id, transaction_status, gross_amount, fraud_status } = payload;
+  private async processMidtransPayment(
+    payload: MidtransWebhookPayload,
+  ): Promise<void> {
+    const { order_id, transaction_status, gross_amount, fraud_status } =
+      payload;
 
     // order_id format: "topup_{walletId}_{timestamp}" or "order_{orderId}"
-    const parts = order_id.split('_');
+    const parts = order_id.split("_");
     const type = parts[0];
     const entityId = parts[1];
     const amount = parseFloat(gross_amount);
 
     // Check fraud status
-    if (fraud_status === 'deny') {
+    if (fraud_status === "deny") {
       this.logger.warn(`Payment denied due to fraud: ${order_id}`);
       return;
     }
 
     // Map Midtrans status to our status
     const isPaid =
-      ['capture', 'settlement'].includes(transaction_status) &&
-      (fraud_status === 'accept' || !fraud_status);
-    const isFailed = ['deny', 'cancel', 'expire'].includes(transaction_status);
+      ["capture", "settlement"].includes(transaction_status) &&
+      (fraud_status === "accept" || !fraud_status);
+    const isFailed = ["deny", "cancel", "expire"].includes(transaction_status);
 
-    if (type === 'topup') {
+    if (type === "topup") {
       if (isPaid) {
-        await this.processTopUpPayment(entityId, 'PAID', amount);
+        await this.processTopUpPayment(entityId, "PAID", amount);
       }
-    } else if (type === 'order') {
+    } else if (type === "order") {
       if (isPaid) {
-        await this.processOrderPayment(entityId, 'PAID', amount);
+        await this.processOrderPayment(entityId, "PAID", amount);
       } else if (isFailed) {
-        await this.processOrderPayment(entityId, 'FAILED', amount);
+        await this.processOrderPayment(entityId, "FAILED", amount);
       }
     }
   }
@@ -434,6 +453,6 @@ export class WebhookController {
     serverKey: string,
   ): string {
     const data = `${orderId}${statusCode}${grossAmount}${serverKey}`;
-    return crypto.createHash('sha512').update(data).digest('hex');
+    return crypto.createHash("sha512").update(data).digest("hex");
   }
 }

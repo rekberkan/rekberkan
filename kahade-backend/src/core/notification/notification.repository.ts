@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Notification } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Notification } from "@prisma/client";
 
 export interface ICreateNotification {
   userId: string;
@@ -53,7 +53,7 @@ export class NotificationRepository {
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.notification.count({ where }),
     ]);
@@ -67,7 +67,7 @@ export class NotificationRepository {
         userId,
         readAt: null,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 

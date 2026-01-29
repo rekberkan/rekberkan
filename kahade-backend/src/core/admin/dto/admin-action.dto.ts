@@ -1,20 +1,26 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  IsOptional,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 /**
  * DTO for admin actions that require a reason
  */
 export class AdminReasonDto {
   @ApiProperty({
-    description: 'Reason for the admin action',
-    example: 'Violation of terms of service',
+    description: "Reason for the admin action",
+    example: "Violation of terms of service",
     minLength: 10,
     maxLength: 1000,
   })
   @IsString()
-  @IsNotEmpty({ message: 'Reason is required' })
-  @MinLength(10, { message: 'Reason must be at least 10 characters' })
-  @MaxLength(1000, { message: 'Reason must not exceed 1000 characters' })
+  @IsNotEmpty({ message: "Reason is required" })
+  @MinLength(10, { message: "Reason must be at least 10 characters" })
+  @MaxLength(1000, { message: "Reason must not exceed 1000 characters" })
   reason: string;
 }
 
@@ -23,25 +29,25 @@ export class AdminReasonDto {
  */
 export class AdminActionWithNotesDto {
   @ApiProperty({
-    description: 'Reason for the admin action',
-    example: 'Violation of terms of service',
+    description: "Reason for the admin action",
+    example: "Violation of terms of service",
     minLength: 10,
     maxLength: 1000,
   })
   @IsString()
-  @IsNotEmpty({ message: 'Reason is required' })
-  @MinLength(10, { message: 'Reason must be at least 10 characters' })
-  @MaxLength(1000, { message: 'Reason must not exceed 1000 characters' })
+  @IsNotEmpty({ message: "Reason is required" })
+  @MinLength(10, { message: "Reason must be at least 10 characters" })
+  @MaxLength(1000, { message: "Reason must not exceed 1000 characters" })
   reason: string;
 
   @ApiPropertyOptional({
-    description: 'Additional notes for internal reference',
-    example: 'User was warned twice before suspension',
+    description: "Additional notes for internal reference",
+    example: "User was warned twice before suspension",
     maxLength: 2000,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(2000, { message: 'Notes must not exceed 2000 characters' })
+  @MaxLength(2000, { message: "Notes must not exceed 2000 characters" })
   notes?: string;
 }
 
@@ -50,7 +56,7 @@ export class AdminActionWithNotesDto {
  */
 export class SuspendUserDto extends AdminReasonDto {
   @ApiPropertyOptional({
-    description: 'Suspension duration in days (null for permanent)',
+    description: "Suspension duration in days (null for permanent)",
     example: 30,
   })
   @IsOptional()

@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma, Promo, PromoAssignment } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma, Promo, PromoAssignment } from "@prisma/client";
 
 @Injectable()
 export class PromoRepository {
@@ -48,11 +48,16 @@ export class PromoRepository {
     return this.prisma.promo.delete({ where: { id } });
   }
 
-  async createAssignment(data: Prisma.PromoAssignmentCreateInput): Promise<PromoAssignment> {
+  async createAssignment(
+    data: Prisma.PromoAssignmentCreateInput,
+  ): Promise<PromoAssignment> {
     return this.prisma.promoAssignment.create({ data });
   }
 
-  async findAssignment(promoId: string, userId: string): Promise<PromoAssignment | null> {
+  async findAssignment(
+    promoId: string,
+    userId: string,
+  ): Promise<PromoAssignment | null> {
     return this.prisma.promoAssignment.findUnique({
       where: { promoId_userId: { promoId, userId } },
     });

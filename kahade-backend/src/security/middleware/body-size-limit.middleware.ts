@@ -1,6 +1,10 @@
-import { Injectable, NestMiddleware, PayloadTooLargeException } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import { ConfigService } from '@nestjs/config';
+import {
+  Injectable,
+  NestMiddleware,
+  PayloadTooLargeException,
+} from "@nestjs/common";
+import { Request, Response, NextFunction } from "express";
+import { ConfigService } from "@nestjs/config";
 
 // ============================================================================
 // BODY SIZE LIMIT MIDDLEWARE
@@ -14,11 +18,14 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
 
   constructor(private readonly configService: ConfigService) {
     // Default 10MB, configurable via environment
-    this.maxBodySize = this.configService.get<number>('MAX_BODY_SIZE', 10 * 1024 * 1024);
+    this.maxBodySize = this.configService.get<number>(
+      "MAX_BODY_SIZE",
+      10 * 1024 * 1024,
+    );
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
-    const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+    const contentLength = parseInt(req.headers["content-length"] || "0", 10);
 
     if (contentLength > this.maxBodySize) {
       throw new PayloadTooLargeException(
@@ -29,7 +36,7 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
     // Track actual body size during streaming
     let bodySize = 0;
 
-    req.on('data', (chunk: Buffer) => {
+    req.on("data", (chunk: Buffer) => {
       bodySize += chunk.length;
       if (bodySize > this.maxBodySize) {
         req.destroy();
@@ -43,11 +50,11 @@ export class BodySizeLimitMiddleware implements NestMiddleware {
   }
 
   private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 }
 
@@ -74,7 +81,9 @@ export const BODY_SIZE_LIMITS = {
 /**
  * Create body parser options for specific route
  */
-export function createBodyParserOptions(routeType: keyof typeof BODY_SIZE_LIMITS) {
+export function createBodyParserOptions(
+  routeType: keyof typeof BODY_SIZE_LIMITS,
+) {
   return {
     limit: BODY_SIZE_LIMITS[routeType] || BODY_SIZE_LIMITS.default,
   };

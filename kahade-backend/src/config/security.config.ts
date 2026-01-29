@@ -1,4 +1,4 @@
-import { registerAs } from '@nestjs/config';
+import { registerAs } from "@nestjs/config";
 
 // ============================================================================
 // SECURITY CONFIGURATION
@@ -6,8 +6,8 @@ import { registerAs } from '@nestjs/config';
 // Fix #99: Comprehensive security headers and settings
 // ============================================================================
 
-export default registerAs('security', () => {
-  const isProduction = process.env.NODE_ENV === 'production';
+export default registerAs("security", () => {
+  const isProduction = process.env.NODE_ENV === "production";
 
   return {
     // Helmet configuration for security headers
@@ -18,7 +18,7 @@ export default registerAs('security', () => {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
+          imgSrc: ["'self'", "data:", "https:"],
           fontSrc: ["'self'"],
           connectSrc: ["'self'"],
           frameSrc: ["'none'"],
@@ -31,16 +31,16 @@ export default registerAs('security', () => {
       crossOriginEmbedderPolicy: false, // Disable for API
 
       // Cross-Origin-Opener-Policy
-      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      crossOriginOpenerPolicy: { policy: "same-origin" },
 
       // Cross-Origin-Resource-Policy
-      crossOriginResourcePolicy: { policy: 'same-origin' },
+      crossOriginResourcePolicy: { policy: "same-origin" },
 
       // DNS Prefetch Control
       dnsPrefetchControl: { allow: false },
 
       // Frameguard (X-Frame-Options)
-      frameguard: { action: 'deny' },
+      frameguard: { action: "deny" },
 
       // Hide Powered By
       hidePoweredBy: true,
@@ -62,10 +62,10 @@ export default registerAs('security', () => {
       originAgentCluster: true,
 
       // Permitted Cross-Domain Policies
-      permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+      permittedCrossDomainPolicies: { permittedPolicies: "none" },
 
       // Referrer Policy
-      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 
       // XSS Filter
       xssFilter: true,
@@ -73,23 +73,28 @@ export default registerAs('security', () => {
 
     // CORS configuration
     cors: {
-      origin: process.env.CORS_ORIGIN?.split(',') || (isProduction ? [] : '*'),
-      credentials: process.env.CORS_CREDENTIALS === 'true',
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-CSRF-Token'],
+      origin: process.env.CORS_ORIGIN?.split(",") || (isProduction ? [] : "*"),
+      credentials: process.env.CORS_CREDENTIALS === "true",
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Request-ID",
+        "X-CSRF-Token",
+      ],
       exposedHeaders: [
-        'X-Request-ID',
-        'X-RateLimit-Limit',
-        'X-RateLimit-Remaining',
-        'X-RateLimit-Reset',
+        "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
       ],
       maxAge: 86400, // 24 hours
     },
 
     // Rate limiting
     rateLimit: {
-      ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
-      limit: parseInt(process.env.RATE_LIMIT_LIMIT || '100', 10),
+      ttl: parseInt(process.env.RATE_LIMIT_TTL || "60", 10),
+      limit: parseInt(process.env.RATE_LIMIT_LIMIT || "100", 10),
 
       // Endpoint-specific limits
       endpoints: {
@@ -118,12 +123,12 @@ export default registerAs('security', () => {
 
     // CSRF protection
     csrf: {
-      enabled: process.env.CSRF_ENABLED !== 'false',
+      enabled: process.env.CSRF_ENABLED !== "false",
       cookie: {
-        key: '_csrf',
+        key: "_csrf",
         secure: isProduction,
         httpOnly: true,
-        sameSite: 'strict' as const,
+        sameSite: "strict" as const,
       },
     },
 
@@ -132,26 +137,26 @@ export default registerAs('security', () => {
       secret: process.env.COOKIE_SECRET,
       secure: isProduction,
       httpOnly: true,
-      sameSite: 'strict' as const,
+      sameSite: "strict" as const,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
 
     // Trust proxy configuration
-    trustProxy: parseInt(process.env.TRUST_PROXY_HOPS || '1', 10),
+    trustProxy: parseInt(process.env.TRUST_PROXY_HOPS || "1", 10),
 
     // IP whitelist for admin endpoints
-    adminIpWhitelist: process.env.ADMIN_IP_WHITELIST?.split(',') || [],
+    adminIpWhitelist: process.env.ADMIN_IP_WHITELIST?.split(",") || [],
 
     // Brute force protection
     bruteForce: {
-      maxAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
-      lockoutDuration: parseInt(process.env.LOCKOUT_DURATION || '900', 10), // 15 minutes
-      attemptWindow: parseInt(process.env.ATTEMPT_WINDOW || '300', 10), // 5 minutes
+      maxAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || "5", 10),
+      lockoutDuration: parseInt(process.env.LOCKOUT_DURATION || "900", 10), // 15 minutes
+      attemptWindow: parseInt(process.env.ATTEMPT_WINDOW || "300", 10), // 5 minutes
     },
 
     // Password policy
     password: {
-      minLength: parseInt(process.env.PASSWORD_MIN_LENGTH || '8', 10),
+      minLength: parseInt(process.env.PASSWORD_MIN_LENGTH || "8", 10),
       requireUppercase: true,
       requireLowercase: true,
       requireNumbers: true,
@@ -161,8 +166,11 @@ export default registerAs('security', () => {
 
     // Session settings
     session: {
-      maxConcurrentSessions: parseInt(process.env.MAX_CONCURRENT_SESSIONS || '5', 10),
-      sessionTimeout: parseInt(process.env.SESSION_TIMEOUT || '1800', 10), // 30 minutes
+      maxConcurrentSessions: parseInt(
+        process.env.MAX_CONCURRENT_SESSIONS || "5",
+        10,
+      ),
+      sessionTimeout: parseInt(process.env.SESSION_TIMEOUT || "1800", 10), // 30 minutes
     },
   };
 });

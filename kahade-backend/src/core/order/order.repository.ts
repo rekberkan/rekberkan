@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { Prisma } from "@prisma/client";
 import {
   Order,
   OrderStatus,
@@ -8,7 +8,7 @@ import {
   OrderCategory,
   FeePayer,
   Currency,
-} from '@prisma/client';
+} from "@prisma/client";
 
 export interface CreateOrderData {
   initiatorId: string;
@@ -29,7 +29,7 @@ export interface CreateOrderData {
 export interface OrderFilterOptions {
   userId: string;
   status?: OrderStatus;
-  role?: 'as_buyer' | 'as_seller';
+  role?: "as_buyer" | "as_seller";
   search?: string;
   dateFrom?: Date;
   dateTo?: Date;
@@ -38,7 +38,7 @@ export interface OrderFilterOptions {
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
 }
 
 export interface PaginatedOrders {
@@ -57,12 +57,15 @@ export class OrderRepository {
 
   private generateOrderNumber(): string {
     const date = new Date();
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
     return `ORD-${dateStr}-${random}`;
   }
 
-  async create(data: CreateOrderData, tx?: Prisma.TransactionClient): Promise<Order> {
+  async create(
+    data: CreateOrderData,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Order> {
     const prisma = tx ?? this.prisma;
     const order = await prisma.order.create({
       data: {
@@ -104,11 +107,16 @@ export class OrderRepository {
         },
       },
     });
-    this.logger.log(`Created order ${order.orderNumber} by user ${data.initiatorId}`);
+    this.logger.log(
+      `Created order ${order.orderNumber} by user ${data.initiatorId}`,
+    );
     return order;
   }
 
-  async findById(id: string, tx?: Prisma.TransactionClient): Promise<Order | null> {
+  async findById(
+    id: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Order | null> {
     const prisma = tx ?? this.prisma;
     return prisma.order.findUnique({
       where: { id, deletedAt: null },
@@ -136,8 +144,10 @@ export class OrderRepository {
         ratings: true,
         comments: {
           where: { deletedAt: null },
-          orderBy: { createdAt: 'asc' },
-          include: { user: { select: { id: true, username: true, avatarUrl: true } } },
+          orderBy: { createdAt: "asc" },
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+          },
         },
       },
     });
@@ -211,8 +221,8 @@ export class OrderRepository {
       where.AND = [
         {
           OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { orderNumber: { contains: search, mode: 'insensitive' } },
+            { title: { contains: search, mode: "insensitive" } },
+            { orderNumber: { contains: search, mode: "insensitive" } },
           ],
         },
       ];
@@ -257,7 +267,11 @@ export class OrderRepository {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async update(id: string, data: Partial<Order>, tx?: Prisma.TransactionClient): Promise<Order> {
+  async update(
+    id: string,
+    data: Partial<Order>,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Order> {
     const prisma = tx ?? this.prisma;
     return prisma.order.update({
       where: { id },
@@ -345,7 +359,11 @@ export class OrderRepository {
 
   async findPendingAutoRelease(): Promise<Order[]> {
     return this.prisma.order.findMany({
-      where: { status: OrderStatus.PAID, autoReleaseAt: { lte: new Date() }, deletedAt: null },
+      where: {
+        status: OrderStatus.PAID,
+        autoReleaseAt: { lte: new Date() },
+        deletedAt: null,
+      },
       include: { escrowHold: true, initiator: true, counterparty: true },
     });
   }

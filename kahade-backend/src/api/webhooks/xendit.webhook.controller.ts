@@ -10,12 +10,12 @@ import {
   BadRequestException,
   RawBodyRequest,
   Req,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { PaymentStatus, WebhookStatus } from '@prisma/client';
-import * as crypto from 'crypto';
-import { Request } from 'express';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "@infrastructure/database/prisma.service";
+import { PaymentStatus, WebhookStatus } from "@prisma/client";
+import * as crypto from "crypto";
+import { Request } from "express";
 
 // ============================================================================
 // BANK-GRADE XENDIT WEBHOOK CONTROLLER
@@ -41,7 +41,7 @@ interface XenditWebhookPayload {
   [key: string]: any;
 }
 
-@Controller('webhooks/xendit')
+@Controller("webhooks/xendit")
 export class XenditWebhookController {
   private readonly logger = new Logger(XenditWebhookController.name);
   private readonly webhookToken: string;
@@ -50,11 +50,14 @@ export class XenditWebhookController {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    this.webhookToken = this.configService.get<string>('XENDIT_WEBHOOK_VERIFICATION_TOKEN', '');
+    this.webhookToken = this.configService.get<string>(
+      "XENDIT_WEBHOOK_VERIFICATION_TOKEN",
+      "",
+    );
 
     if (!this.webhookToken) {
       this.logger.warn(
-        '⚠️  XENDIT_WEBHOOK_VERIFICATION_TOKEN not set! Webhook signature verification will fail.',
+        "⚠️  XENDIT_WEBHOOK_VERIFICATION_TOKEN not set! Webhook signature verification will fail.",
       );
     }
   }
@@ -63,18 +66,22 @@ export class XenditWebhookController {
   // INVOICE CALLBACK (Payment Notification)
   // ============================================================================
 
-  @Post('invoice')
+  @Post("invoice")
   @HttpCode(HttpStatus.OK)
   async handleInvoiceCallback(
     @Body() payload: XenditWebhookPayload,
-    @Headers('x-callback-token') callbackToken: string,
-    @Headers('webhook-id') webhookId: string,
+    @Headers("x-callback-token") callbackToken: string,
+    @Headers("webhook-id") webhookId: string,
     @Req() req: RawBodyRequest<Request>,
   ): Promise<{ status: string; message: string }> {
     // Validate required payload fields
     if (!payload || !payload.id || !payload.external_id || !payload.status) {
-      this.logger.warn('Invalid Xendit webhook payload: missing required fields');
-      throw new BadRequestException('Invalid webhook payload: missing required fields');
+      this.logger.warn(
+        "Invalid Xendit webhook payload: missing required fields",
+      );
+      throw new BadRequestException(
+        "Invalid webhook payload: missing required fields",
+      );
     }
 
     const requestIp = this.getClientIp(req);
@@ -88,13 +95,13 @@ export class XenditWebhookController {
     // Step 2: Store webhook event (for audit trail)
     const webhookEvent = await this.prisma.webhookEvent.create({
       data: {
-        provider: 'XENDIT',
+        provider: "XENDIT",
         eventId,
-        eventType: 'invoice.callback',
+        eventType: "invoice.callback",
         payload: payload as any,
         status: WebhookStatus.PENDING,
         signatureValid,
-        signatureError: signatureValid ? null : 'Invalid callback token',
+        signatureError: signatureValid ? null : "Invalid callback token",
         requestIp,
         requestHeaders: this.sanitizeHeaders(req.headers),
       },
@@ -108,12 +115,12 @@ export class XenditWebhookController {
         where: { id: webhookEvent.id },
         data: {
           status: WebhookStatus.FAILED,
-          processingError: 'Invalid callback token',
+          processingError: "Invalid callback token",
           processedAt: new Date(),
         },
       });
 
-      throw new UnauthorizedException('Invalid webhook signature');
+      throw new UnauthorizedException("Invalid webhook signature");
     }
 
     // Step 4: Check idempotency (prevent duplicate processing)
@@ -127,7 +134,7 @@ export class XenditWebhookController {
 
     if (existingEvent) {
       this.logger.warn(`Duplicate webhook event: ${eventId}`);
-      return { status: 'ok', message: 'Already processed' };
+      return { status: "ok", message: "Already processed" };
     }
 
     try {
@@ -143,9 +150,11 @@ export class XenditWebhookController {
         },
       });
 
-      return { status: 'ok', message: 'Processed successfully' };
+      return { status: "ok", message: "Processed successfully" };
     } catch (error) {
-      this.logger.error(`Failed to process webhook ${eventId}: ${error.message}`);
+      this.logger.error(
+        `Failed to process webhook ${eventId}: ${error.message}`,
+      );
 
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
@@ -158,7 +167,7 @@ export class XenditWebhookController {
       });
 
       // Return 200 to prevent Xendit from retrying (we handle retries internally)
-      return { status: 'error', message: 'Processing failed, will retry' };
+      return { status: "error", message: "Processing failed, will retry" };
     }
   }
 
@@ -166,12 +175,12 @@ export class XenditWebhookController {
   // DISBURSEMENT CALLBACK (Withdrawal Notification)
   // ============================================================================
 
-  @Post('disbursement')
+  @Post("disbursement")
   @HttpCode(HttpStatus.OK)
   async handleDisbursementCallback(
     @Body() payload: any,
-    @Headers('x-callback-token') callbackToken: string,
-    @Headers('webhook-id') webhookId: string,
+    @Headers("x-callback-token") callbackToken: string,
+    @Headers("webhook-id") webhookId: string,
     @Req() req: RawBodyRequest<Request>,
   ): Promise<{ status: string; message: string }> {
     const requestIp = this.getClientIp(req);
@@ -185,13 +194,13 @@ export class XenditWebhookController {
     // Store webhook event
     const webhookEvent = await this.prisma.webhookEvent.create({
       data: {
-        provider: 'XENDIT',
+        provider: "XENDIT",
         eventId,
-        eventType: 'disbursement.callback',
+        eventType: "disbursement.callback",
         payload: payload as any,
         status: WebhookStatus.PENDING,
         signatureValid,
-        signatureError: signatureValid ? null : 'Invalid callback token',
+        signatureError: signatureValid ? null : "Invalid callback token",
         requestIp,
         requestHeaders: this.sanitizeHeaders(req.headers),
       },
@@ -204,12 +213,12 @@ export class XenditWebhookController {
         where: { id: webhookEvent.id },
         data: {
           status: WebhookStatus.FAILED,
-          processingError: 'Invalid callback token',
+          processingError: "Invalid callback token",
           processedAt: new Date(),
         },
       });
 
-      throw new UnauthorizedException('Invalid webhook signature');
+      throw new UnauthorizedException("Invalid webhook signature");
     }
 
     try {
@@ -223,9 +232,11 @@ export class XenditWebhookController {
         },
       });
 
-      return { status: 'ok', message: 'Processed successfully' };
+      return { status: "ok", message: "Processed successfully" };
     } catch (error) {
-      this.logger.error(`Failed to process disbursement webhook: ${error.message}`);
+      this.logger.error(
+        `Failed to process disbursement webhook: ${error.message}`,
+      );
 
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
@@ -237,7 +248,7 @@ export class XenditWebhookController {
         },
       });
 
-      return { status: 'error', message: 'Processing failed' };
+      return { status: "error", message: "Processing failed" };
     }
   }
 
@@ -245,12 +256,12 @@ export class XenditWebhookController {
   // VIRTUAL ACCOUNT CALLBACK
   // ============================================================================
 
-  @Post('virtual-account')
+  @Post("virtual-account")
   @HttpCode(HttpStatus.OK)
   async handleVACallback(
     @Body() payload: any,
-    @Headers('x-callback-token') callbackToken: string,
-    @Headers('webhook-id') webhookId: string,
+    @Headers("x-callback-token") callbackToken: string,
+    @Headers("webhook-id") webhookId: string,
     @Req() req: RawBodyRequest<Request>,
   ): Promise<{ status: string; message: string }> {
     const requestIp = this.getClientIp(req);
@@ -262,13 +273,13 @@ export class XenditWebhookController {
 
     const webhookEvent = await this.prisma.webhookEvent.create({
       data: {
-        provider: 'XENDIT',
+        provider: "XENDIT",
         eventId,
-        eventType: 'virtual_account.callback',
+        eventType: "virtual_account.callback",
         payload: payload as any,
         status: WebhookStatus.PENDING,
         signatureValid,
-        signatureError: signatureValid ? null : 'Invalid callback token',
+        signatureError: signatureValid ? null : "Invalid callback token",
         requestIp,
         requestHeaders: this.sanitizeHeaders(req.headers),
       },
@@ -277,9 +288,12 @@ export class XenditWebhookController {
     if (!signatureValid) {
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
-        data: { status: WebhookStatus.FAILED, processingError: 'Invalid signature' },
+        data: {
+          status: WebhookStatus.FAILED,
+          processingError: "Invalid signature",
+        },
       });
-      throw new UnauthorizedException('Invalid webhook signature');
+      throw new UnauthorizedException("Invalid webhook signature");
     }
 
     try {
@@ -290,7 +304,7 @@ export class XenditWebhookController {
         data: { status: WebhookStatus.PROCESSED, processedAt: new Date() },
       });
 
-      return { status: 'ok', message: 'Processed successfully' };
+      return { status: "ok", message: "Processed successfully" };
     } catch (error) {
       await this.prisma.webhookEvent.update({
         where: { id: webhookEvent.id },
@@ -300,7 +314,7 @@ export class XenditWebhookController {
           retryCount: { increment: 1 },
         },
       });
-      return { status: 'error', message: 'Processing failed' };
+      return { status: "error", message: "Processing failed" };
     }
   }
 
@@ -313,12 +327,12 @@ export class XenditWebhookController {
    */
   private verifyCallbackToken(callbackToken: string): boolean {
     if (!this.webhookToken) {
-      this.logger.error('Webhook verification token not configured');
+      this.logger.error("Webhook verification token not configured");
       return false;
     }
 
     if (!callbackToken) {
-      this.logger.error('No callback token provided in request');
+      this.logger.error("No callback token provided in request");
       return false;
     }
 
@@ -329,7 +343,10 @@ export class XenditWebhookController {
     }
 
     try {
-      return crypto.timingSafeEqual(Buffer.from(callbackToken), Buffer.from(this.webhookToken));
+      return crypto.timingSafeEqual(
+        Buffer.from(callbackToken),
+        Buffer.from(this.webhookToken),
+      );
     } catch (error) {
       this.logger.error(`Callback token comparison error: ${error.message}`);
       return false;
@@ -339,15 +356,25 @@ export class XenditWebhookController {
   /**
    * BANK-GRADE: Verify HMAC signature (for some Xendit endpoints)
    */
-  private verifyHmacSignature(payload: string, signature: string, secret: string): boolean {
-    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  private verifyHmacSignature(
+    payload: string,
+    signature: string,
+    secret: string,
+  ): boolean {
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("hex");
 
     if (signature.length !== expectedSignature.length) {
       return false;
     }
 
     try {
-      return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+      return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature),
+      );
     } catch (error) {
       this.logger.error(`HMAC comparison error: ${error.message}`);
       return false;
@@ -377,14 +404,16 @@ export class XenditWebhookController {
       const paymentByExternal = await this.prisma.payment.findFirst({
         where: {
           paymentDetails: {
-            path: ['external_id'],
+            path: ["external_id"],
             equals: external_id,
           },
         },
       });
 
       if (!paymentByExternal) {
-        throw new BadRequestException(`Payment not found for invoice ${payload.id}`);
+        throw new BadRequestException(
+          `Payment not found for invoice ${payload.id}`,
+        );
       }
     }
 
@@ -393,14 +422,14 @@ export class XenditWebhookController {
       (await this.prisma.payment.findFirst({
         where: {
           paymentDetails: {
-            path: ['external_id'],
+            path: ["external_id"],
             equals: external_id,
           },
         },
       }));
 
     if (!targetPayment) {
-      throw new BadRequestException('Payment not found');
+      throw new BadRequestException("Payment not found");
     }
 
     // Map Xendit status to our status
@@ -447,13 +476,18 @@ export class XenditWebhookController {
       }
     });
 
-    this.logger.log(`Processed invoice callback for payment ${targetPayment.id}: ${status}`);
+    this.logger.log(
+      `Processed invoice callback for payment ${targetPayment.id}: ${status}`,
+    );
   }
 
   /**
    * Process disbursement callback (withdrawal completed)
    */
-  private async processDisbursementCallback(payload: any, _webhookEventId: string): Promise<void> {
+  private async processDisbursementCallback(
+    payload: any,
+    _webhookEventId: string,
+  ): Promise<void> {
     const { id, status } = payload;
 
     // Find withdrawal by provider disbursement ID
@@ -475,13 +509,13 @@ export class XenditWebhookController {
         data: {
           status: newStatus,
           processedAt: new Date(),
-          completedAt: status === 'COMPLETED' ? new Date() : null,
+          completedAt: status === "COMPLETED" ? new Date() : null,
           providerResponse: payload,
         },
       });
 
       // If failed, unlock the balance
-      if (status === 'FAILED') {
+      if (status === "FAILED") {
         await tx.wallet.update({
           where: { id: withdrawal.walletId },
           data: {
@@ -491,7 +525,7 @@ export class XenditWebhookController {
       }
 
       // If completed, deduct from locked balance
-      if (status === 'COMPLETED') {
+      if (status === "COMPLETED") {
         await tx.wallet.update({
           where: { id: withdrawal.walletId },
           data: {
@@ -502,13 +536,18 @@ export class XenditWebhookController {
       }
     });
 
-    this.logger.log(`Processed disbursement callback for withdrawal ${withdrawal.id}: ${status}`);
+    this.logger.log(
+      `Processed disbursement callback for withdrawal ${withdrawal.id}: ${status}`,
+    );
   }
 
   /**
    * Process VA callback
    */
-  private async processVACallback(payload: any, webhookEventId: string): Promise<void> {
+  private async processVACallback(
+    payload: any,
+    webhookEventId: string,
+  ): Promise<void> {
     // Similar to invoice callback
     await this.processInvoiceCallback(payload, webhookEventId);
   }
@@ -516,7 +555,10 @@ export class XenditWebhookController {
   /**
    * Handle completed payment (trigger deposit/order flow)
    */
-  private async handlePaymentCompleted(paymentId: string, tx: any): Promise<void> {
+  private async handlePaymentCompleted(
+    paymentId: string,
+    tx: any,
+  ): Promise<void> {
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
       include: { deposit: true, order: true },
@@ -529,7 +571,7 @@ export class XenditWebhookController {
       await tx.deposit.update({
         where: { id: payment.deposit.id },
         data: {
-          status: 'COMPLETED',
+          status: "COMPLETED",
           completedAt: new Date(),
         },
       });
@@ -548,7 +590,7 @@ export class XenditWebhookController {
       await tx.order.update({
         where: { id: payment.order.id },
         data: {
-          status: 'PAID',
+          status: "PAID",
           paidAt: new Date(),
         },
       });
@@ -573,28 +615,28 @@ export class XenditWebhookController {
 
   private mapDisbursementStatus(status: string): any {
     const statusMap: Record<string, string> = {
-      COMPLETED: 'COMPLETED',
-      PENDING: 'PROCESSING',
-      FAILED: 'FAILED',
+      COMPLETED: "COMPLETED",
+      PENDING: "PROCESSING",
+      FAILED: "FAILED",
     };
 
-    return statusMap[status] ?? 'PENDING';
+    return statusMap[status] ?? "PENDING";
   }
 
   private getClientIp(req: Request): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
+    const forwarded = req.headers["x-forwarded-for"];
+    if (typeof forwarded === "string") {
+      return forwarded.split(",")[0].trim();
     }
-    return req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    return req.ip ?? req.socket.remoteAddress ?? "unknown";
   }
 
   private sanitizeHeaders(headers: any): any {
     // Remove sensitive headers before storing
     const sanitized = { ...headers };
-    delete sanitized['authorization'];
-    delete sanitized['cookie'];
-    delete sanitized['x-callback-token'];
+    delete sanitized["authorization"];
+    delete sanitized["cookie"];
+    delete sanitized["x-callback-token"];
     return sanitized;
   }
 }

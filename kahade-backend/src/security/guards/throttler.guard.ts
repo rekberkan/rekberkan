@@ -1,6 +1,11 @@
-import { Injectable, ExecutionContext, CanActivate, Logger } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import {
+  Injectable,
+  ExecutionContext,
+  CanActivate,
+  Logger,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
 // Simple in-memory rate limiter
 interface RateLimitRecord {
@@ -56,7 +61,7 @@ export class ThrottlerGuard implements CanActivate {
     if (request.user?.id) {
       return `user:${request.user.id}`;
     }
-    return `ip:${request.ip || request.connection?.remoteAddress || 'unknown'}`;
+    return `ip:${request.ip || request.connection?.remoteAddress || "unknown"}`;
   }
 
   private cleanup(now: number): void {
