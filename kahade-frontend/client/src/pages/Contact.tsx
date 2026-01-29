@@ -25,7 +25,7 @@ const contactInfo = [
   {
     icon: Envelope,
     title: 'Email',
-    value: 'support@kahade.com',
+    value: 'support@rekberkan.com',
     description: 'Response within 24 hours'
   },
   {

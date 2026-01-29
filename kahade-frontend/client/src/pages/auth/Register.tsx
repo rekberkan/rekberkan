@@ -255,7 +255,7 @@ export default function Register() {
         phone: formData.phone || undefined
       });
       toast.success('Registration Successful!', {
-        description: 'Welcome to Kahade! Please check your email to verify your account.'
+        description: 'Welcome to Rekberkan! Please check your email to verify your account.'
       });
     } catch (error: any) {
       const { title, description } = getErrorMessage(error);
@@ -299,10 +299,10 @@ export default function Register() {
             <ShieldCheck className="w-24 h-24 text-white" weight="duotone" />
           </div>
           <h2 className="text-2xl font-bold mb-4 text-center text-white">
-            Join Kahade Today
+            Join Rekberkan Today
           </h2>
           <p className="text-white/70 text-center mb-8">
-            Enjoy various benefits as a Kahade member.
+            Enjoy various benefits as a Rekberkan member.
           </p>
           
           <ul className="space-y-4">
@@ -333,7 +333,7 @@ export default function Register() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 mb-8">
-            <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
+            <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
           </Link>
           
           <h1 className="text-3xl font-bold mb-2 text-black">Create Account</h1>

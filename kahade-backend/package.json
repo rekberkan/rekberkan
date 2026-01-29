@@ -1,7 +1,7 @@
 {
-  "name": "kahade-backend",
+  "name": "rekberkan-backend",
   "version": "1.0.0",
-  "description": "Kahade P2P Escrow Platform Backend API",
+  "description": "Rekberkan P2P Escrow Platform Backend API",
   "author": "Rekberkan Team",
   "private": true,
   "license": "MIT",

@@ -118,7 +118,7 @@ We will notify you of any material changes by posting the updated policy on our 
     title: 'Contact Us',
     content: `If you have questions about our use of cookies or this Cookie Policy, please contact us:
 
-Email: privacy@kahade.com
+Email: privacy@rekberkan.com
 Address: Jakarta, Indonesia
 
 You can also manage your cookie preferences at any time using the Cookie Settings button below.`

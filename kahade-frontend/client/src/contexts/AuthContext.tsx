@@ -67,12 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = response.data.user || response.data;
       const mappedUser = mapUserData(userData);
       setUser(mappedUser);
-      localStorage.setItem('kahade_user', JSON.stringify(mappedUser));
+      localStorage.setItem('rekberkan_user', JSON.stringify(mappedUser));
       return mappedUser;
     } catch (error) {
-      localStorage.removeItem('kahade_token');
-      localStorage.removeItem('kahade_user');
-      localStorage.removeItem('kahade_refresh_token');
+      localStorage.removeItem('rekberkan_token');
+      localStorage.removeItem('rekberkan_user');
+      localStorage.removeItem('rekberkan_refresh_token');
       setUser(null);
       throw error;
     }
@@ -80,15 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('kahade_token');
+      const token = localStorage.getItem('rekberkan_token');
       
       // Also check for cached user data for faster initial render
-      const cachedUser = localStorage.getItem('kahade_user');
+      const cachedUser = localStorage.getItem('rekberkan_user');
       if (cachedUser) {
         try {
           setUser(JSON.parse(cachedUser));
         } catch (e) {
-          localStorage.removeItem('kahade_user');
+          localStorage.removeItem('rekberkan_user');
         }
       }
       
@@ -112,16 +112,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { accessToken, token, refreshToken, user: userData } = response.data;
       
       const authToken = accessToken || token;
-      localStorage.setItem('kahade_token', authToken);
+      localStorage.setItem('rekberkan_token', authToken);
       if (refreshToken) {
-        localStorage.setItem('kahade_refresh_token', refreshToken);
+        localStorage.setItem('rekberkan_refresh_token', refreshToken);
       }
       
       let mappedUser: User;
       if (userData) {
         mappedUser = mapUserData(userData, email.split('@')[0]);
         setUser(mappedUser);
-        localStorage.setItem('kahade_user', JSON.stringify(mappedUser));
+        localStorage.setItem('rekberkan_user', JSON.stringify(mappedUser));
       } else {
         mappedUser = await fetchCurrentUser();
       }
@@ -139,9 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return mappedUser;
     } catch (error: any) {
-      localStorage.removeItem('kahade_token');
-      localStorage.removeItem('kahade_user');
-      localStorage.removeItem('kahade_refresh_token');
+      localStorage.removeItem('rekberkan_token');
+      localStorage.removeItem('rekberkan_user');
+      localStorage.removeItem('rekberkan_refresh_token');
       throw new Error(error.response?.data?.message || 'Login failed');
     } finally {
       setIsLoading(false);
@@ -161,16 +161,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { accessToken, token, refreshToken, user: userData } = response.data;
       
       if (accessToken || token) {
-        localStorage.setItem('kahade_token', accessToken || token);
+        localStorage.setItem('rekberkan_token', accessToken || token);
         if (refreshToken) {
-          localStorage.setItem('kahade_refresh_token', refreshToken);
+          localStorage.setItem('rekberkan_refresh_token', refreshToken);
         }
         
         if (userData) {
           const mappedUser = mapUserData(userData, data.username);
           mappedUser.phone = data.phone;
           setUser(mappedUser);
-          localStorage.setItem('kahade_user', JSON.stringify(mappedUser));
+          localStorage.setItem('rekberkan_user', JSON.stringify(mappedUser));
         } else {
           await fetchCurrentUser();
         }
@@ -195,9 +195,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Logout API error:', error);
     } finally {
       // Clear all stored tokens and data
-      localStorage.removeItem('kahade_token');
-      localStorage.removeItem('kahade_user');
-      localStorage.removeItem('kahade_refresh_token');
+      localStorage.removeItem('rekberkan_token');
+      localStorage.removeItem('rekberkan_user');
+      localStorage.removeItem('rekberkan_refresh_token');
       
       // Clear CSRF token from session storage
       SecureStorage.clearAll();
@@ -214,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
-    localStorage.setItem('kahade_user', JSON.stringify(updatedUser));
+    localStorage.setItem('rekberkan_user', JSON.stringify(updatedUser));
   };
 
   const refreshUser = async () => {

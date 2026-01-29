@@ -129,7 +129,7 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <AdminLayout title="Dashboard" subtitle="Kahade Platform Overview">
+      <AdminLayout title="Dashboard" subtitle="Rekberkan Platform Overview">
         <div className="flex items-center justify-center h-64">
           <Spinner className="w-8 h-8 animate-spin text-accent" />
         </div>
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <AdminLayout title="Dashboard" subtitle="Kahade Platform Overview">
+    <AdminLayout title="Dashboard" subtitle="Rekberkan Platform Overview">
       <div className="space-y-6">
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 flex items-center gap-3">

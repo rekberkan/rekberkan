@@ -1,5 +1,5 @@
 /*
- * KAHADE USER DASHBOARD - Modern Design
+ * REKBERKAN USER DASHBOARD - Modern Design
  * Brand color: #000000
  */
 
@@ -184,25 +184,25 @@ export default function Dashboard() {
         >
           <h2 className="text-lg font-semibold mb-4 text-black">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/app/transactions/new">
+            <Link href="/transactions/new">
               <Button className="w-full h-auto py-4 flex-col gap-2 btn-primary">
                 <Plus className="w-5 h-5" weight="bold" />
                 <span>New Transaction</span>
               </Button>
             </Link>
-            <Link href="/app/wallet">
+            <Link href="/wallet">
               <Button className="w-full h-auto py-4 flex-col gap-2 btn-secondary">
                 <ArrowDownRight className="w-5 h-5" weight="bold" />
                 <span>Top Up</span>
               </Button>
             </Link>
-            <Link href="/app/wallet">
+            <Link href="/wallet">
               <Button className="w-full h-auto py-4 flex-col gap-2 btn-secondary">
                 <ArrowUpRight className="w-5 h-5" weight="bold" />
                 <span>Withdraw</span>
               </Button>
             </Link>
-            <Link href="/app/profile">
+            <Link href="/profile">
               <Button className="w-full h-auto py-4 flex-col gap-2 btn-secondary">
                 <ShieldCheck className="w-5 h-5" weight="bold" />
                 <span>Verify KYC</span>
@@ -222,7 +222,7 @@ export default function Dashboard() {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-black">Recent Transactions</h2>
-              <Link href="/app/transactions">
+              <Link href="/transactions">
                 <Button variant="ghost" size="sm" className="text-black hover:text-[#6B7280]">
                   View All
                   <ArrowRight className="w-4 h-4 ml-1" weight="bold" />
@@ -234,7 +234,7 @@ export default function Dashboard() {
               <div className="text-center py-8 text-[#6B7280]">
                 <Receipt className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No transactions yet</p>
-                <Link href="/app/transactions/new">
+                <Link href="/transactions/new">
                   <Button className="mt-4 btn-primary">
                     <Plus className="w-4 h-4 mr-2" weight="bold" />
                     Create First Transaction
@@ -247,7 +247,7 @@ export default function Dashboard() {
                   const status = statusConfig[tx.status] || statusConfig.PENDING_ACCEPT;
                   const isBuyer = tx.initiatorRole === 'BUYER';
                   return (
-                    <Link key={tx.id} href={`/app/transactions/${tx.id}`}>
+                    <Link key={tx.id} href={`/transactions/${tx.id}`}>
                       <div className="flex items-center gap-4 p-4 rounded-xl bg-[#FAFAFA] hover:bg-[#F5F5F5] transition-colors cursor-pointer border border-transparent hover:border-[#E5E5E5]">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isBuyer ? 'bg-[#F5F5F5] text-black' : 'bg-black text-white'}`}>
                           {isBuyer ? <ArrowUpRight className="w-5 h-5" weight="bold" /> : <ArrowDownRight className="w-5 h-5" weight="bold" />}
@@ -323,7 +323,7 @@ export default function Dashboard() {
                 <p className="text-sm text-[#6B7280] mb-4">
                   Increase your transaction limits and access premium features with KYC verification.
                 </p>
-                <Link href="/app/profile">
+                <Link href="/profile">
                   <Button className="btn-primary">
                     Start Verification
                     <ArrowRight className="w-4 h-4 ml-2" weight="bold" />

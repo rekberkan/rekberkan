@@ -17,35 +17,35 @@ import { Input } from '@/components/ui/input';
 const pressReleases = [
   {
     id: 1,
-    title: 'Kahade Raises $25M Series B to Expand Across Southeast Asia',
+    title: 'Rekberkan Raises $25M Series B to Expand Across Southeast Asia',
     date: 'Jan 20, 2026',
     category: 'Funding',
     excerpt: 'The funding round was led by prominent venture capital firms, bringing total funding to $40M.'
   },
   {
     id: 2,
-    title: 'Kahade Launches Mobile App for iOS and Android',
+    title: 'Rekberkan Launches Mobile App for iOS and Android',
     date: 'Jan 10, 2026',
     category: 'Product',
     excerpt: 'The new mobile app brings the full escrow experience to users on the go.'
   },
   {
     id: 3,
-    title: 'Kahade Partners with Major E-commerce Platforms',
+    title: 'Rekberkan Partners with Major E-commerce Platforms',
     date: 'Dec 15, 2025',
     category: 'Partnership',
     excerpt: 'Strategic partnerships to provide escrow services to millions of online sellers.'
   },
   {
     id: 4,
-    title: 'Kahade Achieves SOC 2 Type II Certification',
+    title: 'Rekberkan Achieves SOC 2 Type II Certification',
     date: 'Nov 28, 2025',
     category: 'Security',
     excerpt: 'Demonstrating our commitment to the highest security and compliance standards.'
   },
   {
     id: 5,
-    title: 'Kahade Surpasses 1 Million Transactions Milestone',
+    title: 'Rekberkan Surpasses 1 Million Transactions Milestone',
     date: 'Oct 15, 2025',
     category: 'Milestone',
     excerpt: 'A testament to the growing trust in our platform from users worldwide.'
@@ -53,10 +53,10 @@ const pressReleases = [
 ];
 
 const mediaFeatures = [
-  { outlet: 'TechCrunch', title: 'How Kahade is Solving Trust in P2P Commerce', date: 'Jan 2026' },
+  { outlet: 'TechCrunch', title: 'How Rekberkan is Solving Trust in P2P Commerce', date: 'Jan 2026' },
   { outlet: 'Forbes', title: 'Top 10 Fintech Startups to Watch in 2026', date: 'Jan 2026' },
   { outlet: 'Bloomberg', title: 'The Rise of Escrow Services in Digital Commerce', date: 'Dec 2025' },
-  { outlet: 'The Verge', title: 'Kahade Review: Making Online Transactions Safer', date: 'Nov 2025' },
+  { outlet: 'The Verge', title: 'Rekberkan Review: Making Online Transactions Safer', date: 'Nov 2025' },
 ];
 
 const mediaKitItems = [
@@ -91,10 +91,10 @@ export default function Press() {
               Press & News
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
-              Kahade in the News
+              Rekberkan in the News
             </h1>
             <p className="text-xl text-[#6B7280] mb-8">
-              Stay updated with the latest news, press releases, and media coverage about Kahade.
+              Stay updated with the latest news, press releases, and media coverage about Rekberkan.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -213,7 +213,7 @@ export default function Press() {
             className="text-center mb-12"
           >
             <h2 className="text-2xl font-bold mb-4 text-black">Media Kit</h2>
-            <p className="text-[#6B7280]">Download official Kahade brand assets</p>
+            <p className="text-[#6B7280]">Download official Rekberkan brand assets</p>
           </motion.div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -265,7 +265,7 @@ export default function Press() {
               For press inquiries, interview requests, or media partnerships, please contact our communications team.
             </p>
             <div className="bg-white/10 rounded-xl p-6 inline-block">
-              <div className="text-lg font-semibold text-white">press@kahade.com</div>
+              <div className="text-lg font-semibold text-white">press@rekberkan.com</div>
               <div className="text-sm text-white/70">We typically respond within 24 hours</div>
             </div>
           </motion.div>

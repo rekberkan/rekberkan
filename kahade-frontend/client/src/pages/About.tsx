@@ -34,7 +34,7 @@ const values = [
 ];
 
 const milestones = [
-  { year: '2023', title: 'Founded', description: 'Kahade was founded with the vision of becoming a trusted escrow platform.' },
+  { year: '2023', title: 'Founded', description: 'Rekberkan was founded with the vision of becoming a trusted escrow platform.' },
   { year: '2024', title: 'Platform Launch', description: 'Launched the escrow platform with complete security features.' },
   { year: '2024', title: '10,000 Users', description: 'Reached the milestone of 10,000 active users.' },
   { year: '2025', title: 'Regional Expansion', description: 'Expanding services throughout Southeast Asia.' }
@@ -61,7 +61,7 @@ export default function About() {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
-              About Kahade
+              About Rekberkan
             </h1>
             <p className="text-lg text-[#6B7280]">
               We are a dedicated team creating a safe, transparent, and trusted 
@@ -159,7 +159,7 @@ export default function About() {
           >
             <h2 className="text-3xl font-bold mb-4 text-black">Our Journey</h2>
             <p className="text-[#6B7280] max-w-2xl mx-auto">
-              Important milestones in Kahade's journey.
+              Important milestones in Rekberkan's journey.
             </p>
           </motion.div>
           

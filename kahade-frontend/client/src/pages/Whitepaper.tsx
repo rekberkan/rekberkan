@@ -17,7 +17,7 @@ const tableOfContents = [
   { number: '01', title: 'Executive Summary', page: 3 },
   { number: '02', title: 'Problem Statement', page: 5 },
   { number: '03', title: 'Market Analysis', page: 8 },
-  { number: '04', title: 'The Kahade Solution', page: 12 },
+  { number: '04', title: 'The Rekberkan Solution', page: 12 },
   { number: '05', title: 'Technology Architecture', page: 18 },
   { number: '06', title: 'Security Framework', page: 24 },
   { number: '07', title: 'Business Model', page: 28 },
@@ -80,7 +80,7 @@ export default function Whitepaper() {
                 Official Document
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
-                Kahade Whitepaper
+                Rekberkan Whitepaper
               </h1>
               <p className="text-xl text-[#6B7280] mb-6">
                 A comprehensive overview of our vision, technology, and strategy for building 
@@ -267,7 +267,7 @@ export default function Whitepaper() {
               </Link>
               <Link href="/about">
                 <Button className="bg-transparent text-white border border-white/30 hover:bg-white/10 px-8 py-3 h-auto font-semibold rounded-lg">
-                  About Kahade
+                  About Rekberkan
                 </Button>
               </Link>
             </div>

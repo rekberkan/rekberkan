@@ -1,0 +1,12 @@
+# Rekberkan - robots.txt
+# https://rekberkan.cloud
+
+User-agent: *
+Allow: /
+
+# Disallow admin and app subdomains from indexing
+User-agent: *
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://rekberkan.cloud/sitemap.xml

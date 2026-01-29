@@ -14,9 +14,9 @@ const sections = [
   {
     id: 'introduction',
     title: '1. Introduction',
-    content: `Kahade ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform and services.
+    content: `Rekberkan ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform and services.
 
-By using Kahade, you consent to the data practices described in this policy. If you do not agree with our policies, please do not use our services.`
+By using Rekberkan, you consent to the data practices described in this policy. If you do not agree with our policies, please do not use our services.`
   },
   {
     id: 'collection',
@@ -122,7 +122,7 @@ After account closure, we may retain certain information as required by law or f
 • Restriction: Request restriction of processing
 • Withdrawal: Withdraw consent where processing is based on consent
 
-To exercise these rights, please contact us at privacy@kahade.com. We will respond to your request within 30 days.`
+To exercise these rights, please contact us at privacy@rekberkan.com. We will respond to your request within 30 days.`
   },
   {
     id: 'cookies',
@@ -178,7 +178,7 @@ Your continued use of our services after changes are posted constitutes acceptan
     content: `If you have questions about this Privacy Policy or our data practices, please contact us:
 
 Data Protection Officer
-Email: privacy@kahade.com
+Email: privacy@rekberkan.com
 Address: Jakarta, Indonesia
 
 For EU residents, you also have the right to lodge a complaint with your local data protection authority.`
@@ -261,7 +261,7 @@ export default function Privacy() {
             >
               <div className="bg-white rounded-xl border border-[#E5E5E5] p-8">
                 <p className="text-lg text-[#6B7280] mb-8">
-                  Your privacy is important to us. This Privacy Policy explains how Kahade collects, uses, 
+                  Your privacy is important to us. This Privacy Policy explains how Rekberkan collects, uses, 
                   and protects your personal information.
                 </p>
                 

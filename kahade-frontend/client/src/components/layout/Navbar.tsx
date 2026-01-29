@@ -47,7 +47,7 @@ const megaMenuData = {
     ],
     featured: {
       title: 'New Release',
-      description: 'Introducing Kahade Mobile App - Secure transactions on the go',
+      description: 'Introducing Rekberkan Mobile App - Secure transactions on the go',
       href: '/mobile-app',
       badge: 'New'
     }
@@ -162,7 +162,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center shrink-0">
           <img 
             src="/images/logo.svg" 
-            alt="Kahade" 
+            alt="Rekberkan" 
             className="h-8 w-auto"
           />
         </Link>

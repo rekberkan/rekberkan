@@ -1,5 +1,5 @@
 /*
- * KAHADE ADMIN LAYOUT
+ * REKBERKAN ADMIN LAYOUT
  * 
  * Features:
  * - Admin sidebar with nested menus
@@ -172,7 +172,7 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
         {/* Logo */}
         <div className="p-4 border-b border-border">
           <Link href="/" className="flex items-center gap-3">
-            <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
+            <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
             <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-600 rounded-md">
               ADMIN
             </span>
@@ -205,12 +205,12 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href="/app" className="flex-1">
+            <a href={import.meta.env.VITE_APP_URL || 'https://app.rekberkan.cloud'} className="flex-1">
               <Button variant="outline" size="sm" className="w-full">
                 <Globe className="w-4 h-4 mr-2" />
                 User View
               </Button>
-            </Link>
+            </a>
             <Button 
               variant="ghost" 
               size="sm"
@@ -243,7 +243,7 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
             >
               <div className="p-4 flex items-center justify-between border-b border-border sticky top-0 bg-white">
                 <Link href="/" className="flex items-center gap-2">
-                  <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
+                  <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
                   <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-600 rounded-md">
                     ADMIN
                   </span>

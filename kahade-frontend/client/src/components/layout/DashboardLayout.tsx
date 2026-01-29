@@ -1,5 +1,5 @@
 /*
- * KAHADE USER DASHBOARD LAYOUT - Modern Design
+ * REKBERKAN USER DASHBOARD LAYOUT - Modern Design
  * Brand color: #000000
  */
 
@@ -24,17 +24,17 @@ interface DashboardLayoutProps {
 }
 
 const navItems = [
-  { href: '/app', icon: House, label: 'Overview' },
-  { href: '/app/transactions', icon: ArrowsLeftRight, label: 'Transactions' },
-  { href: '/app/wallet', icon: Wallet, label: 'Wallet' },
-  { href: '/app/bank-accounts', icon: Bank, label: 'Bank Accounts' },
-  { href: '/app/disputes', icon: Scales, label: 'Disputes' },
-  { href: '/app/referrals', icon: Users, label: 'Referrals' },
-  { href: '/app/kyc', icon: IdentificationCard, label: 'KYC Verification' },
-  { href: '/app/activity', icon: ClockCounterClockwise, label: 'Activity Log' },
-  { href: '/app/notifications', icon: Bell, label: 'Notifications' },
-  { href: '/app/profile', icon: User, label: 'Profile' },
-  { href: '/app/settings', icon: Gear, label: 'Settings' },
+  { href: '/', icon: House, label: 'Overview' },
+  { href: '/transactions', icon: ArrowsLeftRight, label: 'Transactions' },
+  { href: '/wallet', icon: Wallet, label: 'Wallet' },
+  { href: '/bank-accounts', icon: Bank, label: 'Bank Accounts' },
+  { href: '/disputes', icon: Scales, label: 'Disputes' },
+  { href: '/referrals', icon: Users, label: 'Referrals' },
+  { href: '/kyc', icon: IdentificationCard, label: 'KYC Verification' },
+  { href: '/activity', icon: ClockCounterClockwise, label: 'Activity Log' },
+  { href: '/notifications', icon: Bell, label: 'Notifications' },
+  { href: '/profile', icon: User, label: 'Profile' },
+  { href: '/settings', icon: Gear, label: 'Settings' },
 ];
 
 export default function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
@@ -64,7 +64,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
           <Link href="/" className="flex items-center gap-2">
             <img 
               src="/images/logo.svg" 
-              alt="Kahade" 
+              alt="Rekberkan" 
               className={cn("h-8 w-auto", isSidebarCollapsed && "mx-auto")}
             />
           </Link>
@@ -81,7 +81,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
         
         {/* Quick Action */}
         <div className="p-4">
-          <Link href="/app/transactions/new">
+          <Link href="/transactions/new">
             <Button className={cn("btn-primary w-full", isSidebarCollapsed ? "px-3" : "justify-start")}>
               <Plus className="w-5 h-5" weight="bold" />
               {!isSidebarCollapsed && <span className="ml-2">New Transaction</span>}
@@ -93,7 +93,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location === item.href || 
-              (item.href !== '/app' && location.startsWith(item.href));
+              (item.href !== '/' && location.startsWith(item.href));
             
             return (
               <Link
@@ -177,7 +177,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
             >
               <div className="p-4 flex items-center justify-between border-b border-[#E5E5E5]">
                 <Link href="/" className="flex items-center gap-2">
-                  <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
+                  <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
                 </Link>
                 <button 
                   onClick={() => setIsSidebarOpen(false)}
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
               </div>
               
               <div className="p-4">
-                <Link href="/app/transactions/new">
+                <Link href="/transactions/new">
                   <Button className="btn-primary w-full justify-start">
                     <Plus className="w-5 h-5 mr-2" weight="bold" />
                     New Transaction
@@ -199,7 +199,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
               <nav className="p-4 space-y-1">
                 {navItems.map((item) => {
                   const isActive = location === item.href || 
-                    (item.href !== '/app' && location.startsWith(item.href));
+                    (item.href !== '/' && location.startsWith(item.href));
                   
                   return (
                     <Link
@@ -267,7 +267,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
               </div>
               
               {/* Notifications */}
-              <Link href="/app/notifications">
+              <Link href="/notifications">
                 <Button variant="ghost" size="icon" className="relative hover:bg-[#F5F5F5]">
                   <Bell className="w-5 h-5 text-black" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-black rounded-full" />
@@ -302,7 +302,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         <div className="text-sm text-[#9CA3AF] truncate">{user?.email}</div>
                       </div>
                       <Link
-                        href="/app/profile"
+                        href="/profile"
                         onClick={() => setIsProfileDropdownOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#6B7280] hover:bg-[#F5F5F5] hover:text-black transition-colors"
                       >
@@ -310,7 +310,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         Profile
                       </Link>
                       <Link
-                        href="/app/settings"
+                        href="/settings"
                         onClick={() => setIsProfileDropdownOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#6B7280] hover:bg-[#F5F5F5] hover:text-black transition-colors"
                       >

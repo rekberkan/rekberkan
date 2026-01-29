@@ -25,10 +25,10 @@ const categories = [
 
 const featuredPost = {
   id: 1,
-  title: 'Introducing Kahade 2.0: A New Era of Secure Transactions',
-  excerpt: 'We are excited to announce the launch of Kahade 2.0, featuring a completely redesigned interface, enhanced security measures, and new features that make P2P escrow easier than ever.',
+  title: 'Introducing Rekberkan 2.0: A New Era of Secure Transactions',
+  excerpt: 'We are excited to announce the launch of Rekberkan 2.0, featuring a completely redesigned interface, enhanced security measures, and new features that make P2P escrow easier than ever.',
   category: 'Product Updates',
-  author: 'Kahade Team',
+  author: 'Rekberkan Team',
   date: 'Jan 25, 2026',
   readTime: '5 min read',
   image: '/images/blog/featured.jpg'
@@ -76,7 +76,7 @@ const posts = [
     title: 'New Feature: Instant Dispute Resolution',
     excerpt: 'Introducing our AI-powered dispute resolution system for faster outcomes.',
     category: 'Product Updates',
-    author: 'Kahade Team',
+    author: 'Rekberkan Team',
     date: 'Jan 12, 2026',
     readTime: '3 min read'
   },
@@ -116,13 +116,13 @@ export default function Blog() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F5F5F5] text-black text-sm font-medium mb-6">
               <BookOpen className="w-4 h-4" weight="fill" />
-              Kahade Blog
+              Rekberkan Blog
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Insights & Updates
             </h1>
             <p className="text-xl text-[#6B7280] mb-8">
-              Stay informed with the latest news, tips, and updates from the Kahade team.
+              Stay informed with the latest news, tips, and updates from the Rekberkan team.
             </p>
             
             {/* Search */}

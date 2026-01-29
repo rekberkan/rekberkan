@@ -26,18 +26,18 @@ const faqCategories = [
 const faqs = [
   {
     category: 'general',
-    question: 'What is Kahade?',
-    answer: 'Kahade is a secure peer-to-peer escrow platform that protects both buyers and sellers in online transactions. We hold funds safely until both parties fulfill their obligations, ensuring a trustworthy exchange.'
+    question: 'What is Rekberkan?',
+    answer: 'Rekberkan is a secure peer-to-peer escrow platform that protects both buyers and sellers in online transactions. We hold funds safely until both parties fulfill their obligations, ensuring a trustworthy exchange.'
   },
   {
     category: 'general',
     question: 'How does escrow work?',
-    answer: 'Escrow works in three simple steps: 1) The buyer deposits funds into Kahade, 2) The seller delivers the goods or services, 3) Once the buyer confirms satisfaction, we release the funds to the seller. This protects both parties from fraud.'
+    answer: 'Escrow works in three simple steps: 1) The buyer deposits funds into Rekberkan, 2) The seller delivers the goods or services, 3) Once the buyer confirms satisfaction, we release the funds to the seller. This protects both parties from fraud.'
   },
   {
     category: 'general',
-    question: 'Is Kahade safe to use?',
-    answer: 'Yes, Kahade employs bank-level security measures including 256-bit SSL encryption, two-factor authentication, and secure fund storage. Your money is protected throughout the entire transaction process.'
+    question: 'Is Rekberkan safe to use?',
+    answer: 'Yes, Rekberkan employs bank-level security measures including 256-bit SSL encryption, two-factor authentication, and secure fund storage. Your money is protected throughout the entire transaction process.'
   },
   {
     category: 'transactions',
@@ -129,7 +129,7 @@ export default function FAQ() {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-[#6B7280] mb-8">
-              Find quick answers to common questions about Kahade.
+              Find quick answers to common questions about Rekberkan.
             </p>
             
             {/* Search */}

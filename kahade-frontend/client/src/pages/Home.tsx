@@ -103,7 +103,7 @@ const steps = [
   {
     step: '02',
     title: 'Deposit Funds',
-    description: 'Buyer deposits funds into Kahade\'s secure escrow account.',
+    description: 'Buyer deposits funds into Rekberkan\'s secure escrow account.',
     icon: Wallet,
   },
   {
@@ -185,7 +185,7 @@ const testimonials = [
     name: 'Sarah Wijaya',
     role: 'Freelance Designer',
     company: 'Independent',
-    content: 'Kahade has transformed how I handle client payments. No more chasing invoices or worrying about non-payment. The escrow system gives both me and my clients peace of mind.',
+    content: 'Rekberkan has transformed how I handle client payments. No more chasing invoices or worrying about non-payment. The escrow system gives both me and my clients peace of mind.',
     rating: 5,
     avatar: 'SW'
   },
@@ -193,7 +193,7 @@ const testimonials = [
     name: 'Michael Chen',
     role: 'E-commerce Owner',
     company: 'TechGadgets Store',
-    content: 'As an online seller, trust is everything. Kahade helps me build that trust with new customers. The transaction process is smooth and the support team is incredibly responsive.',
+    content: 'As an online seller, trust is everything. Rekberkan helps me build that trust with new customers. The transaction process is smooth and the support team is incredibly responsive.',
     rating: 5,
     avatar: 'MC'
   },
@@ -201,7 +201,7 @@ const testimonials = [
     name: 'Emily Rodriguez',
     role: 'Digital Marketer',
     company: 'Growth Agency',
-    content: 'We use Kahade for all our client projects now. The transparency and security features are exactly what we needed. Highly recommend for any service-based business.',
+    content: 'We use Rekberkan for all our client projects now. The transparency and security features are exactly what we needed. Highly recommend for any service-based business.',
     rating: 5,
     avatar: 'ER'
   },
@@ -255,7 +255,7 @@ export default function Home() {
               <motion.div variants={fadeInUp}>
                 <Link href="/mobile-app" className="badge-announcement inline-flex mb-6">
                   <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
-                  <span>Introducing Kahade Mobile App</span>
+                  <span>Introducing Rekberkan Mobile App</span>
                   <ArrowRight className="w-4 h-4" weight="bold" />
                 </Link>
               </motion.div>
@@ -473,7 +473,7 @@ export default function Home() {
             className="mt-12 bg-black rounded-2xl p-8 text-white text-center"
           >
             <ShieldCheck className="w-12 h-12 mx-auto mb-4" weight="duotone" />
-            <h3 className="text-2xl font-bold mb-2">Kahade eliminates these risks</h3>
+            <h3 className="text-2xl font-bold mb-2">Rekberkan eliminates these risks</h3>
             <p className="text-white/70 max-w-2xl mx-auto">
               Our escrow system holds funds securely until both parties are satisfied, 
               ensuring fair and protected transactions for everyone.
@@ -492,7 +492,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-black">
-              Why choose Kahade?
+              Why choose Rekberkan?
             </h2>
             <p className="text-[#6B7280] max-w-2xl mx-auto">
               The most comprehensive escrow platform with cutting-edge security features.
@@ -530,7 +530,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-black">
-              How Kahade works
+              How Rekberkan works
             </h2>
             <p className="text-[#6B7280] max-w-2xl mx-auto">
               Simple 5-step process for secure and trusted transactions.
@@ -686,7 +686,7 @@ export default function Home() {
               Loved by thousands
             </h2>
             <p className="text-[#6B7280] max-w-2xl mx-auto">
-              See what our customers have to say about their experience with Kahade.
+              See what our customers have to say about their experience with Rekberkan.
             </p>
           </motion.div>
           
@@ -744,7 +744,7 @@ export default function Home() {
               Start securing your transactions today
             </h2>
             <p className="text-white/70 max-w-2xl mx-auto mb-8 text-lg">
-              Join thousands of users who trust Kahade for their online transactions.
+              Join thousands of users who trust Rekberkan for their online transactions.
               Get started for free, no credit card required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

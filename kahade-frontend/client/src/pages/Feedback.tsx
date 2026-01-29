@@ -67,7 +67,7 @@ export default function Feedback() {
               </div>
               <h1 className="text-3xl font-bold mb-4 text-black">Thank You!</h1>
               <p className="text-[#6B7280] mb-8">
-                Your feedback has been submitted successfully. We appreciate you taking the time to help us improve Kahade.
+                Your feedback has been submitted successfully. We appreciate you taking the time to help us improve Rekberkan.
               </p>
               <Button onClick={() => setIsSubmitted(false)} className="btn-primary">
                 Submit Another Feedback
@@ -100,7 +100,7 @@ export default function Feedback() {
               We Value Your Feedback
             </h1>
             <p className="text-xl text-[#6B7280]">
-              Help us improve Kahade by sharing your thoughts, ideas, and suggestions.
+              Help us improve Rekberkan by sharing your thoughts, ideas, and suggestions.
             </p>
           </motion.div>
         </div>

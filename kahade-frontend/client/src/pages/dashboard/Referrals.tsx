@@ -92,7 +92,7 @@ export default function Referrals() {
     if (stats?.referralCode && navigator.share) {
       try {
         await navigator.share({
-          title: 'Join Kahade',
+          title: 'Join Rekberkan',
           text: `Use my referral code ${stats.referralCode} to get a bonus when you sign up!`,
           url: `${window.location.origin}/register?ref=${stats.referralCode}`,
         });

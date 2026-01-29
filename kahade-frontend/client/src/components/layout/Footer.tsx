@@ -63,12 +63,12 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: TwitterLogo, href: 'https://twitter.com/kahade', label: 'Twitter' },
-  { icon: InstagramLogo, href: 'https://instagram.com/kahade', label: 'Instagram' },
-  { icon: LinkedinLogo, href: 'https://linkedin.com/company/kahade', label: 'LinkedIn' },
-  { icon: GithubLogo, href: 'https://github.com/kahade', label: 'GitHub' },
-  { icon: YoutubeLogo, href: 'https://youtube.com/@kahade', label: 'YouTube' },
-  { icon: DiscordLogo, href: 'https://discord.gg/kahade', label: 'Discord' },
+  { icon: TwitterLogo, href: 'https://twitter.com/rekberkan', label: 'Twitter' },
+  { icon: InstagramLogo, href: 'https://instagram.com/rekberkan', label: 'Instagram' },
+  { icon: LinkedinLogo, href: 'https://linkedin.com/company/rekberkan', label: 'LinkedIn' },
+  { icon: GithubLogo, href: 'https://github.com/rekberkan', label: 'GitHub' },
+  { icon: YoutubeLogo, href: 'https://youtube.com/@rekberkan', label: 'YouTube' },
+  { icon: DiscordLogo, href: 'https://discord.gg/rekberkan', label: 'Discord' },
 ];
 
 const complianceBadges = [
@@ -89,7 +89,7 @@ export default function Footer() {
             <Link href="/" className="inline-block mb-5">
               <img 
                 src="/images/logo-white.svg" 
-                alt="Kahade" 
+                alt="Rekberkan" 
                 className="h-8 w-auto"
                 onError={(e) => {
                   // Fallback to regular logo with filter
@@ -100,7 +100,7 @@ export default function Footer() {
               />
             </Link>
             <p className="text-[#9CA3AF] text-sm leading-relaxed max-w-sm mb-6">
-              Kahade is Indonesia's trusted P2P escrow platform for secure online transactions. 
+              Rekberkan is Indonesia's trusted P2P escrow platform for secure online transactions. 
               We protect both buyers and sellers with our transparent and reliable escrow service.
             </p>
             
@@ -210,7 +210,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Copyright */}
             <p className="text-sm text-[#6B7280]">
-              © {new Date().getFullYear()} Kahade. All rights reserved.
+              © {new Date().getFullYear()} Rekberkan. All rights reserved.
             </p>
             
             {/* Compliance Badges */}

@@ -16,9 +16,9 @@ const API_BASE_URL = APP_URLS.api;
 const REQUEST_TIMEOUT = 30000;
 
 // Token storage keys
-const TOKEN_KEY = 'kahade_token';
-const USER_KEY = 'kahade_user';
-const REFRESH_TOKEN_KEY = 'kahade_refresh_token';
+const TOKEN_KEY = 'rekberkan_token';
+const USER_KEY = 'rekberkan_user';
+const REFRESH_TOKEN_KEY = 'rekberkan_refresh_token';
 
 // Create axios instance with default config
 const api = axios.create({

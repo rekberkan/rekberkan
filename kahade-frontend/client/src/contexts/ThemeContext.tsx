@@ -20,7 +20,7 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   defaultTheme = "light",
-  storageKey = "kahade-theme",
+  storageKey = "rekberkan-theme",
 }: ThemeProviderProps) {
   // Always light mode
   const theme: Theme = "light";

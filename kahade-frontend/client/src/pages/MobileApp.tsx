@@ -62,10 +62,10 @@ export default function MobileApp() {
                 Coming Soon
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-black">
-                Kahade in Your Pocket
+                Rekberkan in Your Pocket
               </h1>
               <p className="text-xl text-[#6B7280] mb-8 max-w-lg">
-                Experience the full power of Kahade escrow on your mobile device. 
+                Experience the full power of Rekberkan escrow on your mobile device. 
                 Secure transactions, instant notifications, and complete control wherever you go.
               </p>
               
@@ -113,7 +113,7 @@ export default function MobileApp() {
                     <div className="w-20 h-20 rounded-2xl bg-black flex items-center justify-center mx-auto mb-4">
                       <DeviceMobile className="w-10 h-10 text-white" weight="fill" />
                     </div>
-                    <div className="font-semibold text-lg text-black">Kahade Mobile</div>
+                    <div className="font-semibold text-lg text-black">Rekberkan Mobile</div>
                     <div className="text-sm text-[#6B7280]">Coming Soon</div>
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export default function MobileApp() {
               Get Notified When We Launch
             </h2>
             <p className="text-xl text-white/70 mb-8">
-              Be the first to know when Kahade Mobile is available for download.
+              Be the first to know when Rekberkan Mobile is available for download.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">

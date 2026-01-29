@@ -23,7 +23,7 @@ const steps = [
   {
     icon: UserPlus,
     title: 'Create Account',
-    description: 'Create a free account on Kahade. Registration is quick and easy, just need email and password.',
+    description: 'Create a free account on Rekberkan. Registration is quick and easy, just need email and password.',
     details: [
       'Email verification for account security',
       'Complete profile to increase trust',
@@ -44,10 +44,10 @@ const steps = [
   {
     icon: Wallet,
     title: 'Buyer Deposits Funds',
-    description: 'Buyer deposits funds to Kahade escrow. Funds are safe and cannot be accessed by anyone.',
+    description: 'Buyer deposits funds to Rekberkan escrow. Funds are safe and cannot be accessed by anyone.',
     details: [
       'Choose payment method (Transfer, E-Wallet, VA)',
-      'Funds go to Kahade escrow account',
+      'Funds go to Rekberkan escrow account',
       'Seller gets notification that funds are received',
       'Transaction status updates in real-time'
     ]
@@ -78,12 +78,12 @@ const steps = [
 
 const faqs = [
   {
-    question: 'How much does it cost to use Kahade?',
-    answer: 'Kahade charges a platform fee of 1-3% of the transaction value, depending on the category and amount. This fee can be borne by the buyer, seller, or split equally as agreed.'
+    question: 'How much does it cost to use Rekberkan?',
+    answer: 'Rekberkan charges a platform fee of 1-3% of the transaction value, depending on the category and amount. This fee can be borne by the buyer, seller, or split equally as agreed.'
   },
   {
     question: 'What if there is a dispute?',
-    answer: 'If a dispute occurs, both parties can file a dispute. Kahade mediator team will review evidence from both sides and make a fair decision. The dispute process usually completes within 3-7 business days.'
+    answer: 'If a dispute occurs, both parties can file a dispute. Rekberkan mediator team will review evidence from both sides and make a fair decision. The dispute process usually completes within 3-7 business days.'
   },
   {
     question: 'Is my money safe?',
@@ -99,7 +99,7 @@ const faqs = [
   },
   {
     question: 'What transaction categories are supported?',
-    answer: 'Kahade supports various categories including: Electronics, Digital Services, Physical Goods, Professional Services, and more. Some prohibited categories such as illegal goods are not allowed.'
+    answer: 'Rekberkan supports various categories including: Electronics, Digital Services, Physical Goods, Professional Services, and more. Some prohibited categories such as illegal goods are not allowed.'
   }
 ];
 
@@ -135,7 +135,7 @@ export default function HowItWorks() {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-black">
-              How Kahade Works
+              How Rekberkan Works
             </h1>
             <p className="text-lg text-[#6B7280]">
               Simple and secure process to protect every transaction. 
@@ -286,7 +286,7 @@ export default function HowItWorks() {
               Ready to Get Started?
             </h2>
             <p className="text-white/70 max-w-xl mx-auto mb-8">
-              Sign up now and enjoy secure transactions with Kahade.
+              Sign up now and enjoy secure transactions with Rekberkan.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">

@@ -157,7 +157,7 @@ export default function Login() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 mb-8">
-            <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
+            <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
           </Link>
           
           <h1 className="text-3xl font-bold mb-2 text-black">Welcome Back</h1>
@@ -293,7 +293,7 @@ export default function Login() {
             <ShieldCheck className="w-24 h-24 text-white" weight="duotone" />
           </div>
           <h2 className="text-2xl font-bold mb-4 text-white">
-            Secure Transactions with Kahade
+            Secure Transactions with Rekberkan
           </h2>
           <p className="text-white/70 max-w-sm mx-auto">
             The trusted escrow platform for secure online transactions.

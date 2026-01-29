@@ -96,7 +96,7 @@ export default function ForgotPassword() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mb-8 justify-center">
-          <img src="/images/logo.svg" alt="Kahade" className="h-8 w-auto" />
+          <img src="/images/logo.svg" alt="Rekberkan" className="h-8 w-auto" />
         </Link>
         
         <div className="bg-white rounded-2xl border border-[#E5E5E5] p-8 shadow-sm">

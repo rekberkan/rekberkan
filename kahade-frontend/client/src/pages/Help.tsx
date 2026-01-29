@@ -20,7 +20,7 @@ const categories = [
   {
     icon: Book,
     title: 'Getting Started',
-    description: 'Learn the basics of using Kahade',
+    description: 'Learn the basics of using Rekberkan',
     articles: 12,
     href: '/help/getting-started'
   },

@@ -114,7 +114,7 @@ export default function Licenses() {
               Open Source Licenses
             </h1>
             <p className="text-xl text-[#6B7280] mb-6">
-              Kahade is built with the help of many open source projects. 
+              Rekberkan is built with the help of many open source projects. 
               We are grateful to the developers and communities behind these tools.
             </p>
             <div className="flex items-center gap-4 text-[#6B7280]">
@@ -270,14 +270,14 @@ export default function Licenses() {
             <h2 className="text-2xl font-bold mb-4 text-white">Acknowledgments</h2>
             <p className="text-white/70 mb-6">
               We extend our sincere gratitude to all the open source maintainers and contributors 
-              whose work makes projects like Kahade possible. Your dedication to building and 
+              whose work makes projects like Rekberkan possible. Your dedication to building and 
               sharing quality software benefits the entire developer community.
             </p>
             <p className="text-sm text-white/50">
               If you believe we have missed any attribution or have questions about our use of 
               open source software, please contact us at{' '}
-              <a href="mailto:legal@kahade.com" className="text-white hover:underline">
-                legal@kahade.com
+              <a href="mailto:legal@rekberkan.com" className="text-white hover:underline">
+                legal@rekberkan.com
               </a>
             </p>
           </motion.div>

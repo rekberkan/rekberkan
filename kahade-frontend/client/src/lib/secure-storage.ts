@@ -50,10 +50,10 @@ export class SecureStorage {
    * This function helps migrate existing tokens
    */
   static migrateFromLocalStorage(): void {
-    const oldToken = localStorage.getItem('kahade_token');
+    const oldToken = localStorage.getItem('rekberkan_token');
     if (oldToken) {
       console.warn('⚠️ JWT token found in localStorage. Please re-login for secure cookie-based authentication.');
-      localStorage.removeItem('kahade_token');
+      localStorage.removeItem('rekberkan_token');
     }
   }
 }

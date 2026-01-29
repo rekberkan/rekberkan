@@ -116,7 +116,7 @@ export default function AdminSettings() {
 
   if (isLoading) {
     return (
-      <AdminLayout title="Platform Settings" subtitle="Kahade system configuration">
+      <AdminLayout title="Platform Settings" subtitle="Rekberkan system configuration">
         <div className="flex items-center justify-center h-64">
           <Spinner className="w-8 h-8 animate-spin text-accent" weight="bold" />
         </div>
@@ -125,7 +125,7 @@ export default function AdminSettings() {
   }
 
   return (
-    <AdminLayout title="Platform Settings" subtitle="Kahade system configuration">
+    <AdminLayout title="Platform Settings" subtitle="Rekberkan system configuration">
       <div className="max-w-4xl space-y-6">
         {/* Transaction Settings */}
         <motion.div

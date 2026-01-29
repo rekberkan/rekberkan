@@ -14,14 +14,14 @@ const sections = [
   {
     id: 'acceptance',
     title: '1. Acceptance of Terms',
-    content: `By accessing or using Kahade's services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.
+    content: `By accessing or using Rekberkan's services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.
 
 These Terms of Service apply to all users of the platform, including without limitation users who are browsers, vendors, customers, merchants, and/or contributors of content.`
   },
   {
     id: 'services',
     title: '2. Description of Services',
-    content: `Kahade provides a peer-to-peer escrow platform that facilitates secure transactions between buyers and sellers. Our services include:
+    content: `Rekberkan provides a peer-to-peer escrow platform that facilitates secure transactions between buyers and sellers. Our services include:
 
 • Secure fund holding during transactions
 • Transaction management and tracking
@@ -34,7 +34,7 @@ We reserve the right to modify, suspend, or discontinue any aspect of our servic
   {
     id: 'eligibility',
     title: '3. Eligibility',
-    content: `To use Kahade's services, you must:
+    content: `To use Rekberkan's services, you must:
 
 • Be at least 18 years of age
 • Have the legal capacity to enter into binding contracts
@@ -101,7 +101,7 @@ Violation of these prohibitions may result in immediate account termination and 
   {
     id: 'intellectual',
     title: '8. Intellectual Property',
-    content: `All content, features, and functionality of Kahade's platform are owned by Kahade and are protected by international copyright, trademark, and other intellectual property laws.
+    content: `All content, features, and functionality of Rekberkan's platform are owned by Rekberkan and are protected by international copyright, trademark, and other intellectual property laws.
 
 You may not:
 • Copy, modify, or distribute our content without permission
@@ -112,7 +112,7 @@ You may not:
   {
     id: 'liability',
     title: '9. Limitation of Liability',
-    content: `To the maximum extent permitted by law, Kahade shall not be liable for:
+    content: `To the maximum extent permitted by law, Rekberkan shall not be liable for:
 
 • Any indirect, incidental, or consequential damages
 • Loss of profits, data, or business opportunities
@@ -125,7 +125,7 @@ Our total liability for any claim shall not exceed the fees paid by you in the 1
   {
     id: 'indemnification',
     title: '10. Indemnification',
-    content: `You agree to indemnify, defend, and hold harmless Kahade and its officers, directors, employees, and agents from any claims, damages, losses, or expenses arising from:
+    content: `You agree to indemnify, defend, and hold harmless Rekberkan and its officers, directors, employees, and agents from any claims, damages, losses, or expenses arising from:
 
 • Your use of our services
 • Your violation of these Terms
@@ -167,7 +167,7 @@ Your continued use of our services after such modifications constitutes acceptan
     title: '14. Contact Information',
     content: `For questions about these Terms of Service, please contact us:
 
-Email: legal@kahade.com
+Email: legal@rekberkan.com
 Address: Jakarta, Indonesia
 
 We aim to respond to all inquiries within 5 business days.`
@@ -250,7 +250,7 @@ export default function Terms() {
             >
               <div className="bg-white rounded-xl border border-[#E5E5E5] p-8">
                 <p className="text-lg text-[#6B7280] mb-8">
-                  Please read these Terms of Service carefully before using Kahade's platform and services. 
+                  Please read these Terms of Service carefully before using Rekberkan's platform and services. 
                   By using our services, you agree to be bound by these terms.
                 </p>
                 

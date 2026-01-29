@@ -201,7 +201,7 @@ export default function Careers() {
           >
             <h2 className="text-3xl font-bold mb-4 text-black">Our Values</h2>
             <p className="text-[#6B7280] max-w-2xl mx-auto">
-              These principles guide everything we do at Kahade.
+              These principles guide everything we do at Rekberkan.
             </p>
           </motion.div>
           
