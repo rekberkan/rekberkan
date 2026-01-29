@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { bankApi } from '@/lib/api';
+import { bankAccountApi, walletApi } from '@/lib/api';
 
 interface BankAccount {
   id: string;
@@ -81,8 +81,8 @@ export default function BankAccounts() {
   const fetchData = async () => {
     try {
       const [accountsRes, banksRes] = await Promise.all([
-        bankApi.getAccounts(),
-        bankApi.getSupportedBanks(),
+        bankAccountApi.list(),
+        walletApi.getBanks(),
       ]);
       setAccounts(accountsRes.data.accounts || []);
       setBanks(banksRes.data.banks || []);
@@ -107,7 +107,7 @@ export default function BankAccounts() {
 
     setIsSubmitting(true);
     try {
-      await bankApi.addAccount(formData);
+      await bankAccountApi.create(formData);
       toast.success('Bank account added successfully');
       setIsAddOpen(false);
       setFormData({ bankCode: '', accountNumber: '', accountHolderName: '' });
@@ -121,7 +121,7 @@ export default function BankAccounts() {
 
   const handleSetDefault = async (id: string) => {
     try {
-      await bankApi.setDefault(id);
+      await bankAccountApi.setDefault(id);
       toast.success('Default bank account updated');
       fetchData();
     } catch (error: any) {
@@ -134,7 +134,7 @@ export default function BankAccounts() {
 
     setIsSubmitting(true);
     try {
-      await bankApi.deleteAccount(selectedAccount.id);
+      await bankAccountApi.delete(selectedAccount.id);
       toast.success('Bank account deleted');
       setIsDeleteOpen(false);
       setSelectedAccount(null);
