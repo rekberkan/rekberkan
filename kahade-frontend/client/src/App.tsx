@@ -69,6 +69,7 @@ import AdminPromos from "./pages/admin/AdminPromos";
 // Protected Route Component
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const appMode = getAppMode();
 
   if (isLoading) {
     return (
@@ -79,8 +80,18 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    // Redirect to login on landing page
-    window.location.href = `${import.meta.env.VITE_LANDING_URL || ''}/login`;
+    // If on app/admin subdomain, redirect to landing page login
+    // If on landing page (single domain setup), just go to /login
+    if (appMode === 'app' || appMode === 'admin') {
+      const landingUrl = import.meta.env.VITE_LANDING_URL;
+      // Only redirect to external URL if it's properly configured (not placeholder)
+      if (landingUrl && !landingUrl.includes('domain.com')) {
+        window.location.href = `${landingUrl}/login`;
+        return null;
+      }
+    }
+    // Fallback: redirect to /login on current origin
+    window.location.href = '/login';
     return null;
   }
 
@@ -90,6 +101,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 // Admin Protected Route Component
 function AdminProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const appMode = getAppMode();
 
   if (isLoading) {
     return (
@@ -100,13 +112,30 @@ function AdminProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    window.location.href = `${import.meta.env.VITE_LANDING_URL || ''}/login`;
+    // If on admin subdomain, redirect to landing page login
+    if (appMode === 'admin') {
+      const landingUrl = import.meta.env.VITE_LANDING_URL;
+      // Only redirect to external URL if it's properly configured (not placeholder)
+      if (landingUrl && !landingUrl.includes('domain.com')) {
+        window.location.href = `${landingUrl}/login`;
+        return null;
+      }
+    }
+    // Fallback: redirect to /login on current origin
+    window.location.href = '/login';
     return null;
   }
 
   if (!canAccessAdmin(user)) {
     // Redirect non-admin users to user app
-    navigateToApp();
+    const appUrl = import.meta.env.VITE_APP_URL;
+    // Only redirect to external URL if it's properly configured
+    if (appUrl && !appUrl.includes('domain.com')) {
+      window.location.href = appUrl;
+      return null;
+    }
+    // Fallback: redirect to home on current origin
+    window.location.href = '/';
     return null;
   }
 
