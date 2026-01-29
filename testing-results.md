@@ -75,19 +75,27 @@
 - ✅ Access token: 15 minutes expiry
 - ✅ Refresh token: 7 days expiry
 
-## 5. Issues Found & Fixed
+## 5. Issues Found & Fixed ✅
 
-### Issue 1: API_PREFIX Configuration
+### Issue 1: Build Scripts Warning ✅ FIXED
+- **Problem**: Warning about ignored build scripts (esbuild, @tailwindcss/oxide)
+- **Solution**: Added `pnpm.onlyBuiltDependencies` config in package.json
+- **Commit**: `fix(frontend): add pnpm.onlyBuiltDependencies for esbuild and @tailwindcss/oxide`
+
+### Issue 2: API_PREFIX Configuration ✅ FIXED
 - **Problem**: Routes not found with `API_PREFIX=api/v1`
-- **Solution**: Changed to `API_PREFIX=api` (versioning handled by NestJS)
+- **Solution**: Changed to `API_PREFIX=api` (versioning handled by NestJS @Version() decorator)
+- **Commit**: `fix(backend): correct API_PREFIX from 'api/v1' to 'api'`
 
-### Issue 2: Database Tables Not Created
-- **Problem**: Migration file was placeholder only
-- **Solution**: Used `prisma db push` to sync schema
+### Issue 3: Database Tables Not Created ✅ FIXED
+- **Problem**: Migration file was placeholder only (`-- Placeholder migration`)
+- **Solution**: Generated proper Prisma migration with full SQL schema (1616 lines)
+- **Commit**: `fix(backend): generate proper Prisma migration (replace placeholder)`
 
-### Issue 3: Password Validation
-- **Problem**: Simple passwords rejected
-- **Solution**: Use strong passwords (8+ chars, uppercase, lowercase, number, symbol)
+### Issue 4: Password Validation Documentation ✅ FIXED
+- **Problem**: No documentation about password requirements
+- **Solution**: Created README.md with detailed password requirements table
+- **Commit**: `docs(backend): add README with password requirements documentation`
 
 ## 6. Security Features Verified
 
