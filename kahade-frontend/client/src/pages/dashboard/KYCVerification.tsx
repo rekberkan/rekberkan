@@ -23,7 +23,7 @@ import {
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { kycApi } from '@/lib/api';
+import { userApi } from '@/lib/api';
 
 type KYCStatus = 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
@@ -78,7 +78,7 @@ export default function KYCVerification() {
 
   const fetchKYCStatus = async () => {
     try {
-      const response = await kycApi.getStatus();
+      const response = await userApi.getKYCStatus();
       setKycData(response.data);
     } catch (error) {
       console.error('Failed to fetch KYC status:', error);
@@ -136,7 +136,7 @@ export default function KYCVerification() {
       if (idBack) formDataToSend.append('idBack', idBack);
       formDataToSend.append('selfie', selfie);
 
-      await kycApi.submit(formDataToSend);
+      await userApi.uploadKYC(formDataToSend);
       toast.success('KYC submitted successfully!', {
         description: 'We will review your documents within 1-3 business days.'
       });
